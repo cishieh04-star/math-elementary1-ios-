@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>九九乘法學習遊戲</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            background-color: #fdf5e6; 
+            padding: 20px; 
+            touch-action: manipulation; 
+        }
+        h1 { color: #333; font-size: 28px; }
+        .equation-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 45px; 
+            margin: 20px 0 10px 0; 
+            font-weight: bold;
+        }
+        .concept-text {
+            font-size: 24px;
+            color: #d2691e;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .num-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0 10px; 
+        }
+        .visual-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            min-height: 120px;
+        }
+        .group-box {
+            border: 3px solid #ffa07a;
+            border-radius: 12px;
+            padding: 8px;
+            display: grid;
+            gap: 5px;
+            background-color: #fff;
+            align-content: center;
+        }
+        .dot { 
+            height: 16px; 
+            width: 16px; 
+            background-color: #ff6347; 
+            border-radius: 50%; 
+        }
+        .box { 
+            width: 80px; 
+            height: 80px; 
+            border: 4px dashed #333; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: white; 
+            margin: 0 10px; 
+            border-radius: 10px; 
+            font-size: 35px;
+        }
+        #options { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            max-width: 500px; 
+            margin: 10px auto; 
+        }
+        .option { 
+            width: 75px; 
+            height: 75px; 
+            background: #98fb98; 
+            border-radius: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            margin: 10px; 
+            font-weight: bold; 
+            font-size: 28px; 
+            box-shadow: 2px 2px 5px #aaa; 
+            transition: transform 0.1s; 
+        }
+        .option:active { transform: scale(0.9); }
+    </style>
+</head>
+<body>
+
+    <h1>請點選正確的乘法答案</h1>
+    
+    <div id="visualArea" class="visual-area"></div>
+
+    <div class="equation-container">
+        <div class="num-wrapper" id="numA"></div>
+        ×
+        <div class="num-wrapper" id="numB"></div>
+        ＝
+        <div class="box" id="dropTarget">?</div>
+    </div>
+    <div class="concept-text" id="conceptText"></div>
+    
+    <div id="options"></div>
+
+    <script>
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            msg.rate = 0.85; 
+            window.speechSynthesis.speak(msg);
+        }
+
+        // numA 是被乘數 (每群數量) / numB 是乘數 (有幾群)
+        let numA = Math.floor(Math.random() * 8) + 2; 
+        let numB = Math.floor(Math.random() * 8) + 2;
+        let product = numA * numB;
+        
+        // 處理中文「2」的發音
+        let numBSpeech = (numB === 2) ? '兩' : numB;
+
+        document.getElementById('numA').innerText = numA;
+        document.getElementById('numB').innerText = numB;
+        
+        // 畫面上顯示
+        document.getElementById('conceptText').innerText = `（ ${numB} 個 ${numA} ）`;
+
+        // 繪製具象化的群組點點
+        let visualHTML = '';
+        let cols = Math.ceil(Math.sqrt(numA)); 
+        for(let i = 0; i < numB; i++) { 
+            visualHTML += `<div class="group-box" style="grid-template-columns: repeat(${cols}, 1fr);">`;
+            for(let j = 0; j < numA; j++) { 
+                visualHTML += `<div class="dot"></div>`;
+            }
+            visualHTML += `</div>`;
+        }
+        document.getElementById('visualArea').innerHTML = visualHTML;
+
+        // 語音同步朗讀完整算式與具體概念
+        speak(`${numA} 乘以 ${numB}，也就是 ${numBSpeech}個 ${numA}，等於多少呢？`);
+
+        let options = [product];
+        while(options.length < 6) {
+            let fakeA = Math.floor(Math.random() * 8) + 2;
+            let fakeB = Math.floor(Math.random() * 8) + 2;
+            let fakeAns = fakeA * fakeB;
+            if(!options.includes(fakeAns)) {
+                options.push(fakeAns);
+            }
+        }
+        options.sort(() => Math.random() - 0.5);
+
+        options.forEach(val => {
+            let div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = val;
+            div.onclick = () => {
+                if (val === product) {
+                    document.getElementById('dropTarget').innerHTML = val;
+                    document.getElementById('dropTarget').style.backgroundColor = '#ffff99';
+                    // 答對時的語音也同步更新邏輯
+                    speak(`太棒了！${numA} 乘以 ${numB}，也就是 ${numBSpeech}個 ${numA} 等於 ${val}，你答對了！`);
+                    setTimeout(() => location.reload(), 5000);
+                } else {
+                    speak("再試試看喔！");
+                }
+            };
+            document.getElementById('options').appendChild(div);
+        });
+    </script>
+</body>
+</html>
