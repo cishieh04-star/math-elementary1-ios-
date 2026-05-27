@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>減法遊戲</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #f0f8ff; padding: 20px; touch-action: manipulation; }
+        #startBtn { padding: 20px 40px; font-size: 24px; background-color: #ff6347; color: white; border: none; border-radius: 15px; cursor: pointer; transition: transform 0.1s; }
+        #startBtn:active { transform: scale(0.9); }
+        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 40px; margin: 30px; }
+        .num-wrapper { display: flex; flex-direction: column; align-items: center; margin: 0 10px; }
+        .dots-row { display: flex; flex-wrap: wrap; justify-content: center; width: 100px; margin-bottom: 10px; }
+        .dot { height: 15px; width: 15px; background-color: #ff6347; border-radius: 50%; margin: 3px; }
+        .box { width: 140px; height: 140px; border: 4px dashed #333; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; margin: 0 10px; border-radius: 15px; font-weight: bold; font-size: 50px; }
+        #options { display: flex; flex-wrap: wrap; justify-content: center; max-width: 600px; margin: 20px auto; }
+        .option { width: 80px; height: 80px; background: #87ceeb; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 15px; font-weight: bold; font-size: 30px; box-shadow: 3px 3px 8px #888; }
+    </style>
+</head>
+<body>
+
+    <h1>請點選「開始」聽題目</h1>
+    <button id="startBtn">開始遊戲</button>
+    <div id="gameArea" class="equation-container"></div>
+    <div id="options"></div>
+
+    <script>
+        // 確保網頁讀取完畢後才綁定按鈕
+        window.onload = function() {
+            document.getElementById('startBtn').addEventListener('click', startGame);
+        };
+
+        let numA, numB, diff;
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            msg.rate = 0.6;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function createDots(n) {
+            let dots = '<div class="dots-row">';
+            for(let i=0; i<n; i++) dots += '<span class="dot"></span>';
+            dots += '</div>';
+            return dots;
+        }
+
+        function startGame() {
+            numA = Math.floor(Math.random() * 10) + 5; 
+            numB = Math.floor(Math.random() * (numA - 1)) + 1;
+            diff = numA - numB;
+
+            document.getElementById('gameArea').innerHTML = `
+                <div class="num-wrapper">${createDots(numA)}<div>${numA}</div></div>
+                －
+                <div class="num-wrapper">${createDots(numB)}<div>${numB}</div></div>
+                ＝
+                <div class="box" id="dropTarget">?</div>
+            `;
+            
+            document.getElementById('options').innerHTML = '';
+            
+            let options = [diff];
+            while(options.length < 6) {
+                let rand = Math.floor(Math.random() * 10) + 1;
+                if(!options.includes(rand)) options.push(rand);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(val => {
+                let div = document.createElement('div');
+                div.className = 'option';
+                div.innerText = val;
+                div.onclick = function() {
+                    if (parseInt(this.innerText) === diff) {
+                        document.getElementById('dropTarget').innerHTML = `<div>${diff}</div>${createDots(diff)}`;
+                        speak(`太棒了！答案是 ${diff}。`);
+                        setTimeout(startGame, 5000);
+                    } else {
+                        speak("再算算看喔！");
+                    }
+                };
+                document.getElementById('options').appendChild(div);
+            });
+
+            speak(`${numA} 減 ${numB} 等於多少呢？`);
+        }
+    </script>
+</body>
+</html>
