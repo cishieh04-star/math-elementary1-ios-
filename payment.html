@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>互動付錢遊戲 (包含移動摩擦音效版)</title>
+<title>互動付錢遊戲 (語音出題與撒花特效版)</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
   body {
     font-family: sans-serif; display: flex; flex-direction: column;
@@ -12,40 +13,63 @@
     touch-action: none; 
   }
   
-  .teacher-setup {
-    padding: 10px; text-align: center; background: #e0e0e0; font-size: 18px; color: #555;
+  /* --- 新增：強制解鎖語音與音效的開始畫面 --- */
+  #startScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); color: #fff; z-index: 9999;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    cursor: pointer;
   }
-  .teacher-setup input {
-    font-size: 18px; width: 60px; text-align: center; border: 1px solid #ccc; border-radius: 5px;
-  }
+  #startScreen div { font-size: 36px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
+  #startScreen p { font-size: 18px; color: #ffeb3b; }
 
+  /* 頂部任務區 */
   .header {
     padding: 15px; text-align: center; background: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative;
   }
-  .box-icon { font-size: 60px; line-height: 1; margin-bottom: 5px; }
-  .target-display { font-size: 36px; font-weight: bold; color: #d32f2f; }
+  .box-icon { font-size: 50px; line-height: 1; margin-bottom: 5px; }
+  .target-display { 
+    font-size: 36px; font-weight: bold; color: #d32f2f; 
+    display: flex; align-items: center; gap: 10px;
+  }
   
+  /* 按鈕樣式 */
+  .icon-btn {
+    background: #e3f2fd; border: 2px solid #90caf9; border-radius: 50%;
+    width: 45px; height: 45px; font-size: 24px; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .icon-btn:active { background: #bbdefb; }
+  
+  .next-btn {
+    margin-top: 10px; padding: 8px 20px; font-size: 20px; font-weight: bold;
+    background: #4CAF50; color: white; border: none; border-radius: 25px;
+    cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  }
+  .next-btn:active { transform: translateY(2px); box-shadow: 0 2px 3px rgba(0,0,0,0.2); }
+
+  /* 中部操作區 (付錢托盤) */
   .tray {
-    flex: 1; margin: 20px; border: 3px dashed #aaa; background: #eef;
+    flex: 1; margin: 15px; border: 3px dashed #aaa; background: #eef;
     border-radius: 15px; position: relative; padding: 15px;
   }
-  .tray-coins {
-    display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; height: 100%;
-  }
+  .tray-coins { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; height: 100%; }
   #counter {
     font-size: 50px; font-weight: bold; color: #333;
     position: absolute; bottom: 15px; right: 20px; opacity: 0.8;
     transition: color 0.3s;
   }
   
+  /* 底部資源區 (錢包) */
   .wallet {
     height: 130px; background: #cfd8dc; display: flex;
     justify-content: space-around; align-items: center; padding: 10px;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
   }
   
+  /* 硬幣樣式 */
   .coin {
     width: 70px; height: 70px; border-radius: 50%; display: flex;
     justify-content: center; align-items: center; font-weight: bold;
@@ -57,8 +81,7 @@
 
   .dragging {
     position: absolute; pointer-events: none; z-index: 1000;
-    transform: scale(1.1);
-    box-shadow: 3px 8px 15px rgba(0,0,0,0.4);
+    transform: scale(1.1); box-shadow: 3px 8px 15px rgba(0,0,0,0.4);
   }
 
   .celebrate { animation: pop 0.5s ease-in-out; color: #4CAF50 !important; }
@@ -66,15 +89,18 @@
 
   .error-shake { animation: shake 0.4s; color: #d32f2f !important; }
   @keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    50% { transform: translateX(10px); }
-    75% { transform: translateX(-10px); }
+    0% { transform: translateX(0); } 25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); } 75% { transform: translateX(-10px); }
     100% { transform: translateX(0); }
   }
 </style>
 </head>
 <body>
+
+  <div id="startScreen">
+    <div>▶ 點擊開始遊戲</div>
+    <p>(開啟語音、音效與撒花功能)</p>
+  </div>
 
   <audio id="pickupSound" src="https://actions.google.com/sounds/v1/water/water_drop.ogg" preload="auto"></audio>
   <audio id="dragSound" src="https://actions.google.com/sounds/v1/mechanisms/clock_tick.ogg" preload="auto"></audio>
@@ -82,13 +108,13 @@
   <audio id="errorSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
   <audio id="cheerSound" src="https://actions.google.com/sounds/v1/crowds/children_cheering.ogg" preload="auto"></audio>
 
-  <div class="teacher-setup">
-    老師設定金額：<input type="number" id="targetInput" value="47" min="1" max="99"> 元
-  </div>
-
   <div class="header">
     <div class="box-icon">🎁</div>
-    <div class="target-display">要付 <span id="displayTarget">47</span> 元</div>
+    <div class="target-display">
+      要付 <span id="displayTarget">?</span> 元
+      <button class="icon-btn" onclick="speakAmount()" title="聽題目">🔊</button>
+    </div>
+    <button class="next-btn" onclick="nextQuestion()">換下一題</button>
   </div>
 
   <div class="tray" id="tray">
@@ -103,13 +129,14 @@
 
 <script>
   let totalAmount = 0;
+  let currentTarget = 0;
   let audioUnlocked = false; 
 
-  const targetInput = document.getElementById('targetInput');
   const displayTarget = document.getElementById('displayTarget');
   const counterDisplay = document.getElementById('counter');
   const trayCoins = document.getElementById('trayCoins');
   const trayElement = document.getElementById('tray');
+  const startScreen = document.getElementById('startScreen');
   
   const pickupSound = document.getElementById('pickupSound');
   const dragSound = document.getElementById('dragSound');
@@ -117,30 +144,56 @@
   const errorSound = document.getElementById('errorSound');
   const cheerSound = document.getElementById('cheerSound');
 
-  // 第一次觸控螢幕時，解鎖所有音效
-  document.body.addEventListener('pointerdown', () => {
-    if (!audioUnlocked) {
-      pickupSound.play().then(() => pickupSound.pause()).catch(()=>{});
-      dragSound.play().then(() => dragSound.pause()).catch(()=>{});
-      dropSound.play().then(() => dropSound.pause()).catch(()=>{});
-      errorSound.play().then(() => errorSound.pause()).catch(()=>{});
-      cheerSound.play().then(() => cheerSound.pause()).catch(()=>{});
-      audioUnlocked = true;
-    }
-  }, { once: true });
+  // --- 啟動遊戲與解鎖機制 ---
+  startScreen.addEventListener('click', () => {
+    // 1. 解鎖所有 HTML5 音效
+    pickupSound.play().then(() => pickupSound.pause()).catch(()=>{});
+    dragSound.play().then(() => dragSound.pause()).catch(()=>{});
+    dropSound.play().then(() => dropSound.pause()).catch(()=>{});
+    errorSound.play().then(() => errorSound.pause()).catch(()=>{});
+    cheerSound.play().then(() => cheerSound.pause()).catch(()=>{});
+    
+    // 2. 解鎖語音引擎 (發送一個空的語音以取得系統權限)
+    let unlockSpeech = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(unlockSpeech);
 
-  // 播放音效共用函數
+    audioUnlocked = true;
+    startScreen.style.display = 'none';
+    
+    // 開始第一題
+    nextQuestion();
+  });
+
+  // --- 語音報讀功能 ---
+  function speakAmount() {
+    if (!audioUnlocked || currentTarget === 0) return;
+    
+    // 中斷目前正在唸的聲音，避免重複點擊造成聲音重疊
+    window.speechSynthesis.cancel(); 
+    
+    const utterance = new SpeechSynthesisUtterance(`要付，${currentTarget} 元`);
+    utterance.lang = 'zh-TW';
+    utterance.rate = 0.85; // 稍微放慢語速，讓孩子聽得更清楚
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // --- 隨機出題功能 ---
+  function nextQuestion() {
+    // 產生 1 到 99 的隨機整數
+    currentTarget = Math.floor(Math.random() * 99) + 1;
+    displayTarget.innerText = currentTarget;
+    resetGame();
+    
+    // 出題後自動唸出題目 (稍微延遲一下讓畫面先更新)
+    setTimeout(speakAmount, 300);
+  }
+
   function playSound(audioElement) {
     if(audioUnlocked) {
       audioElement.currentTime = 0; 
       audioElement.play().catch(e => console.log("音效阻擋", e));
     }
   }
-
-  targetInput.addEventListener('input', (e) => {
-    displayTarget.innerText = e.target.value;
-    resetGame();
-  });
 
   function resetGame() {
     totalAmount = 0;
@@ -151,14 +204,21 @@
 
   function updateCounter(checkWin = true) {
     counterDisplay.innerText = totalAmount;
-    const target = parseInt(targetInput.value);
     
     counterDisplay.classList.remove('celebrate', 'error-shake');
     void counterDisplay.offsetWidth; 
 
-    if (checkWin && totalAmount === target && target > 0) {
+    if (checkWin && totalAmount === currentTarget && currentTarget > 0) {
       counterDisplay.classList.add('celebrate');
-      playSound(cheerSound); 
+      playSound(cheerSound); // 播放歡呼聲
+      
+      // --- 觸發撒花特效 ---
+      confetti({
+        particleCount: 150,   // 紙花數量
+        spread: 80,           // 噴灑廣度
+        origin: { y: 0.6 },   // 從畫面中下方噴出
+        colors: ['#FFD700', '#ff0000', '#00ff00', '#0000ff'] // 紙花顏色
+      });
     }
   }
 
@@ -169,13 +229,16 @@
     playSound(errorSound); 
   }
 
+  // --- 觸控與拖曳邏輯 ---
   let activeCoin = null;
-  // --- 用來記錄拖曳距離的變數 ---
   let lastDragX = 0;
   let lastDragY = 0;
-  const DRAG_THRESHOLD = 40; // 每移動 40 像素發出一次輕微聲音，可依手感調整數字
+  const DRAG_THRESHOLD = 40; 
 
   document.addEventListener('pointerdown', (e) => {
+    // 防止點到按鈕時也觸發硬幣拖曳
+    if (e.target.tagName === 'BUTTON') return;
+
     if (e.target.classList.contains('coin')) {
       const val = parseInt(e.target.dataset.value);
       
@@ -193,7 +256,6 @@
       activeCoin.innerText = val;
       document.body.appendChild(activeCoin);
 
-      // 紀錄起始坐標點
       lastDragX = e.pageX;
       lastDragY = e.pageY;
 
@@ -205,12 +267,10 @@
     if (activeCoin) {
       moveCoin(e.pageX, e.pageY);
       
-      // --- 計算移動距離並播放摩擦聲 ---
       let dx = e.pageX - lastDragX;
       let dy = e.pageY - lastDragY;
       let distance = Math.sqrt(dx * dx + dy * dy);
 
-      // 如果移動距離超過設定的閾值，就發出滴答聲並重置座標
       if (distance > DRAG_THRESHOLD) {
         playSound(dragSound);
         lastDragX = e.pageX;
@@ -224,13 +284,12 @@
 
     const trayRect = trayElement.getBoundingClientRect();
     const val = parseInt(activeCoin.dataset.value);
-    const target = parseInt(targetInput.value);
 
     if (
       e.clientX >= trayRect.left && e.clientX <= trayRect.right &&
       e.clientY >= trayRect.top && e.clientY <= trayRect.bottom
     ) {
-      if (totalAmount + val > target) {
+      if (totalAmount + val > currentTarget) {
         showError(); 
       } else {
         const staticCoin = document.createElement('div');
