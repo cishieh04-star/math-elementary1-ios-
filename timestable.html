@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>九九乘法學習遊戲</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            background-color: #fdf5e6; 
+            padding: 20px; 
+            touch-action: manipulation; 
+            margin: 0;
+            overflow-x: hidden; 
+        }
+        h1 { color: #333; font-size: 28px; }
+        
+        #startScreen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #fdf5e6;
+        }
+        .start-btn {
+            padding: 20px 40px;
+            font-size: 32px;
+            font-weight: bold;
+            background-color: #ff7f50;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        #gameScreen { display: none; }
+
+        .equation-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 45px; 
+            margin: 20px 0 10px 0; 
+            font-weight: bold;
+        }
+        .concept-text {
+            font-size: 24px;
+            color: #d2691e;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .num-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0 10px; 
+        }
+        .visual-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            min-height: 120px;
+        }
+        .group-box {
+            border: 3px solid #ffa07a;
+            border-radius: 12px;
+            padding: 8px;
+            display: grid;
+            gap: 5px;
+            background-color: #fff;
+            align-content: center;
+        }
+        .dot { 
+            height: 16px; 
+            width: 16px; 
+            background-color: #ff6347; 
+            border-radius: 50%; 
+        }
+        .box { 
+            width: 80px; 
+            height: 80px; 
+            border: 4px dashed #333; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: white; 
+            margin: 0 10px; 
+            border-radius: 10px; 
+            font-size: 35px;
+        }
+        #options { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            max-width: 500px; 
+            margin: 10px auto; 
+        }
+        .option { 
+            width: 75px; 
+            height: 75px; 
+            background: #98fb98; 
+            border-radius: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            margin: 10px; 
+            font-weight: bold; 
+            font-size: 28px; 
+            box-shadow: 2px 2px 5px #aaa; 
+            transition: transform 0.1s, background-color 0.2s; 
+        }
+        .option:active { transform: scale(0.9); }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <h1 style="font-size: 36px; margin-bottom: 40px;">九九乘法遊戲</h1>
+        <div class="start-btn" id="startBtn">開始遊戲</div>
+    </div>
+
+    <div id="gameScreen">
+        <h1>請點選正確的乘法答案</h1>
+        
+        <div id="visualArea" class="visual-area"></div>
+
+        <div class="equation-container">
+            <div class="num-wrapper" id="numA"></div>
+            ×
+            <div class="num-wrapper" id="numB"></div>
+            ＝
+            <div class="box" id="dropTarget">?</div>
+        </div>
+        
+        <div class="concept-text" id="conceptText"></div>
+        <div id="options"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <script>
+        let preferredVoice = null;
+
+        // 尋找合適的女聲 (加入安全機制)
+        function loadVoices() {
+            let voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return;
+
+            preferredVoice = voices.find(v => 
+                (v.lang === 'zh-TW' || v.lang === 'zh-HK' || v.lang === 'zh-CN') && 
+                (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman') || v.name.includes('女') || v.name.includes('Yating') || v.name.includes('Meijia') || v.name.includes('Xiaoxiao'))
+            );
+            
+            if (!preferredVoice) {
+                preferredVoice = voices.find(v => v.lang === 'zh-TW');
+            }
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); 
+
+        function speak(text, onEndCallback) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            msg.rate = 0.85; 
+            
+            if (preferredVoice) {
+                msg.voice = preferredVoice;
+            }
+
+            if (onEndCallback) {
+                let called = false;
+                msg.onend = () => {
+                    if (!called) { 
+                        called = true; 
+                        onEndCallback(); 
+                    }
+                };
+                setTimeout(() => {
+                    if (!called) { 
+                        called = true; 
+                        onEndCallback(); 
+                    }
+                }, 8000); // 8秒安全強制換題機制
+            }
+
+            window.speechSynthesis.speak(msg);
+        }
+
+        document.getElementById('startBtn').onclick = () => {
+            let wakeUpMsg = new SpeechSynthesisUtterance('');
+            wakeUpMsg.lang = 'zh-TW';
+            window.speechSynthesis.speak(wakeUpMsg);
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            setTimeout(() => {
+                generateQuestion(); 
+            }, 300);
+        };
+
+        function generateQuestion() {
+            document.getElementById('options').style.pointerEvents = 'auto';
+            document.getElementById('dropTarget').innerHTML = '?';
+            document.getElementById('dropTarget').style.backgroundColor = 'white';
+            document.getElementById('options').innerHTML = '';
+
+            let numA = Math.floor(Math.random() * 8) + 2; 
+            let numB = Math.floor(Math.random() * 8) + 2;
+            let product = numA * numB;
+            
+            let numBSpeech = (numB === 2) ? '兩' : numB;
+
+            document.getElementById('numA').innerText = numA;
+            document.getElementById('numB').innerText = numB;
+            document.getElementById('conceptText').innerText = `（ ${numB} 個 ${numA} ）`;
+
+            let visualHTML = '';
+            let cols = Math.ceil(Math.sqrt(numA)); 
+            for(let i = 0; i < numB; i++) { 
+                visualHTML += `<div class="group-box" style="grid-template-columns: repeat(${cols}, 1fr);">`;
+                for(let j = 0; j < numA; j++) { 
+                    visualHTML += `<div class="dot"></div>`;
+                }
+                visualHTML += `</div>`;
+            }
+            document.getElementById('visualArea').innerHTML = visualHTML;
+
+            speak(`${numA} 乘以 ${numB}，也就是 ${numBSpeech}個 ${numA}，等於多少呢？`);
+
+            let options = [product];
+            while(options.length < 6) {
+                let fakeA = Math.floor(Math.random() * 8) + 2;
+                let fakeB = Math.floor(Math.random() * 8) + 2;
+                let fakeAns = fakeA * fakeB;
+                if(!options.includes(fakeAns)) {
+                    options.push(fakeAns);
+                }
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(val => {
+                let div = document.createElement('div');
+                div.className = 'option';
+                div.innerText = val;
+                div.onclick = () => {
+                    if (val === product) {
+                        // 鎖住按鈕
+                        document.getElementById('options').style.pointerEvents = 'none';
+                        document.getElementById('dropTarget').innerHTML = val;
+                        document.getElementById('dropTarget').style.backgroundColor = '#ffff99';
+                        
+                        // 觸發撒花特效 (加入安全檢查 typeof !== 'undefined')
+                        if (typeof confetti !== 'undefined') {
+                            confetti({
+                                particleCount: 150, 
+                                spread: 80,         
+                                origin: { y: 0.6 }, 
+                                colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'] 
+                            });
+                        }
+
+                        speak(`太棒了！${numA} 乘以 ${numB}，也就是 ${numBSpeech}個 ${numA} 等於 ${val}，你答對了！`, () => {
+                            generateQuestion();
+                        });
+                    } else {
+                        // 答錯時加入視覺回饋：變色 0.3 秒，讓使用者明確知道按鈕有反應
+                        div.style.backgroundColor = '#ffb6c1';
+                        setTimeout(() => {
+                            div.style.backgroundColor = '#98fb98';
+                        }, 300);
+                        
+                        speak("再試試看喔！");
+                    }
+                };
+                document.getElementById('options').appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
