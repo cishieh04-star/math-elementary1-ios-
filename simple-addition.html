@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數學選擇遊戲</title>
+    <style>
+        body { background-color: #fdfbf7; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        
+        #visual-container { display: flex; align-items: center; justify-content: center; gap: 10px; height: 120px; margin-bottom: 20px; }
+        .dot-group { display: flex; flex-wrap: wrap; gap: 5px; width: auto; align-items: center; justify-content: center; }
+        .dot { width: 40px; height: 40px; background: #ffaa55; border-radius: 50%; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
+        .symbol { font-size: 40px; font-weight: bold; color: #555; padding: 0 10px; }
+
+        #question { font-size: 60px; font-weight: bold; color: #333; margin: 20px 0; }
+        
+        .options { display: flex; gap: 20px; }
+        .btn-opt { padding: 20px 40px; font-size: 30px; background: #fff; border: 3px solid #7fc8f8; border-radius: 20px; cursor: pointer; }
+        
+        /* 撒花效果 */
+        #confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="visual-container">
+        <div id="dots-n1" class="dot-group"></div>
+        <div class="symbol">+</div>
+        <div id="dots-n2" class="dot-group"></div>
+        <div class="symbol">=</div>
+        <div id="dots-res" class="dot-group"></div>
+    </div>
+    
+    <div id="question">1 + 1 = ?</div>
+    <div class="options" id="options-container"></div>
+    <canvas id="confetti"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        let currentData;
+        const data = [
+            {n1: 1, n2: 1, res: 2}, {n1: 2, n2: 1, res: 3}, {n1: 3, n2: 1, res: 4},
+            {n1: 4, n2: 1, res: 5}, {n1: 5, n2: 1, res: 6}, {n1: 6, n2: 1, res: 7},
+            {n1: 7, n2: 1, res: 8}, {n1: 8, n2: 1, res: 9}, {n1: 9, n2: 1, res: 10}
+        ];
+        let step = 0;
+
+        function loadQuestion() {
+            currentData = data[step];
+            document.getElementById('question').innerText = `${currentData.n1} + ${currentData.n2} = ?`;
+            
+            // 朗讀題目
+            let utterance = new SpeechSynthesisUtterance(`${currentData.n1} 加 ${currentData.n2} 等於多少？`);
+            window.speechSynthesis.speak(utterance);
+
+            // 顯示圓點
+            renderDots('dots-n1', currentData.n1);
+            renderDots('dots-n2', currentData.n2);
+            renderDots('dots-res', 0); // 預設隱藏結果圓點
+
+            // 產生選項
+            let ops = [currentData.res, currentData.res + 1, currentData.res - 1].sort(() => Math.random() - 0.5);
+            let container = document.getElementById('options-container');
+            container.innerHTML = '';
+            ops.forEach(num => {
+                let btn = document.createElement('button');
+                btn.className = 'btn-opt';
+                btn.innerText = num;
+                btn.onclick = () => checkAnswer(num);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(ans) {
+            if (ans === currentData.res) {
+                // 答對：撒花、歡呼、顯示結果
+                confetti();
+                new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3').play();
+                renderDots('dots-res', currentData.res);
+                document.getElementById('question').innerText = `${currentData.n1} + ${currentData.n2} = ${currentData.res}`;
+                
+                setTimeout(() => {
+                    step = (step + 1) % data.length;
+                    loadQuestion();
+                }, 2000);
+            } else {
+                new Audio('https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3').play();
+            }
+        }
+
+        function renderDots(id, count) {
+            let container = document.getElementById(id);
+            container.innerHTML = '';
+            for(let i=0; i<count; i++) {
+                let d = document.createElement('div');
+                d.className = 'dot';
+                container.appendChild(d);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
