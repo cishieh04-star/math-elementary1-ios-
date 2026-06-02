@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>數學題目練習</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #fdf6e3; margin: 0; min-height: 100vh; }
+        .container { width: 100%; max-width: 600px; text-align: center; }
+        
+        .char-wrapper { position: relative; display: inline-block; margin: 5px; padding: 5px; background: white; border: 1px solid #ccc; border-radius: 4px; }
+        .char { font-size: 24px; font-weight: bold; padding-right: 20px; }
+        .zhuyin { position: absolute; right: 2px; top: 2px; font-size: 12px; color: #d35400; line-height: 1.1; width: 15px; }
+        
+        .slots-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px 0; min-height: 60px; }
+        .slot { width: 45px; height: 60px; border: 2px dashed #8b4513; background: #fff; border-radius: 8px; }
+        
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+        .word { cursor: pointer; }
+        .hidden { visibility: hidden; }
+        .audio-btn { padding: 15px 30px; font-size: 18px; background: #ff69b4; color: white; border: none; border-radius: 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>數學題目練習</h2>
+    <button class="audio-btn" onclick="triggerSpeak()">🔊 聽題目</button>
+    <div id="slots" class="slots-container"></div>
+    <div id="word-pool" class="word-pool"></div>
+</div>
+
+<script>
+    const levels = [
+        { text: "有幾個已經跳出去了？", data: [{c:"有",z:"ㄧㄡˇ"},{c:"幾",z:"ㄐㄧˇ"},{c:"個",z:"˙ㄍㄜ"},{c:"已",z:"ㄧˇ"},{c:"經",z:"ㄐㄧㄥ"},{c:"跳",z:"ㄊㄧㄠˋ"},{c:"出",z:"ㄔㄨ"},{c:"去",z:"ㄑㄩˋ"},{c:"了",z:"˙ㄌㄜ"},{c:"？",z:""}] },
+        { text: "還剩下幾隻鳥？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"剩",z:"ㄕㄥˋ"},{c:"下",z:"ㄒㄧㄚˋ"},{c:"幾",z:"ㄐㄧˇ"},{c:"隻",z:"ㄓ"},{c:"鳥",z:"ㄋㄧㄠˇ"},{c:"？",z:""}] },
+        { text: "還剩下幾顆球？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"剩",z:"ㄕㄥˋ"},{c:"下",z:"ㄒㄧㄚˋ"},{c:"幾",z:"ㄐㄧˇ"},{c:"顆",z:"ㄎㄜ"},{c:"球",z:"ㄑㄧㄡˊ"},{c:"？",z:""}] },
+        { text: "還剩下幾塊餅乾？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"剩",z:"ㄕㄥˋ"},{c:"下",z:"ㄒㄧㄚˋ"},{c:"幾",z:"ㄐㄧˇ"},{c:"塊",z:"ㄎㄨㄞˋ"},{c:"餅",z:"ㄅㄧㄥˇ"},{c:"乾",z:"ㄍㄢ"},{c:"？",z:""}] },
+        { text: "還剩下幾瓶果汁？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"剩",z:"ㄕㄥˋ"},{c:"下",z:"ㄒㄧㄚˋ"},{c:"幾",z:"ㄐㄧˇ"},{c:"瓶",z:"ㄆㄧㄥˊ"},{c:"果",z:"ㄍㄨㄛˇ"},{c:"汁",z:"ㄓ"},{c:"？",z:""}] },
+        { text: "品妍比宥廷少套中幾個？", data: [{c:"品",z:"ㄆㄧㄣˇ"},{c:"妍",z:"ㄧㄢˊ"},{c:"比",z:"ㄅㄧˇ"},{c:"宥",z:"ㄧㄡˋ"},{c:"廷",z:"ㄊㄧㄥˊ"},{c:"少",z:"ㄕㄠˇ"},{c:"套",z:"ㄊㄠˋ"},{c:"中",z:"ㄓㄨㄥ"},{c:"幾",z:"ㄐㄧˇ"},{c:"個",z:"˙ㄍㄜ"},{c:"？",z:""}] },
+        { text: "怎麼付錢才會剛好？", data: [{c:"怎",z:"ㄗㄣˇ"},{c:"麼",z:"˙ㄇㄜ"},{c:"付",z:"ㄈㄨˋ"},{c:"錢",z:"ㄑㄧㄢˊ"},{c:"才",z:"ㄘㄞˊ"},{c:"會",z:"ㄏㄨㄟˋ"},{c:"剛",z:"ㄍㄤ"},{c:"好",z:"ㄏㄠˇ"},{c:"？",z:""}] },
+        { text: "要怎麼付錢？", data: [{c:"要",z:"ㄧㄠˋ"},{c:"怎",z:"ㄗㄣˇ"},{c:"麼",z:"˙ㄇㄜ"},{c:"付",z:"ㄈㄨˋ"},{c:"錢",z:"ㄑㄧㄢˊ"},{c:"？",z:""}] },
+        { text: "還有其他的付法嗎？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"有",z:"ㄧㄡˇ"},{c:"其",z:"ㄑㄧˊ"},{c:"他",z:"ㄊㄚ"},{c:"的",z:"˙ㄉㄜ"},{c:"付",z:"ㄈㄨˋ"},{c:"法",z:"ㄈㄚˇ"},{c:"嗎",z:"˙ㄇㄚ"},{c:"？",z:""}] },
+        { text: "誰的錢比較多？", data: [{c:"誰",z:"ㄕㄟˊ"},{c:"的",z:"˙ㄉㄜ"},{c:"錢",z:"ㄑㄧㄢˊ"},{c:"比",z:"ㄅㄧˇ"},{c:"較",z:"ㄐㄧㄠˋ"},{c:"多",z:"ㄉㄨㄛ"},{c:"？",z:""}] }
+    ];
+
+    let currentLevel = 0;
+
+    function speakText(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        window.speechSynthesis.speak(msg);
+    }
+
+    function triggerSpeak() { speakText(levels[currentLevel].text); }
+
+    function loadLevel() {
+        const slotsDiv = document.getElementById('slots');
+        const poolDiv = document.getElementById('word-pool');
+        slotsDiv.innerHTML = '';
+        poolDiv.innerHTML = '';
+        
+        levels[currentLevel].data.forEach(item => {
+            let slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.dataset.char = item.c;
+            slotsDiv.appendChild(slot);
+        });
+
+        [...levels[currentLevel].data].sort(() => Math.random() - 0.5).forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'word';
+            div.innerHTML = `<div class="char-wrapper"><div class="char">${item.c}</div><div class="zhuyin">${item.z.split('').join('<br>')}</div></div>`;
+            div.onclick = function() {
+                let emptySlot = Array.from(document.querySelectorAll('.slot')).find(s => !s.innerHTML);
+                if (emptySlot && item.c === emptySlot.dataset.char) {
+                    emptySlot.innerHTML = div.innerHTML;
+                    div.className = 'hidden';
+                    if (!document.querySelector('.slot:empty')) {
+                        confetti();
+                        speakText("太棒了！");
+                        setTimeout(() => { 
+                            currentLevel = (currentLevel + 1) % levels.length; 
+                            loadLevel(); 
+                        }, 2500);
+                    }
+                }
+            };
+            poolDiv.appendChild(div);
+        });
+        triggerSpeak();
+    }
+    loadLevel();
+</script>
+</body>
+</html>
