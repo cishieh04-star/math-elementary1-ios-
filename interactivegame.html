@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>特教數學題目練習</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Microsoft JhengHei', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 10px; background-color: #fdf6e3; margin: 0; min-height: 100vh; 
+        }
+        .container { width: 100%; max-width: 600px; text-align: center; }
+        h2 { color: #8b4513; margin: 15px 0; font-size: 1.5rem; }
+        .slots-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px 0; }
+        .slot { 
+            width: 40px; height: 40px; border: 2px dashed #8b4513; 
+            display: flex; align-items: center; justify-content: center; 
+            background-color: #fff; border-radius: 8px; font-size: 20px; font-weight: bold;
+        }
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+        .word { 
+            padding: 12px 18px; background-color: #007bff; color: white; 
+            cursor: pointer; border-radius: 8px; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .hidden { visibility: hidden; }
+        .audio-btn { 
+            padding: 15px 30px; font-size: 18px; background: #ff69b4; 
+            color: white; border: none; border-radius: 12px; cursor: pointer; 
+            margin: 10px 0; touch-action: manipulation;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 id="level-title">數學題練習</h2>
+    <button class="audio-btn" onclick="triggerSpeak()">🔊 聽聽看題目</button>
+    <div id="slots" class="slots-container"></div>
+    <div id="word-pool" class="word-pool"></div>
+</div>
+
+<script>
+    const levels = [
+        { text: "有幾個已經跳出去了？" },
+        { text: "還剩下幾隻鳥？" },
+        { text: "還剩下幾顆球？" },
+        { text: "還剩下幾塊餅乾？" },
+        { text: "還剩下幾瓶果汁？" },
+        { text: "品妍比宥廷少套中幾個？" },
+        { text: "怎麼付錢才會剛好？" },
+        { text: "要怎麼付錢？" },
+        { text: "還有其他的付法嗎？" },
+        { text: "誰的錢比較多？" }
+    ];
+
+    let currentLevel = 0;
+
+    function triggerSpeak() {
+        // 先取消之前的語音，避免重疊
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(levels[currentLevel].text);
+        msg.lang = 'zh-TW';
+        msg.rate = 0.8; // 設定較慢的語速，方便小朋友聽清楚
+        window.speechSynthesis.speak(msg);
+    }
+
+    function loadLevel() {
+        const data = levels[currentLevel];
+        const slotsDiv = document.getElementById('slots');
+        const poolDiv = document.getElementById('word-pool');
+        slotsDiv.innerHTML = '';
+        poolDiv.innerHTML = '';
+        
+        // 建立目標空格
+        data.text.split('').forEach(char => {
+            let slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.dataset.char = char;
+            slotsDiv.appendChild(slot);
+        });
+
+        // 建立可選文字池（打散順序）
+        data.text.split('').sort(() => Math.random() - 0.5).forEach(char => {
+            let div = document.createElement('div');
+            div.className = 'word';
+            div.textContent = char;
+            div.onclick = function() {
+                let emptySlot = Array.from(document.querySelectorAll('.slot')).find(s => !s.textContent);
+                if (emptySlot && this.textContent === emptySlot.dataset.char) {
+                    emptySlot.textContent = this.textContent;
+                    this.className = 'hidden';
+                    // 檢查是否全對
+                    if (!document.querySelector('.slot:empty')) {
+                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                        setTimeout(() => {
+                            currentLevel = (currentLevel + 1) % levels.length;
+                            loadLevel();
+                        }, 2500);
+                    }
+                }
+            };
+            poolDiv.appendChild(div);
+        });
+        triggerSpeak();
+    }
+
+    // 頁面載入後自動開始
+    loadLevel();
+</script>
+</body>
+</html>
