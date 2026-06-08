@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>看時鐘選答案 - 8選項橫排版</title>
+    <style>
+        body {
+            font-family: "PingFang TC", "Helvetica Neue", sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4vh;
+            background: linear-gradient(135deg, #FFF9C4 0%, #FFF3E0 100%);
+            margin: 0; padding: 15px; height: 100dvh;
+            box-sizing: border-box; touch-action: manipulation; overflow: hidden;
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+        }
+        
+        /* 啟動畫面（解鎖 iOS 聲音專用） */
+        #startScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 248, 225, 0.98); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        /* 新增：開始畫面的標題樣式 */
+        .start-title {
+            font-size: 32px; font-weight: bold; color: #E65100; 
+            margin-bottom: 30px; letter-spacing: 2px; text-align: center;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.6);
+        }
+        .start-btn {
+            font-size: 36px; font-weight: bold; padding: 20px 50px;
+            border-radius: 25px; background: #4CAF50; color: white;
+            border: none; box-shadow: 0 8px 0 #2E7D32; cursor: pointer;
+            letter-spacing: 5px;
+        }
+        .start-btn:active { transform: translateY(8px); box-shadow: 0 0 0 #2E7D32; }
+        
+        /* 標題與注音 */
+        .title-container {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: rgba(255,255,255,0.7); padding: 10px 25px; border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer;
+        }
+        .title-container:active { transform: scale(0.95); }
+        
+        .title { 
+            font-size: 28px; font-weight: bold; color: #E65100; margin: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .zy-word { display: inline-flex; flex-direction: row; align-items: center; margin: 0 1px; vertical-align: bottom; }
+        .zy-char { font-size: 1em; }
+        .zy-bpmf { writing-mode: vertical-lr; font-size: 0.35em; line-height: 1.1; margin-left: 2px; color: #EF6C00; font-weight: normal; }
+        .speaker-icon { font-size: 28px; }
+
+        /* 時鐘本體 */
+        .clock-container {
+            width: 220px; height: 220px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95); border: 10px solid #FF9800;
+            position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin: 0; flex-shrink: 0;
+        }
+        .mark { position: absolute; width: 3px; height: 8px; background: #FFE0B2; left: 50%; transform: translateX(-50%); transform-origin: 50% 110px; }
+        .mark.main { width: 5px; height: 14px; background: #FF9800; }
+        .number { 
+            position: absolute; width: 30px; height: 30px; text-align: center; 
+            line-height: 30px; font-size: 22px; font-weight: bold; color: #5D4037; 
+            left: 50%; top: 50%; margin-left: -15px; margin-top: -15px; 
+            pointer-events: none; font-family: Arial, sans-serif;
+        }
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 10px; }
+        .hour-hand { width: 8px; height: 50px; background: #4E342E; margin-left: -4px; z-index: 2; }
+        .minute-hand { width: 5px; height: 85px; background: #E64A19; margin-left: -2.5px; z-index: 3; }
+        .center-dot { position: absolute; width: 16px; height: 16px; background: #4E342E; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4; border: 3px solid white; }
+        
+        /* 4個一排的選項網格 (4欄 x 2列) */
+        .options-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); 
+            gap: 15px 10px; width: 100%; max-width: 400px; flex-shrink: 0;
+        }
+        .option-btn {
+            background: rgba(255, 255, 255, 0.95); border: 3px solid #FFCC80; border-radius: 12px;
+            padding: 12px 0; font-size: 20px; font-weight: bold; color: #4E342E;
+            box-shadow: 0 5px 0 #FFB74D; cursor: pointer; transition: 0.1s;
+            display: flex; justify-content: center; align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .option-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #FFB74D; }
+        .option-btn.wrong { border-color: #EF5350; box-shadow: 0 5px 0 #E53935; color: #C62828; animation: shake 0.4s; }
+        .option-btn.correct { border-color: #66BB6A; box-shadow: 0 5px 0 #43A047; color: #2E7D32; background: #E8F5E9; }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        .confetti { position: absolute; width: 10px; height: 22px; z-index: 999; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <div class="start-title">「現在是幾點鐘」互動遊戲</div>
+        <button class="start-btn" onclick="startGame()">開始</button>
+    </div>
+
+    <div class="title-container" onclick="speakText('現在是幾點鐘？')">
+        <div class="title" id="mainTitle"></div>
+        <div class="speaker-icon">🔊</div>
+    </div>
+
+    <div class="clock-container" id="clockFace">
+        <script>
+            for(let i=0; i<12; i++) {
+                let isMain = (i % 3 === 0) ? 'main' : '';
+                document.write(`<div class="mark ${isMain}" style="transform: translateX(-50%) rotate(${i*30}deg)"></div>`);
+                let num = i === 0 ? 12 : i;
+                let angle = i * 30;
+                document.write(`<div class="number" style="transform: rotate(${angle}deg) translateY(-80px) rotate(-${angle}deg)">${num}</div>`);
+            }
+        </script>
+        <div class="hand hour-hand" id="hourHand"></div>
+        <div class="hand minute-hand" id="minuteHand"></div>
+        <div class="center-dot"></div>
+    </div>
+
+    <div class="options-grid" id="optionsContainer"></div>
+
+    <script>
+        let correctHour, correctMinute;
+        let isWaitingForNext = false;
+
+        function z(char, bpmf) {
+            return `<span class="zy-word"><span class="zy-char">${char}</span><span class="zy-bpmf">${bpmf}</span></span>`;
+        }
+
+        document.getElementById('mainTitle').innerHTML = 
+            z('現', 'ㄒㄧㄢˋ') + z('在', 'ㄗㄞˋ') + z('是', 'ㄕˋ') + z('幾', 'ㄐㄧˇ') + z('點', 'ㄉㄧㄢˇ') + z('鐘', 'ㄓㄨㄥ') + '？';
+
+        // 初始化與解鎖語音
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            // 播放一小段空白語音來解鎖 iOS 限制
+            let unlockMsg = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlockMsg);
+            
+            setTimeout(() => {
+                speakText("現在是幾點鐘？");
+            }, 500);
+        }
+
+        function speakText(textToRead, isPraise = false) {
+            window.speechSynthesis.cancel(); 
+            let msg = new SpeechSynthesisUtterance(textToRead);
+            msg.lang = 'zh-TW';
+            msg.pitch = 1.4; 
+            msg.rate = isPraise ? 1.1 : 0.85; 
+
+            let voices = window.speechSynthesis.getVoices();
+            let twVoices = voices.filter(v => v.lang.includes('zh-TW'));
+            if(twVoices.length > 0) {
+                let femaleVoice = twVoices.find(v => v.name.includes('Mei-Jia') || v.name.includes('Ting-Ting') || v.name.includes('female'));
+                msg.voice = femaleVoice ? femaleVoice : twVoices[0];
+            }
+            window.speechSynthesis.speak(msg);
+        }
+
+        function throwConfetti() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#845EC2', '#FF9671', '#F9F871'];
+            for (let i = 0; i < 45; i++) {
+                let confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-20px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1.5) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000); 
+            }
+        }
+
+        // 格式改為緊湊的 10:30 以配合 4 欄排版
+        function formatDigitalTime(h, m) {
+            let mm = m === 0 ? "00" : "30";
+            return `${h}:${mm}`;
+        }
+
+        function getSpeechText(h, m) {
+            let mText = m === 0 ? "鐘" : "半";
+            return `${h}點${mText}`;
+        }
+
+        function generateQuestion() {
+            isWaitingForNext = false;
+            
+            correctHour = Math.floor(Math.random() * 12) + 1;
+            correctMinute = Math.random() < 0.5 ? 0 : 30;
+
+            let totalMinutes = (correctHour % 12) * 60 + correctMinute;
+            document.getElementById('minuteHand').style.transform = `rotate(${correctMinute * 6}deg)`;
+            document.getElementById('hourHand').style.transform = `rotate(${(totalMinutes / 12) * 6}deg)`;
+
+            let optionsMap = new Map(); 
+            let correctStr = formatDigitalTime(correctHour, correctMinute);
+            optionsMap.set(correctStr, getSpeechText(correctHour, correctMinute));
+
+            while(optionsMap.size < 8) {
+                let h = Math.floor(Math.random() * 12) + 1;
+                let m = Math.random() < 0.5 ? 0 : 30;
+                let valStr = formatDigitalTime(h, m);
+                if (!optionsMap.has(valStr)) {
+                    optionsMap.set(valStr, getSpeechText(h, m));
+                }
+            }
+
+            let optionsArray = Array.from(optionsMap.entries()).sort(() => Math.random() - 0.5);
+            let container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            optionsArray.forEach(([displayStr, speechStr]) => {
+                let btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = displayStr;
+                
+                btn.onclick = function() {
+                    if(isWaitingForNext) return; 
+                    
+                    if (displayStr === correctStr) {
+                        isWaitingForNext = true;
+                        btn.classList.add('correct');
+                        speakText("太棒了！", true);
+                        throwConfetti();
+                        setTimeout(generateQuestion, 3000); 
+                    } else {
+                        // 點錯時會用語音把時間唸出來
+                        speakText(speechStr, false);
+                        btn.classList.add('wrong');
+                        setTimeout(() => btn.classList.remove('wrong'), 400);
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        generateQuestion();
+    </script>
+</body>
+</html>
