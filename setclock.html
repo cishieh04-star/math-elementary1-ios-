@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>看時間轉時鐘</title>
+    <style>
+        /* 基礎全螢幕設定 */
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
+        }
+        
+        body {
+            font-family: "PingFang TC", "Helvetica Neue", sans-serif;
+            /* 允許在過短的螢幕上(如筆電)上下滾動，確保畫面不被裁切 */
+            overflow-x: hidden; overflow-y: auto; 
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+        }
+
+        /* 智慧型安全容器：在平板與電腦上限制寬度並置中 */
+        .main-container {
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; gap: 2vh;
+            width: 100%; max-width: 450px; /* 電腦與平板的寬度限制 */
+            min-height: 100dvh; /* 確保至少滿版高度 */
+            margin: 0 auto; 
+            padding: 4vh 15px 3vh 15px; 
+            box-sizing: border-box;
+        }
+
+        /* 解鎖聲音的開始畫面 */
+        #startScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(224, 247, 250, 0.95); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .start-btn {
+            font-size: 32px; font-weight: bold; padding: 15px 40px;
+            border-radius: 20px; background: #00ACC1; color: white;
+            border: none; box-shadow: 0 6px 0 #00838F; cursor: pointer;
+            letter-spacing: 5px; font-family: "PingFang TC", sans-serif;
+        }
+        .start-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #00838F; }
+        
+        /* 注音的垂直排版設計 */
+        .zy-word { display: inline-flex; flex-direction: row; align-items: center; margin: 0 1px; vertical-align: bottom; }
+        .zy-char { font-size: 1em; }
+        .zy-bpmf { writing-mode: vertical-lr; font-size: 0.4em; line-height: 1.1; margin-left: 2px; font-weight: normal; }
+
+        .instruction { 
+            font-size: 22px; font-weight: bold; color: #00838F; 
+            letter-spacing: 2px; text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+            margin: 0; flex-shrink: 0;
+        }
+        
+        .target-time { 
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 5px 25px; border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
+            border: 5px solid #00BCD4; margin: 0;
+            cursor: pointer; transition: transform 0.1s;
+            flex-shrink: 0;
+        }
+        .target-time:active { transform: scale(0.95); }
+        
+        .time-text { font-size: 45px; font-weight: bold; color: #006064; letter-spacing: 5px; font-family: Arial, sans-serif; }
+        .speaker-icon { font-size: 30px; }
+
+        .turn-hint {
+            background: #FFF9C4; padding: 6px 20px; border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); color: #F57F17;
+            font-size: 18px; font-weight: bold; display: flex; align-items: center;
+            border: 3px solid #FFF176; flex-shrink: 0; margin: 0;
+        }
+
+        .clock-container {
+            width: 220px; height: 220px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95); border: 10px solid rgba(255,255,255,0.7);
+            position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            cursor: pointer; transition: border-color 0.4s, box-shadow 0.4s;
+            margin: 0; flex-shrink: 0;
+        }
+        .clock-container.success { border-color: #FFC107; box-shadow: 0 0 30px rgba(255, 193, 7, 0.5); }
+        
+        .mark { position: absolute; width: 3px; height: 10px; background: #BDC3C7; left: 50%; transform: translateX(-50%); transform-origin: 50% 110px; }
+        .mark.main { width: 5px; height: 14px; background: #7F8C8D; }
+        .number { 
+            position: absolute; width: 30px; height: 30px; text-align: center; line-height: 30px; 
+            font-size: 22px; font-weight: bold; color: #2C3E50; 
+            left: 50%; top: 50%; margin-left: -15px; margin-top: -15px; 
+            pointer-events: none; font-family: Arial, sans-serif;
+        }
+        
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 10px; }
+        .hour-hand { width: 8px; height: 50px; background: #2C3E50; margin-left: -4px; z-index: 2; }
+        .minute-hand { width: 5px; height: 85px; background: #E74C3C; margin-left: -2.5px; z-index: 3; }
+        .center-dot { position: absolute; width: 14px; height: 14px; background: #2C3E50; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 4; border: 3px solid white; }
+        
+        .forward-btn {
+            background: #29B6F6; border: 3px solid #0288D1; border-radius: 15px;
+            padding: 8px 20px; font-size: 18px; font-weight: bold; color: white;
+            box-shadow: 0 5px 0 #0288D1; cursor: pointer; transition: 0.1s;
+            display: flex; justify-content: center; align-items: center;
+            margin: 0; flex-shrink: 0; font-family: "PingFang TC", "Helvetica Neue", sans-serif;
+        }
+        .forward-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #0288D1; }
+
+        .progress-hint {
+            background: #E8F5E9; padding: 6px 20px; border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); color: #2E7D32;
+            font-size: 18px; font-weight: bold; display: flex; align-items: center;
+            border: 3px solid #81C784; flex-shrink: 0; margin: 0; transition: all 0.3s;
+        }
+        
+        .bottom-text {
+            font-size: 15px; color: #00838F; font-weight: bold; opacity: 0.8; 
+            margin: 0; flex-shrink: 0; align-self: flex-end;
+        }
+        
+        .confetti { position: absolute; width: 10px; height: 20px; z-index: 999; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <button class="start-btn" onclick="startGame()">開始遊戲</button>
+    </div>
+
+    <div class="main-container">
+        <div class="instruction" id="instructionText"></div>
+        
+        <div class="target-time" onclick="readQuestionTime()">
+            <div class="time-text" id="targetDisplay">-- : --</div>
+            <div class="speaker-icon">🔊</div>
+        </div>
+
+        <div class="turn-hint" id="turnHint"></div>
+
+        <div class="clock-container" id="clockFace">
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+            <div class="center-dot"></div>
+        </div>
+        
+        <button class="forward-btn" id="forwardBtn" onclick="forward10Minutes()"></button>
+
+        <div class="progress-hint" id="progressHint"></div>
+
+        <div class="bottom-text" id="bottomHint"></div>
+    </div>
+
+    <script>
+        function z(char, bpmf) {
+            if(!bpmf) return char;
+            return `<span class="zy-word"><span class="zy-char">${char}</span><span class="zy-bpmf">${bpmf}</span></span>`;
+        }
+
+        document.getElementById('instructionText').innerHTML = 
+            z('請', 'ㄑㄧㄥˇ') + z('把', 'ㄅㄚˇ') + z('時', 'ㄕˊ') + z('鐘', 'ㄓㄨㄥ') + z('轉', 'ㄓㄨㄢˇ') + z('到', 'ㄉㄠˋ');
+            
+        document.getElementById('forwardBtn').innerHTML = 
+            "⏩ " + z('向', 'ㄒㄧㄤˋ') + z('前', 'ㄑㄧㄢˊ') + z('轉', 'ㄓㄨㄢˇ') + 
+            "<span style='font-family: Arial; margin: 0 5px;'>10</span>" + 
+            z('分', 'ㄈㄣ') + z('鐘', 'ㄓㄨㄥ');
+
+        document.getElementById('bottomHint').innerHTML = 
+            "📢 " + z('點', 'ㄉㄧㄢˇ') + z('擊', 'ㄐㄧˊ') + z('數', 'ㄕㄨˋ') + z('字', 'ㄗˋ') + 
+            z('可', 'ㄎㄜˇ') + z('聽', 'ㄊㄧㄥ') + z('題', 'ㄊㄧˊ') + z('目', 'ㄇㄨˋ');
+
+        // ==== 跨平台語音引擎初始化邏輯 ====
+        let sysVoice = null;
+        function loadVoices() {
+            let voices = window.speechSynthesis.getVoices();
+            let twVoices = voices.filter(v => v.lang.includes('zh-TW'));
+            if(twVoices.length > 0) {
+                sysVoice = twVoices.find(v => v.name.includes('Mei-Jia') || v.name.includes('Ting-Ting') || v.name.includes('female')) || twVoices[0];
+            }
+        }
+        // 監聽語音庫載入完成 (解決 Chrome/Windows 延遲問題)
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices(); 
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            // 播放空白語音解鎖各家瀏覽器的自動靜音限制
+            let unlockMsg = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlockMsg);
+            setTimeout(() => { readQuestionTime(); }, 600);
+        }
+
+        // ================================
+
+        function buildClock() {
+            const face = document.getElementById('clockFace');
+            for(let i=0; i<12; i++) {
+                let mark = document.createElement('div');
+                mark.className = 'mark' + (i % 3 === 0 ? ' main' : '');
+                mark.style.transform = `translateX(-50%) rotate(${i*30}deg)`;
+                face.appendChild(mark);
+
+                let num = document.createElement('div');
+                num.className = 'number';
+                let n = i === 0 ? 12 : i;
+                let angle = i * 30;
+                num.style.transform = `rotate(${angle}deg) translateY(-78px) rotate(-${angle}deg)`;
+                num.innerText = n;
+                face.appendChild(num);
+            }
+        }
+        buildClock();
+
+        let targetHour, targetMinute;
+        let currentCircles = 0;
+        let currentHalf = false;
+        let exactMinutes = 0; 
+        let isDragging = false;
+        let previousAngle = null;
+        let isSolved = false;
+        
+        let lastSpokenTime = -1; 
+        let speakTimeout = null; 
+
+        const clockFace = document.getElementById('clockFace');
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const targetDisplay = document.getElementById('targetDisplay');
+
+        function getTargetTurnsHTML(c, h) {
+            let res = "💡 " + z('長', 'ㄔㄤˊ') + z('針', 'ㄓㄣ') + 
+                      "<span style='font-family: Arial; margin: 0 2px;'>(</span>" + 
+                      z('分', 'ㄈㄣ') + z('針', 'ㄓㄣ') + 
+                      "<span style='font-family: Arial; margin: 0 2px;'>)</span>" + 
+                      z('轉', 'ㄓㄨㄢˇ') + " ";
+            let numSpan = (n) => `<span style="font-size: 1.3em; color: #E65100; font-weight: bold; margin: 0 5px; font-family: Arial;">${n}</span>`;
+            if (c > 0 && h) res += numSpan(c) + z('圈', 'ㄑㄩㄢ') + z('半', 'ㄅㄢˋ');
+            else if (c > 0 && !h) res += numSpan(c) + z('圈', 'ㄑㄩㄢ');
+            else if (c === 0 && h) res += z('半', 'ㄅㄢˋ') + z('圈', 'ㄑㄩㄢ');
+            return res;
+        }
+
+        function updateProgress() {
+            let absMins = Math.floor(Math.abs(exactMinutes));
+            let c = Math.floor(absMins / 60);
+            let rem = absMins % 60;
+
+            let res = "🔄 " + z('已', 'ㄧˇ') + z('轉', 'ㄓㄨㄢˇ') + " ";
+            let numSpan = (n) => `<span style="font-size: 1.3em; color: #1B5E20; font-weight: bold; margin: 0 5px; font-family: Arial;">${n}</span>`;
+
+            if (c > 0) {
+                if (rem >= 30) res += numSpan(c) + z('圈', 'ㄑㄩㄢ') + z('半', 'ㄅㄢˋ');
+                else res += numSpan(c) + z('圈', 'ㄑㄩㄢ');
+            } else {
+                if (rem >= 30) res += z('半', 'ㄅㄢˋ') + z('圈', 'ㄑㄩㄢ');
+                else res += numSpan(0) + z('圈', 'ㄑㄩㄢ');
+            }
+            document.getElementById('progressHint').innerHTML = res;
+        }
+
+        function readQuestionTime() {
+            window.speechSynthesis.cancel(); 
+            let mText = targetMinute === 0 ? "鐘" : "半";
+            let speechTurns = "";
+            if (currentCircles > 0 && currentHalf) speechTurns = `${currentCircles}圈半`;
+            else if (currentCircles > 0 && !currentHalf) speechTurns = `${currentCircles}圈`;
+            else if (currentCircles === 0 && currentHalf) speechTurns = `半圈`;
+
+            let msg = new SpeechSynthesisUtterance(`請把時鐘轉到，${targetHour}點${mText}。長針轉${speechTurns}喔！`);
+            msg.lang = 'zh-TW'; msg.pitch = 1.4; msg.rate = 0.85; 
+            if(sysVoice) msg.voice = sysVoice;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function speakCurrentTime(totalMins) {
+            window.speechSynthesis.cancel();
+            let h = Math.floor(totalMins / 60);
+            if (h === 0) h = 12;
+            let m = totalMins % 60;
+            let mText = (m === 0) ? "鐘" : (m === 30 ? "半" : m + "分");
+            
+            let msg = new SpeechSynthesisUtterance(`${h}點${mText}`);
+            msg.lang = 'zh-TW'; msg.pitch = 1.4; msg.rate = 1.2;
+            if(sysVoice) msg.voice = sysVoice;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function speakAwesome() {
+            window.speechSynthesis.cancel();
+            let msg = new SpeechSynthesisUtterance("答對了，太棒了！");
+            msg.lang = 'zh-TW'; msg.pitch = 1.4; msg.rate = 1.1;
+            if(sysVoice) msg.voice = sysVoice;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function throwConfetti() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#845EC2', '#FF9671', '#F9F871'];
+            for (let i = 0; i < 50; i++) {
+                let confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-20px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1.5) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000); 
+            }
+        }
+
+        function generateQuestion() {
+            isSolved = false;
+            clockFace.classList.remove('success');
+            
+            let targetTotal;
+            do {
+                targetHour = Math.floor(Math.random() * 12) + 1;
+                targetMinute = Math.random() < 0.5 ? 0 : 30;
+                targetTotal = (targetHour % 12) * 60 + targetMinute;
+            } while (targetTotal === 0); 
+            
+            let strHour = targetHour.toString().padStart(2, '0');
+            let strMinute = targetMinute === 0 ? "00" : "30";
+            targetDisplay.innerText = `${strHour} : ${strMinute}`;
+            
+            currentCircles = targetHour % 12;
+            currentHalf = (targetMinute === 30);
+            document.getElementById('turnHint').innerHTML = getTargetTurnsHTML(currentCircles, currentHalf);
+            
+            exactMinutes = 0; 
+            lastSpokenTime = -1; 
+            updateDisplay();
+            updateProgress(); 
+
+            // 如果已經解鎖過聲音（開始畫面消失），自動唸出新題目
+            if(document.getElementById('startScreen').style.display === 'none') {
+                setTimeout(() => { readQuestionTime(); }, 500);
+            }
+        }
+
+        function updateDisplay() {
+            let minuteAngle = (exactMinutes % 60) * 6;
+            let hourAngle = ((exactMinutes / 60) % 12) * 30;
+
+            minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
+            hourHand.style.transform = `rotate(${hourAngle}deg)`;
+        }
+
+        function checkAnswer() {
+            if (isSolved) return true;
+            let currentMod = (Math.round(exactMinutes) % 720 + 720) % 720;
+            let targetTotal = (targetHour % 12) * 60 + targetMinute;
+
+            if (currentMod === targetTotal) {
+                isSolved = true;
+                clockFace.classList.add('success');
+                
+                clearTimeout(speakTimeout); 
+                speakAwesome(); 
+                throwConfetti();
+                
+                setTimeout(generateQuestion, 3500); 
+                return true;
+            }
+            return false;
+        }
+
+        function forward10Minutes() {
+            if (isSolved) return;
+            exactMinutes += 10;
+            updateDisplay();
+            updateProgress();
+            
+            clearTimeout(speakTimeout); 
+            if (!checkAnswer()) {
+                let currentMod = (Math.round(exactMinutes) % 720 + 720) % 720;
+                speakCurrentTime(currentMod);
+                lastSpokenTime = currentMod;
+            }
+        }
+
+        function getAngle(x, y) {
+            const rect = clockFace.getBoundingClientRect();
+            let radians = Math.atan2(y - (rect.top + rect.height/2), x - (rect.left + rect.width/2));
+            let degrees = radians * (180 / Math.PI) + 90;
+            return degrees < 0 ? degrees + 360 : degrees;
+        }
+
+        function handleMove(clientX, clientY) {
+            if (!isDragging || isSolved) return; 
+            let currentAngle = getAngle(clientX, clientY);
+            if (previousAngle !== null) {
+                let delta = currentAngle - previousAngle;
+                if (delta > 180) delta -= 360;
+                else if (delta < -180) delta += 360;
+                exactMinutes += delta / 6;
+            }
+            previousAngle = currentAngle;
+            updateDisplay();
+            updateProgress(); 
+            
+            let rounded = Math.round(exactMinutes / 5) * 5; 
+            let currentMod = (rounded % 720 + 720) % 720;
+            
+            if (currentMod !== lastSpokenTime) {
+                lastSpokenTime = currentMod;
+                clearTimeout(speakTimeout);
+                speakTimeout = setTimeout(() => {
+                    if (!isSolved) speakCurrentTime(currentMod);
+                }, 400); 
+            }
+        }
+
+        function handleRelease() {
+            if (!isDragging) return;
+            isDragging = false;
+            previousAngle = null;
+            
+            if (isSolved) return;
+
+            exactMinutes = Math.round(exactMinutes / 5) * 5;
+            updateDisplay();
+            updateProgress(); 
+            
+            clearTimeout(speakTimeout);
+            if (!checkAnswer()) {
+                let currentMod = (exactMinutes % 720 + 720) % 720;
+                speakCurrentTime(currentMod);
+                lastSpokenTime = currentMod;
+            }
+        }
+
+        clockFace.addEventListener('mousedown', (e) => { isDragging = true; previousAngle = getAngle(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', handleRelease);
+
+        clockFace.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            previousAngle = getAngle(e.touches[0].clientX, e.touches[0].clientY);
+            e.preventDefault(); 
+        }, {passive: false});
+        window.addEventListener('touchmove', (e) => {
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            e.preventDefault();
+        }, {passive: false});
+        window.addEventListener('touchend', handleRelease);
+
+        generateQuestion();
+    </script>
+</body>
+</html>
