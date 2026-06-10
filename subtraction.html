@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>減法互動遊戲</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'PingFang TC', sans-serif; text-align: center; background-color: #f0f8ff; padding: 10px; margin: 0; touch-action: manipulation; }
+        
+        /* 首頁設計 */
+        #homeScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f0f8ff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .title-text { font-size: 36px; font-weight: bold; color: #ff6347; margin-bottom: 30px; }
+        .start-btn { padding: 20px 50px; font-size: 24px; background-color: #ff6347; color: white; border: none; border-radius: 20px; cursor: pointer; box-shadow: 0 6px #d32f2f; }
+        .start-btn:active { transform: translateY(6px); box-shadow: none; }
+
+        /* 遊戲介面 */
+        .game-ui { display: none; } /* 預設隱藏 */
+        h1 { font-size: 22px; margin: 15px 0; color: #333; }
+        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 30px; margin: 20px 0; }
+        .num-wrapper { display: flex; flex-direction: column; align-items: center; margin: 5px; }
+        .dots-row { display: flex; flex-wrap: wrap; justify-content: center; width: 85px; margin-bottom: 5px; }
+        .dot { height: 15px; width: 15px; background-color: #ff6347; border-radius: 50%; margin: 1px; }
+        .box { width: 80px; height: 80px; border: 4px dashed #333; display: flex; align-items: center; justify-content: center; background: white; border-radius: 10px; font-weight: bold; }
+        #options { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+        .option { width: 60px; height: 60px; background: #87ceeb; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 8px; font-weight: bold; font-size: 24px; box-shadow: 2px 2px 5px #888; }
+    </style>
+</head>
+<body>
+
+    <div id="homeScreen">
+        <div class="title-text">減法互動遊戲</div>
+        <button class="start-btn" onclick="startGame()">開始玩遊戲</button>
+    </div>
+
+    <div id="gameUI" class="game-ui">
+        <h1>請計算下列減法題目</h1>
+        <div id="gameArea" class="equation-container"></div>
+        <div id="options"></div>
+    </div>
+
+    <script>
+        // 設定女生語音與撒花
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            // iOS 優先篩選美佳語音
+            const voices = window.speechSynthesis.getVoices();
+            msg.voice = voices.find(v => v.name.includes('Mei-Jia') || v.name.includes('female')) || voices[0];
+            window.speechSynthesis.speak(msg);
+        }
+
+        function startGame() {
+            // 切換畫面與解鎖聲音
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
+            let unlock = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlock);
+            loadQuestion();
+        }
+
+        function createDots(n) {
+            let dots = '<div class="dots-row">';
+            for(let i=0; i<n; i++) dots += '<span class="dot"></span>';
+            dots += '</div>';
+            return dots;
+        }
+
+        function loadQuestion() {
+            let numA = Math.floor(Math.random() * 10) + 5; 
+            let numB = Math.floor(Math.random() * (numA - 1)) + 1;
+            let diff = numA - numB;
+
+            document.getElementById('gameArea').innerHTML = `
+                <div class="num-wrapper">${createDots(numA)}<div>${numA}</div></div>
+                －
+                <div class="num-wrapper">${createDots(numB)}<div>${numB}</div></div>
+                ＝
+                <div class="box" id="dropTarget">?</div>
+            `;
+            
+            document.getElementById('options').innerHTML = '';
+            
+            let options = [diff];
+            while(options.length < 6) {
+                let rand = Math.floor(Math.random() * 10) + 1;
+                if(!options.includes(rand)) options.push(rand);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(val => {
+                let div = document.createElement('div');
+                div.className = 'option';
+                div.innerText = val;
+                div.onclick = function() {
+                    if (parseInt(this.innerText) === diff) {
+                        document.getElementById('dropTarget').innerHTML = `<div>${diff}</div>${createDots(diff)}`;
+                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                        speak("太棒了！答案是" + diff);
+                        setTimeout(loadQuestion, 4000);
+                    } else {
+                        speak("再算算看喔！");
+                    }
+                };
+                document.getElementById('options').appendChild(div);
+            });
+
+            speak(`${numA} 減 ${numB} 等於多少呢？`);
+        }
+    </script>
+</body>
+</html>
