@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>數學題目練習</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #fdf6e3; margin: 0; min-height: 100vh; touch-action: manipulation; }
+        .container { width: 100%; max-width: 600px; text-align: center; }
+        
+        .char-wrapper { position: relative; display: inline-block; margin: 5px; padding: 5px; background: white; border: 1px solid #ccc; border-radius: 4px; }
+        .char { font-size: 24px; font-weight: bold; padding-right: 20px; }
+        .zhuyin { position: absolute; right: 2px; top: 2px; font-size: 12px; color: #d35400; line-height: 1.1; width: 15px; }
+        
+        .slots-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px 0; min-height: 60px; }
+        .slot { width: 45px; height: 60px; border: 2px dashed #8b4513; background: #fff; border-radius: 8px; }
+        
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+        .word { cursor: pointer; transition: transform 0.1s; }
+        .word:active { transform: scale(0.9); }
+        .hidden { visibility: hidden; }
+        .audio-btn { padding: 15px 30px; font-size: 18px; background: #ff69b4; color: white; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px #c71585; }
+        .audio-btn:active { transform: translateY(2px); box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>數學題目練習</h2>
+    <button class="audio-btn" onclick="triggerSpeak()">🔊 聽題目</button>
+    <div id="slots" class="slots-container"></div>
+    <div id="word-pool" class="word-pool"></div>
+</div>
+
+<script>
+    const levels = [
+        { text: "有幾個已經跳出去了？", data: [{c:"有",z:"ㄧㄡˇ"},{c:"幾",z:"ㄐㄧˇ"},{c:"個",z:"˙ㄍㄜ"},{c:"已",z:"ㄧˇ"},{c:"經",z:"ㄐㄧㄥ"},{c:"跳",z:"ㄊㄧㄠˋ"},{c:"出",z:"ㄔㄨ"},{c:"去",z:"ㄑㄩˋ"},{c:"了",z:"˙ㄌㄜ"},{c:"？",z:""}] },
+        { text: "還剩下幾隻鳥？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"剩",z:"ㄕㄥˋ"},{c:"下",z:"ㄒㄧㄚˋ"},{c:"幾",z:"ㄐㄧˇ"},{c:"隻",z:"ㄓ"},{c:"鳥",z:"ㄋㄧㄠˇ"},{c:"？",z:""}] },
+        { text: "還剩下幾顆球？", data: [{c:"還",z:"ㄏㄞˊ"},{c:"剩",z:"ㄕㄥˋ"},{c:"下",z:"ㄒㄧㄚˋ"},{c:"幾",z:"ㄐㄧˇ"},{c:"顆",z:"ㄎㄜ"},{c:"球",z:"ㄑㄧㄡˊ"},{c:"？",z:""}] }
+    ];
+
+    let currentLevel = 0;
+
+    // 針對 iOS 優化的語音合成
+    function speakText(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        
+        const voices = window.speechSynthesis.getVoices();
+        // 優先找尋女性語音
+        const femaleVoice = voices.find(v => v.lang.includes('zh-TW') && (v.name.includes('Mei-Jia') || v.name.toLowerCase().includes('female')));
+        if (femaleVoice) msg.voice = femaleVoice;
+        
+        window.speechSynthesis.speak(msg);
+    }
+
+    function triggerSpeak() { speakText(levels[currentLevel].text); }
+
+    function loadLevel() {
+        const slotsDiv = document.getElementById('slots');
+        const poolDiv = document.getElementById('word-pool');
+        slotsDiv.innerHTML = '';
+        poolDiv.innerHTML = '';
+        
+        levels[currentLevel].data.forEach(item => {
+            let slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.dataset.char = item.c;
+            slotsDiv.appendChild(slot);
+        });
+
+        [...levels[currentLevel].data].sort(() => Math.random() - 0.5).forEach(item => {
+            let div = document.createElement('div');
+            div.className = 'word';
+            div.innerHTML = `<div class="char-wrapper"><div class="char">${item.c}</div><div class="zhuyin">${item.z.split('').join('<br>')}</div></div>`;
+            div.onclick = function() {
+                let emptySlot = Array.from(document.querySelectorAll('.slot')).find(s => !s.innerHTML);
+                if (emptySlot && item.c === emptySlot.dataset.char) {
+                    emptySlot.innerHTML = div.innerHTML;
+                    div.className = 'hidden';
+                    if (!document.querySelector('.slot:empty')) {
+                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                        speakText("太棒了！");
+                        setTimeout(() => { 
+                            currentLevel = (currentLevel + 1) % levels.length; 
+                            loadLevel(); 
+                        }, 2500);
+                    }
+                }
+            };
+            poolDiv.appendChild(div);
+        });
+        
+        // 給 iOS 一點時間載入聲音資源
+        setTimeout(triggerSpeak, 500);
+    }
+    
+    // 初始化
+    loadLevel();
+</script>
+</body>
+</html>
