@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>看時間，轉時鐘</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #FDF6E3; overflow: hidden; touch-action: manipulation; }
+        body { font-family: -apple-system, "PingFang TC", sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        #homeScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FDF6E3; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 30px; }
+        .home-title { font-size: 40px; font-weight: bold; color: #5D4037; }
+        .enter-btn { font-size: 24px; padding: 20px 40px; border-radius: 20px; background: #8D6E63; color: white; border: none; box-shadow: 0 6px #5D4037; cursor: pointer; }
+        
+        .main-container { display: flex; flex-direction: column; align-items: center; gap: 2vh; width: 100%; height: 100dvh; justify-content: center; box-sizing: border-box; padding: 10px; }
+        .info-panel { background: #FFFFFF; padding: 15px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .target-text { font-size: clamp(18px, 5vw, 24px); color: #5D4037; font-weight: bold; margin-bottom: 5px; }
+        .time-display { font-size: clamp(24px, 8vw, 36px); font-weight: bold; color: #4E342E; }
+        
+        .clock-container { width: clamp(180px, 40vh, 250px); height: clamp(180px, 40vh, 250px); border-radius: 50%; background: white; border: 8px solid #D7CCC8; position: relative; }
+        .number { position: absolute; width: 30px; height: 30px; text-align: center; font-size: clamp(16px, 4vw, 20px); font-weight: bold; left: 50%; top: 50%; margin-left: -15px; margin-top: -15px; pointer-events: none; color: #3E2723; }
+        
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 10px; }
+        .hour-hand { width: 6px; height: 30%; background: #3E2723; margin-left: -3px; z-index: 2; }
+        .minute-hand { width: 4px; height: 50%; background: #BF360C; margin-left: -2px; z-index: 3; }
+        
+        .btn { background: #8D6E63; color: white; padding: 15px 40px; border-radius: 15px; border: none; font-size: 20px; font-weight: bold; box-shadow: 0 4px #5D4037; }
+    </style>
+</head>
+<body>
+
+    <div id="homeScreen">
+        <div class="home-title">看時間，轉時鐘</div>
+        <button class="enter-btn" onclick="enterGame()">按此進入遊戲</button>
+    </div>
+
+    <div class="main-container">
+        <div class="info-panel" onclick="repeatTask()">
+            <div class="target-text" id="targetText">現在是？</div>
+            <div class="time-display" id="currentTime">目前時間：-- : --</div>
+        </div>
+        
+        <div class="clock-container" id="clockFace">
+            <script>
+                for(let i=1; i<=12; i++) {
+                    let angle = (i * 30) * (Math.PI / 180);
+                    let dist = 85; 
+                    document.write(`<div class="number" style="transform: translate(${Math.sin(angle)*dist}px, ${-Math.cos(angle)*dist}px)">${i}</div>`);
+                }
+            </script>
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+        </div>
+        
+        <button class="btn" onclick="add10Min()">向前轉 10 分鐘</button>
+    </div>
+
+    <script>
+        let exactMinutes = 0;
+        let targetMins = 0;
+        let lastTargetText = "";
+
+        function speakText(text) {
+            window.speechSynthesis.cancel();
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            const voices = window.speechSynthesis.getVoices();
+            msg.voice = voices.find(v => v.name.includes('Mei-Jia') || v.name.toLowerCase().includes('female')) || voices[0];
+            window.speechSynthesis.speak(msg);
+        }
+
+        function enterGame() {
+            document.getElementById('homeScreen').style.display = 'none';
+            let unlock = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlock);
+            generateNewTask();
+        }
+
+        function repeatTask() { speakText(lastTargetText); }
+
+        function generateNewTask() {
+            // 每次生成題目時，目標為「當前時間 + 10到30分鐘內」
+            let currentTotalMins = Math.round(exactMinutes);
+            let offset = (Math.floor(Math.random() * 3) + 1) * 10; // 10, 20, 30分鐘
+            targetMins = currentTotalMins + offset;
+            
+            let targetH = Math.floor((targetMins / 60) % 12) || 12;
+            let targetM = targetMins % 60;
+            
+            lastTargetText = `請把時鐘轉到，${targetH}點${targetM === 0 ? "鐘" : targetM + "分"}`;
+            document.getElementById('targetText').innerText = `請轉到：${targetH}點${targetM === 0 ? "鐘" : targetM + "分"}`;
+            speakText(lastTargetText);
+        }
+
+        function updateDisplay() {
+            document.getElementById('minuteHand').style.transform = `rotate(${exactMinutes * 6}deg)`;
+            document.getElementById('hourHand').style.transform = `rotate(${(exactMinutes / 2)}deg)`;
+            
+            let totalMins = Math.floor(exactMinutes) % 720;
+            let h = Math.floor(totalMins / 60) || 12;
+            let m = totalMins % 60;
+            
+            document.getElementById('currentTime').innerText = `目前時間：${h} : ${m === 0 ? "00" : m}`;
+
+            // 檢查是否達成目標
+            if (Math.round(exactMinutes) === targetMins) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                speakText("太棒了！答對了！");
+                setTimeout(generateNewTask, 2000);
+            }
+        }
+
+        function add10Min() {
+            exactMinutes += 10;
+            updateDisplay();
+            
+            let totalMins = Math.floor(exactMinutes) % 720;
+            let h = Math.floor(totalMins / 60) || 12;
+            let m = totalMins % 60;
+            speakText(`現在是 ${h} 點 ${m === 0 ? "鐘" : m + "分"}`);
+        }
+    </script>
+</body>
+</html>
