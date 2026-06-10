@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>九九乘法互動遊戲</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #fdf5e6; padding: 20px; touch-action: manipulation; margin: 0; overflow-x: hidden; }
+        h1 { color: #333; font-size: 28px; }
+        #startScreen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #fdf5e6; }
+        .start-btn { padding: 20px 40px; font-size: 32px; font-weight: bold; background-color: #ff7f50; color: white; border-radius: 20px; cursor: pointer; box-shadow: 0px 5px 15px rgba(0,0,0,0.2); }
+        #gameScreen { display: none; }
+        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 45px; margin: 20px 0 10px 0; font-weight: bold; }
+        .concept-text { font-size: 24px; color: #d2691e; margin-bottom: 20px; font-weight: bold; }
+        .visual-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; min-height: 120px; }
+        .group-box { border: 3px solid #ffa07a; border-radius: 12px; padding: 8px; display: grid; gap: 5px; background-color: #fff; align-content: center; width: 60px; height: 100px; }
+        .dot { height: 14px; width: 14px; background-color: #ff6347; border-radius: 50%; }
+        .box { width: 120px; height: 80px; border: 4px dashed #333; display: flex; align-items: center; justify-content: center; background: white; margin: 0 10px; border-radius: 10px; font-size: 40px; }
+        #options { display: flex; flex-wrap: wrap; justify-content: center; max-width: 500px; margin: 10px auto; }
+        .option { width: 75px; height: 75px; background: #98fb98; border-radius: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 10px; font-weight: bold; font-size: 28px; transition: 0.2s; }
+        .confetti { position: absolute; width: 10px; height: 10px; z-index: 999; }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <h1>九九乘法互動遊戲</h1>
+        <div class="start-btn" id="startBtn">開始遊戲</div>
+    </div>
+
+    <div id="gameScreen">
+        <h1>九九乘法互動遊戲</h1>
+        <div id="visualArea" class="visual-area"></div>
+        <div class="equation-container">
+            <span id="equationDisplay">4 × 4 ＝</span>
+            <div class="box" id="dropTarget">?</div>
+        </div>
+        <div class="concept-text" id="conceptText"></div>
+        <div id="options"></div>
+    </div>
+
+    <script>
+        let isSpeaking = false;
+
+        function speak(text, onEndCallback) {
+            // 每次說話前，先中斷舊語音，這是避免亂跳的核心
+            window.speechSynthesis.cancel();
+            
+            isSpeaking = true;
+            // 這裡不再使用 replace 符號，而是直接在文字定義時就唸成「乘以」
+            // 這是給語音引擎最乾淨的指令
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            msg.rate = 0.9; 
+
+            msg.onend = () => {
+                isSpeaking = false;
+                if(onEndCallback) onEndCallback();
+            };
+            
+            // 安全緩衝，如果系統沒回報結束，強制釋放鎖
+            setTimeout(() => { isSpeaking = false; }, 6000);
+            
+            window.speechSynthesis.speak(msg);
+        }
+
+        function triggerConfetti() {
+            for (let i = 0; i < 40; i++) {
+                let c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.top = '-10px';
+                c.style.backgroundColor = ['#f00', '#0f0', '#00f', '#ff0', '#f0f'][Math.floor(Math.random()*5)];
+                document.body.appendChild(c);
+                c.animate([{ top: '-10px', opacity: 1 }, { top: '100vh', opacity: 0 }], { duration: 1500 });
+                setTimeout(() => c.remove(), 2000);
+            }
+        }
+
+        document.getElementById('startBtn').onclick = () => {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            generateQuestion();
+        };
+
+        function generateQuestion() {
+            document.getElementById('dropTarget').innerHTML = '?';
+            document.getElementById('options').innerHTML = '';
+
+            let numA = Math.floor(Math.random() * 8) + 2; 
+            let numB = Math.floor(Math.random() * 8) + 2;
+            let product = numA * numB;
+            
+            document.getElementById('equationDisplay').innerText = `${numA} × ${numB} ＝`;
+            document.getElementById('conceptText').innerText = `（ ${numB} 個 ${numA} ）`;
+
+            let visualHTML = '';
+            for(let i = 0; i < numB; i++) { 
+                visualHTML += `<div class="group-box" style="grid-template-columns: repeat(2, 1fr);">`;
+                for(let j = 0; j < numA; j++) { visualHTML += `<div class="dot"></div>`; }
+                visualHTML += `</div>`;
+            }
+            document.getElementById('visualArea').innerHTML = visualHTML;
+
+            // 文字指令已明確寫成「乘以」，微軟引擎會直接唸出這兩個字，不會再猜測符號
+            speak(`${numA} 乘以 ${numB} 等於多少呢？`);
+
+            let options = [product];
+            while(options.length < 6) {
+                let ans = (Math.floor(Math.random() * 8) + 2) * (Math.floor(Math.random() * 8) + 2);
+                if(!options.includes(ans)) options.push(ans);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(val => {
+                let div = document.createElement('div');
+                div.className = 'option';
+                div.innerText = val;
+                div.onclick = () => {
+                    if (isSpeaking) return;
+                    if (val === product) {
+                        document.getElementById('dropTarget').innerText = val;
+                        triggerConfetti();
+                        speak(`太棒了！${val}。答對了！`, generateQuestion);
+                    } else {
+                        speak("再試試看喔！");
+                    }
+                };
+                document.getElementById('options').appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
