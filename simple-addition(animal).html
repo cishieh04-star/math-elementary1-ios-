@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>烏龜數數冒險</title>
+    <style>
+        body { background-color: #e0f7fa; margin: 0; padding: 2vh; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; overflow: hidden; }
+        #visual-area { height: 40vh; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5vw; flex-wrap: wrap; }
+        .turtle { font-size: 7vh; transition: transform 1s, opacity 1s; }
+        .entering { transform: translateX(-50vw); opacity: 0; }
+        .exiting { transform: translateX(50vw); opacity: 0; }
+        #feedback { font-size: 6vh; color: #d84315; height: 8vh; font-weight: bold; }
+        .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; width: 100%; max-width: 600px; padding-top: 2vh; }
+        .btn-opt { padding: 2vh; font-size: 4vh; background: #fff; border: 0.5vh solid #81c784; border-radius: 2vh; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="visual-area"></div>
+    <div id="feedback">請觀察烏龜的變化...</div>
+    <div class="options-grid" id="options-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        let currentCount = 3;
+
+        async function playRound() {
+            let area = document.getElementById('visual-area');
+            let feedback = document.getElementById('feedback');
+            
+            // 決定動作：0=跑進來, 1=跑出去
+            let action = Math.random() > 0.5 ? 'enter' : 'exit';
+            if (currentCount >= 12) action = 'exit';
+            if (currentCount <= 1) action = 'enter';
+
+            // 1. 先顯示當前烏龜
+            renderTurtles();
+            feedback.innerText = "請看烏龜的變化...";
+            await new Promise(r => setTimeout(r, 1000));
+
+            // 2. 執行動作
+            if (action === 'enter') {
+                currentCount++;
+                let t = document.createElement('div');
+                t.className = 'turtle entering';
+                t.innerText = '🐢';
+                area.appendChild(t);
+                await new Promise(r => setTimeout(r, 100));
+                t.classList.remove('entering');
+            } else {
+                let t = area.lastElementChild;
+                t.classList.add('exiting');
+                await new Promise(r => setTimeout(r, 1000));
+                currentCount--;
+                renderTurtles();
+            }
+
+            // 3. 詢問
+            feedback.innerText = "現在有幾隻烏龜？";
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance("現在有幾隻烏龜？"));
+            renderOptions();
+        }
+
+        function renderTurtles() {
+            let area = document.getElementById('visual-area');
+            area.innerHTML = '';
+            for(let i = 0; i < currentCount; i++) {
+                let t = document.createElement('div');
+                t.className = 'turtle';
+                t.innerText = '🐢';
+                area.appendChild(t);
+            }
+        }
+
+        function renderOptions() {
+            let container = document.getElementById('options-container');
+            container.innerHTML = '';
+            for(let i = 1; i <= 12; i++) {
+                let btn = document.createElement('button');
+                btn.className = 'btn-opt';
+                btn.innerText = i;
+                btn.onclick = () => {
+                    if(i === currentCount) {
+                        document.getElementById('feedback').innerText = "太棒了！👍";
+                        window.speechSynthesis.speak(new SpeechSynthesisUtterance("太棒了！"));
+                        confetti();
+                        setTimeout(playRound, 2500);
+                    } else {
+                        btn.style.visibility = 'hidden';
+                    }
+                };
+                container.appendChild(btn);
+            }
+        }
+
+        playRound();
+    </script>
+</body>
+</html>
