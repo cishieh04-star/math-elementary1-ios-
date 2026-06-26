@@ -5,32 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>烏龜算術大冒險</title>
     <style>
-        body { background-color: #e0f7fa; margin: 0; padding: 2vh; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; font-family: sans-serif; overflow: hidden; }
-        #status-bar { display: flex; justify-content: space-around; width: 100%; font-size: 5vh; font-weight: bold; }
+        body { 
+            background-color: #e0f7fa; margin: 0; padding: 2vh; height: 100vh; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-family: sans-serif; overflow: hidden; 
+        }
+        
+        /* 首頁樣式 */
+        #home-screen { text-align: center; }
+        #start-btn { padding: 4vh 8vh; font-size: 6vh; background: #2e7d32; color: white; border: none; border-radius: 3vh; cursor: pointer; box-shadow: 0 1vh #1b5e20; }
+        
+        /* 遊戲介面樣式 */
+        #game-ui { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: space-between; }
+        #status-bar { display: flex; justify-content: space-around; width: 100%; font-size: 7vh; font-weight: bold; color: #2c3e50; padding: 1vh 0; border-bottom: 0.5vh solid #b2ebf2; }
+        
         #visual-area { height: 35vh; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5vw; flex-wrap: wrap; }
         .turtle { font-size: 7vh; transition: transform 1s, opacity 1s; }
         .entering { transform: translateX(50vw); opacity: 0; }
         .exiting { transform: translateX(50vw); opacity: 0; }
         #equation { font-size: 10vh; font-weight: bold; color: #2e7d32; }
         #feedback { font-size: 6vh; color: #d84315; font-weight: bold; height: 8vh; }
+        
         .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; width: 100%; max-width: 600px; padding-bottom: 2vh; }
         .btn-opt { padding: 2vh; font-size: 4vh; background: #fff; border: 0.5vh solid #81c784; border-radius: 2vh; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="status-bar">
-        <div id="timer">時間: 00:00</div>
-        <div id="score">闖關: 0</div>
+    <div id="home-screen">
+        <h1 style="font-size: 10vh; color: #2e7d32;">烏龜算術冒險</h1>
+        <button id="start-btn" onclick="initGame()">開始遊戲</button>
     </div>
-    <div id="visual-area"></div>
-    <div id="equation">?</div>
-    <div id="feedback">請觀察烏龜變化...</div>
-    <div class="options-grid" id="options-container"></div>
+
+    <div id="game-ui">
+        <div id="status-bar">
+            <div id="timer">時間: 00:00</div>
+            <div id="score">闖關: 0</div>
+        </div>
+        <div id="visual-area"></div>
+        <div id="equation">?</div>
+        <div id="feedback">請觀察烏龜變化...</div>
+        <div class="options-grid" id="options-container"></div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
-        let currentCount = 3, score = 0, startTime = Date.now();
+        let currentCount = 3, score = 0, startTime;
+
+        function initGame() {
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'flex';
+            startTime = Date.now();
+            startTimer();
+            playRound();
+        }
 
         function startTimer() {
             setInterval(() => {
@@ -105,9 +133,6 @@
                 container.appendChild(btn);
             }
         }
-
-        startTimer();
-        playRound();
     </script>
 </body>
 </html>
