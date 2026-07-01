@@ -2,82 +2,238 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>互動付錢遊戲 (防溢出版)</title>
+<!-- 鎖死畫面縮放，確保所有裝置比例一致 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>互動付錢遊戲 (版面固定與自動換行版)</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f4f4f4; font-family: sans-serif; }
-  .app-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
-  .header { height: 12%; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 18px; font-weight: bold; }
+  /* 確保邊框與內距不會撐破畫面 */
+  * { box-sizing: border-box; } 
   
-  /* tray 增加捲軸控制，防止硬幣撐開畫面 */
-  .tray { flex: 1; border: 2px dashed #aaa; background: #eef; margin: 5px; border-radius: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 5px; }
-  
-  .wallet { height: 18%; display: flex; justify-content: space-around; align-items: center; background: #ddd; }
-  
-  .coin { 
-    width: 45px; height: 45px; border-radius: 50%; display: flex; 
-    justify-content: center; align-items: center; font-weight: bold; 
-    font-size: 16px; color: white; cursor: pointer; margin: 2px; flex-shrink: 0;
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    overflow: hidden; /* 終極鎖定：絕對不允許整個網頁上下滑動 */
+    font-family: sans-serif; background-color: #f4f4f4;
+    touch-action: none; /* 關閉瀏覽器預設滑動手勢，讓點擊反應最快 */
   }
-  .coin-10 { background-color: #092993; border: 2px solid #061d66; }
-  .coin-1 { background-color: #092993; border: 2px solid #061d66; }
 
-  #startScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); color: #fff; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+  #gameContainer {
+    display: flex; flex-direction: column; height: 100%; width: 100%;
+    max-width: 800px; margin: 0 auto; /* 在平板上自動置中，畫面更美觀 */
+  }
+
+  /* 強制解鎖語音的開始畫面 */
+  #startScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); color: #fff; z-index: 9999;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    cursor: pointer;
+  }
+  #startScreen div { font-size: 32px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
+
+  /* 頂部任務區 (固定高度) */
+  .header {
+    padding: 15px; text-align: center; background: #fff;
+    flex: 0 0 auto; /* 固定高度，不被壓縮 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;
+  }
+  .box-icon { font-size: 40px; line-height: 1; margin-bottom: 5px; }
+  .target-display { font-size: 36px; font-weight: bold; color: #d32f2f; }
+
+  /* 中部付錢區 (自動彈性縮放) */
+  .tray {
+    flex: 1 1 auto; /* 自動填滿中間所有剩餘空間 */
+    margin: 15px; padding: 15px;
+    border: 3px dashed #aaa; background: #eef; border-radius: 15px;
+    
+    /* 解決硬幣往下跑的關鍵：讓硬幣橫向排列，滿了自動換行 */
+    display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px;
+    overflow-y: auto; /* 若硬幣多到滿出來，只允許這個框框內部捲動 */
+  }
+
+  /* 底部錢包區 (固定高度) */
+  .wallet {
+    height: 120px; flex: 0 0 auto; 
+    display: flex; justify-content: space-around; align-items: center;
+    background: #cfd8dc; box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    /* 完美適應新款 iPhone 底部的黑條，不會被擋住 */
+    padding-bottom: env(safe-area-inset-bottom); 
+  }
+
+  /* 硬幣樣式 */
+  .coin {
+    width: 65px; height: 65px; border-radius: 50%; display: flex;
+    justify-content: center; align-items: center; font-weight: bold;
+    font-size: 26px; color: #333; cursor: pointer;
+    box-shadow: 1px 3px 5px rgba(0,0,0,0.3); transition: transform 0.1s;
+  }
+  .coin:active { transform: scale(0.9); box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+  
+  /* 恢復為金黃色與銀色 */
+  .coin-10 { background-color: #FFD700; border: 2px solid #DAA520; }
+  .coin-1 { background-color: #F0F8FF; border: 2px solid #B0C4DE; }
 </style>
 </head>
 <body>
 
+  <!-- 點擊解鎖畫面 -->
   <div id="startScreen">
-    <div style="font-size: 18px; padding: 15px; background: #092993; border-radius: 10px;">▶ 點擊開始遊戲</div>
+    <div>▶ 點擊開始遊戲</div>
   </div>
 
-  <div class="app-container">
-    <div class="header" id="targetDisplay">要付 ? 元</div>
+  <div id="gameContainer">
+    <!-- 任務區 -->
+    <div class="header">
+      <div class="box-icon">🎁</div>
+      <div class="target-display">要付 <span id="displayTarget">?</span> 元</div>
+    </div>
+
+    <!-- 付錢區 -->
     <div class="tray" id="trayCoins"></div>
-    <div class="wallet">
-      <div class="coin coin-10" onclick="addCoin(10)">10</div>
-      <div class="coin coin-1" onclick="addCoin(1)">1</div>
+
+    <!-- 錢包區 -->
+    <div class="wallet" id="wallet">
+      <div class="coin coin-10" data-value="10">10</div>
+      <div class="coin coin-1" data-value="1">1</div>
     </div>
   </div>
 
 <script>
-  let totalAmount = 0, currentTarget = 0, audioUnlocked = false;
+  let totalAmount = 0;
+  let currentTarget = 0;
+  let audioUnlocked = false; 
+  let isWinning = false;
 
-  function speakText(text) {
-    if (!audioUnlocked) return;
-    try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; window.speechSynthesis.speak(u); } catch (e) {}
+  const displayTarget = document.getElementById('displayTarget');
+  const trayCoins = document.getElementById('trayCoins');
+  const wallet = document.getElementById('wallet');
+  const startScreen = document.getElementById('startScreen');
+  
+  // 建立簡化版的音效產生器 (Web Audio API)，確保所有裝置都有聲音
+  let audioCtx;
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
   }
 
-  document.getElementById('startScreen').onclick = function() {
-    audioUnlocked = true; this.style.display = 'none'; nextQuestion();
-  };
+  function playTone(freq, type, duration, vol = 0.5) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = type; 
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function playDropSound() { playTone(400, 'square', 0.1, 0.2); }
+  function playPickupSound() { playTone(800, 'sine', 0.1, 0.3); }
+  function playErrorSound() {
+    playTone(150, 'sawtooth', 0.2, 0.4);
+    setTimeout(() => playTone(100, 'sawtooth', 0.3, 0.4), 150);
+  }
+  function playCheerSound() {
+    playTone(523.25, 'sine', 0.2, 0.5); 
+    setTimeout(() => playTone(659.25, 'sine', 0.2, 0.5), 150); 
+    setTimeout(() => playTone(783.99, 'sine', 0.3, 0.5), 300); 
+    setTimeout(() => playTone(1046.50, 'square', 0.5, 0.4), 450); 
+  }
+
+  // 語音報讀引擎
+  function speakText(text, speedRate) {
+    if (!audioUnlocked) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-TW';
+    utterance.rate = speedRate; 
+    window.speechSynthesis.speak(utterance);
+  }
+
+  startScreen.addEventListener('click', () => {
+    initAudio();
+    let unlockSpeech = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(unlockSpeech);
+
+    audioUnlocked = true;
+    startScreen.style.display = 'none';
+    nextQuestion();
+  });
+
+  function speakTargetAmount() {
+    if (currentTarget > 0) speakText(`要付，${currentTarget} 元`, 0.85); 
+  }
 
   function nextQuestion() {
+    isWinning = false;
     currentTarget = Math.floor(Math.random() * 99) + 1;
-    document.getElementById('targetDisplay').innerText = "要付 " + currentTarget + " 元";
-    totalAmount = 0; document.getElementById('trayCoins').innerHTML = '';
-    speakText("要付 " + currentTarget + " 元");
+    displayTarget.innerText = currentTarget;
+    totalAmount = 0;
+    trayCoins.innerHTML = '';
+    
+    // 強制重繪避免殘影
+    void displayTarget.offsetWidth; 
+    setTimeout(speakTargetAmount, 300);
   }
 
-  function addCoin(val) {
-    if (totalAmount + val <= currentTarget) {
-      totalAmount += val;
-      const c = document.createElement('div');
-      c.className = "coin " + (val === 10 ? "coin-10" : "coin-1");
-      c.innerText = val;
-      c.onclick = function() { totalAmount -= val; this.parentNode.removeChild(this); speakText(totalAmount + " 元"); };
-      document.getElementById('trayCoins').appendChild(c);
-      speakText(totalAmount + " 元");
+  function updateCounter(checkWin = true) {
+    if (checkWin && totalAmount === currentTarget && currentTarget > 0) {
+      isWinning = true; 
+      playCheerSound(); 
+      speakText(`${totalAmount} 元，答對了！`, 1.0); 
+      
+      confetti({
+        particleCount: 150, spread: 80, origin: { y: 0.6 },
+        colors: ['#FFD700', '#ff0000', '#00ff00', '#0000ff']
+      });
 
-      if (totalAmount === currentTarget) {
-        confetti({ particleCount: 50 });
-        speakText("太棒了，答對了！");
-        setTimeout(nextQuestion, 2000);
-      }
+      setTimeout(nextQuestion, 3000);
     }
   }
+
+  // 點擊事件
+  document.addEventListener('pointerdown', (e) => {
+    if (isWinning) return;
+
+    if (e.target.classList.contains('coin')) {
+      const val = parseInt(e.target.dataset.value);
+
+      // 狀況 A：退回硬幣
+      if (e.target.parentNode === trayCoins) {
+        e.target.remove();
+        totalAmount -= val;
+        playPickupSound(); 
+        speakText(`${totalAmount} 元`, 1.3);
+        return;
+      }
+
+      // 狀況 B：加入硬幣
+      if (e.target.parentNode === wallet) {
+        if (totalAmount + val > currentTarget) {
+          playErrorSound(); 
+        } else {
+          const staticCoin = document.createElement('div');
+          staticCoin.className = `coin coin-${val}`;
+          staticCoin.dataset.value = val;
+          staticCoin.innerText = val;
+          trayCoins.appendChild(staticCoin);
+          
+          totalAmount += val;
+          playDropSound();
+          updateCounter(true);
+          
+          if (totalAmount < currentTarget) {
+            speakText(`${totalAmount} 元`, 1.3); 
+          }
+        }
+      }
+    }
+  });
 </script>
 </body>
 </html>
-```[cite: 3]
