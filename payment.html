@@ -2,23 +2,24 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<!-- 鎖死畫面縮放，確保所有裝置比例一致 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>互動付錢遊戲 (防雙擊放大完美版)</title>
+<!-- 鎖死畫面縮放，使用 user-scalable=0 增加舊版 iOS 支援度 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
+<title>互動付錢遊戲 (iOS 終極鎖定版)</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-  /* 💡 核心防護 1：封殺所有元件的系統預設手勢，包含雙擊放大 */
+  /* 💡 核心防護：關閉所有元素的預設觸控行為（包含滑動與雙擊放大） */
   * { 
     box-sizing: border-box; 
-    touch-action: none; 
-    -webkit-touch-callout: none; /* 關閉長按選單 */
+    touch-action: none !important; 
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   } 
   
   html, body {
     margin: 0; padding: 0; height: 100%; width: 100%;
-    overflow: hidden; /* 終極鎖定：不允許整個網頁上下滑動 */
+    overflow: hidden; /* 不允許上下滑動 */
     font-family: sans-serif; background-color: #f4f4f4;
-    user-select: none; -webkit-user-select: none; /* 防止反白文字 */
   }
 
   #gameContainer {
@@ -26,7 +27,6 @@
     max-width: 600px; margin: 0 auto; 
   }
 
-  /* 強制解鎖語音的開始畫面 */
   #startScreen {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.85); color: #fff; z-index: 9999;
@@ -35,7 +35,6 @@
   }
   #startScreen div { font-size: 32px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
 
-  /* 頂部任務區 */
   .header {
     padding: 10px; text-align: center; background: #fff;
     flex: 0 0 auto; 
@@ -44,17 +43,14 @@
   .box-icon { font-size: 40px; line-height: 1; margin-bottom: 5px; }
   .target-display { font-size: 36px; font-weight: bold; color: #d32f2f; }
 
-  /* 中部付錢區 */
   .tray {
     flex: 1 1 auto; 
     margin: 10px; padding: 15px;
     border: 3px dashed #aaa; background: #eef; border-radius: 15px;
-    
     display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px;
     position: relative;
   }
 
-  /* 底部錢包區 */
   .wallet {
     height: 110px; flex: 0 0 auto; 
     display: flex; justify-content: space-around; align-items: center;
@@ -62,7 +58,6 @@
     padding-bottom: env(safe-area-inset-bottom); 
   }
 
-  /* 硬幣共用樣式 */
   .coin {
     border-radius: 50%; display: flex; justify-content: center; align-items: center; 
     font-weight: bold; color: #333; cursor: pointer;
@@ -76,14 +71,12 @@
   .wallet .coin { width: 65px; height: 65px; font-size: 26px; }
   .tray .coin { width: 45px; height: 45px; font-size: 20px; }
 
-  /* 特效 */
   .celebrate { animation: pop 0.5s ease-in-out; color: #4CAF50 !important; }
   @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
 </style>
 </head>
 <body>
 
-  <!-- 點擊解鎖畫面 -->
   <div id="startScreen">
     <div>▶ 點擊開始遊戲</div>
   </div>
@@ -93,9 +86,7 @@
       <div class="box-icon">🎁</div>
       <div class="target-display">要付 <span id="displayTarget">?</span> 元</div>
     </div>
-
     <div class="tray" id="trayCoins"></div>
-
     <div class="wallet" id="wallet">
       <div class="coin coin-10" onclick="addCoin(10)">10</div>
       <div class="coin coin-1" onclick="addCoin(1)">1</div>
@@ -103,9 +94,19 @@
   </div>
 
 <script>
-  // 💡 核心防護 2：透過 JavaScript 攔截連續點兩下的放大行為
-  document.addEventListener('dblclick', function(event) {
+  // 💡 終極防護 1：防止雙指縮放
+  document.addEventListener('gesturestart', function(event) {
     event.preventDefault();
+  });
+
+  // 💡 終極防護 2：防止雙擊快點造成畫面放大 (計算點擊時間差)
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function(event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault(); // 如果兩次點擊少於0.3秒，就攔截原始預設行為
+    }
+    lastTouchEnd = now;
   }, { passive: false });
 
   let count10 = 0; 
@@ -118,7 +119,6 @@
   const trayCoins = document.getElementById('trayCoins');
   const startScreen = document.getElementById('startScreen');
   
-  // 音效引擎
   let audioCtx;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -152,7 +152,6 @@
     setTimeout(() => playTone(1046.50, 'square', 0.5, 0.4), 450); 
   }
 
-  // 語音報讀引擎
   function speakText(text, speedRate) {
     if (!audioUnlocked) return;
     window.speechSynthesis.cancel(); 
@@ -162,7 +161,6 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  // 解鎖遊戲
   startScreen.addEventListener('click', () => {
     initAudio();
     let unlockSpeech = new SpeechSynthesisUtterance('');
@@ -173,7 +171,6 @@
     nextQuestion();
   });
 
-  // 自動換題
   function nextQuestion() {
     isWinning = false;
     currentTarget = Math.floor(Math.random() * 99) + 1;
@@ -181,11 +178,9 @@
     count10 = 0;
     count1 = 0;
     renderTray(); 
-    
     setTimeout(() => speakText(`要付，${currentTarget} 元`, 0.85), 300);
   }
 
-  // 加入硬幣
   function addCoin(val) {
     if (isWinning) return;
     let totalAmount = (count10 * 10) + count1;
@@ -195,24 +190,19 @@
     } else {
       if (val === 10) count10++;
       else count1++;
-      
       playDropSound();
       renderTray(); 
     }
   }
 
-  // 退回硬幣
   function removeCoin(val) {
     if (isWinning) return;
-    
     if (val === 10) count10--;
     else count1--;
-    
     playPickupSound();
     renderTray(); 
   }
 
-  // 渲染並整理盤面
   function renderTray() {
     let totalAmount = (count10 * 10) + count1;
     trayCoins.innerHTML = ''; 
@@ -248,7 +238,6 @@
       speakText(`${totalAmount} 元`, 1.3); 
     }
   }
-
 </script>
 </body>
 </html>
