@@ -2,23 +2,28 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<!-- 鎖死畫面縮放，確保所有裝置比例一致，不會被放大跑版 -->
+<!-- 鎖死畫面縮放，確保所有裝置比例一致 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>互動付錢遊戲 (版面鎖定與自動排序版)</title>
+<title>互動付錢遊戲 (防雙擊放大完美版)</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-  * { box-sizing: border-box; } 
+  /* 💡 核心防護 1：封殺所有元件的系統預設手勢，包含雙擊放大 */
+  * { 
+    box-sizing: border-box; 
+    touch-action: none; 
+    -webkit-touch-callout: none; /* 關閉長按選單 */
+  } 
   
   html, body {
     margin: 0; padding: 0; height: 100%; width: 100%;
-    overflow: hidden; /* 終極鎖定：絕對不允許整個網頁上下滑動 */
+    overflow: hidden; /* 終極鎖定：不允許整個網頁上下滑動 */
     font-family: sans-serif; background-color: #f4f4f4;
-    touch-action: manipulation; /* 優化點擊反應，消除延遲 */
+    user-select: none; -webkit-user-select: none; /* 防止反白文字 */
   }
 
   #gameContainer {
     display: flex; flex-direction: column; height: 100%; width: 100%;
-    max-width: 600px; margin: 0 auto; /* 在平板或電腦上自動置中，畫面更美觀 */
+    max-width: 600px; margin: 0 auto; 
   }
 
   /* 強制解鎖語音的開始畫面 */
@@ -30,32 +35,31 @@
   }
   #startScreen div { font-size: 32px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
 
-  /* 頂部任務區 (固定高度) */
+  /* 頂部任務區 */
   .header {
     padding: 10px; text-align: center; background: #fff;
-    flex: 0 0 auto; /* 固定高度，不被壓縮 */
+    flex: 0 0 auto; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;
   }
   .box-icon { font-size: 40px; line-height: 1; margin-bottom: 5px; }
   .target-display { font-size: 36px; font-weight: bold; color: #d32f2f; }
 
-  /* 中部付錢區 (自動彈性縮放) */
+  /* 中部付錢區 */
   .tray {
-    flex: 1 1 auto; /* 自動填滿中間所有剩餘空間 */
+    flex: 1 1 auto; 
     margin: 10px; padding: 15px;
     border: 3px dashed #aaa; background: #eef; border-radius: 15px;
     
-    /* 確保硬幣橫向排列，滿了自動換行，不會跑出去 */
     display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px;
     position: relative;
   }
 
-  /* 底部錢包區 (固定高度) */
+  /* 底部錢包區 */
   .wallet {
     height: 110px; flex: 0 0 auto; 
     display: flex; justify-content: space-around; align-items: center;
     background: #cfd8dc; box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    padding-bottom: env(safe-area-inset-bottom); /* 適應新款 iPhone 底部黑條 */
+    padding-bottom: env(safe-area-inset-bottom); 
   }
 
   /* 硬幣共用樣式 */
@@ -69,9 +73,7 @@
   .coin-10 { background-color: #FFD700; border: 2px solid #DAA520; }
   .coin-1 { background-color: #F0F8FF; border: 2px solid #B0C4DE; }
 
-  /* 💡 核心設計：錢包區的硬幣比較大，方便點擊 */
   .wallet .coin { width: 65px; height: 65px; font-size: 26px; }
-  /* 💡 核心設計：付錢區的硬幣自動縮小，確保畫面上排得下所有錢 */
   .tray .coin { width: 45px; height: 45px; font-size: 20px; }
 
   /* 特效 */
@@ -87,16 +89,13 @@
   </div>
 
   <div id="gameContainer">
-    <!-- 任務區 -->
     <div class="header">
       <div class="box-icon">🎁</div>
       <div class="target-display">要付 <span id="displayTarget">?</span> 元</div>
     </div>
 
-    <!-- 付錢區 -->
     <div class="tray" id="trayCoins"></div>
 
-    <!-- 錢包區 -->
     <div class="wallet" id="wallet">
       <div class="coin coin-10" onclick="addCoin(10)">10</div>
       <div class="coin coin-1" onclick="addCoin(1)">1</div>
@@ -104,8 +103,13 @@
   </div>
 
 <script>
-  let count10 = 0; // 記錄有幾個 10 元
-  let count1 = 0;  // 記錄有幾個 1 元
+  // 💡 核心防護 2：透過 JavaScript 攔截連續點兩下的放大行為
+  document.addEventListener('dblclick', function(event) {
+    event.preventDefault();
+  }, { passive: false });
+
+  let count10 = 0; 
+  let count1 = 0;  
   let currentTarget = 0;
   let audioUnlocked = false; 
   let isWinning = false;
@@ -151,7 +155,7 @@
   // 語音報讀引擎
   function speakText(text, speedRate) {
     if (!audioUnlocked) return;
-    window.speechSynthesis.cancel(); // 中斷前一個聲音
+    window.speechSynthesis.cancel(); 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'zh-TW';
     utterance.rate = speedRate; 
@@ -176,28 +180,28 @@
     displayTarget.innerText = currentTarget;
     count10 = 0;
     count1 = 0;
-    renderTray(); // 清空盤面
+    renderTray(); 
     
     setTimeout(() => speakText(`要付，${currentTarget} 元`, 0.85), 300);
   }
 
-  // 點擊錢包加入硬幣
+  // 加入硬幣
   function addCoin(val) {
     if (isWinning) return;
     let totalAmount = (count10 * 10) + count1;
 
     if (totalAmount + val > currentTarget) {
-      playErrorSound(); // 放進去會超過就發出錯誤聲
+      playErrorSound(); 
     } else {
       if (val === 10) count10++;
       else count1++;
       
       playDropSound();
-      renderTray(); // 重新整理盤面
+      renderTray(); 
     }
   }
 
-  // 點擊盤面退回硬幣
+  // 退回硬幣
   function removeCoin(val) {
     if (isWinning) return;
     
@@ -205,15 +209,14 @@
     else count1--;
     
     playPickupSound();
-    renderTray(); // 重新整理盤面
+    renderTray(); 
   }
 
-  // 💡 核心設計：渲染並自動整理盤面 (10元永遠在前面，1元在後面)
+  // 渲染並整理盤面
   function renderTray() {
     let totalAmount = (count10 * 10) + count1;
-    trayCoins.innerHTML = ''; // 先清空
+    trayCoins.innerHTML = ''; 
 
-    // 先畫出所有的 10 元
     for(let i=0; i<count10; i++) {
       let c = document.createElement('div');
       c.className = 'coin coin-10';
@@ -222,7 +225,6 @@
       trayCoins.appendChild(c);
     }
 
-    // 再畫出所有的 1 元
     for(let i=0; i<count1; i++) {
       let c = document.createElement('div');
       c.className = 'coin coin-1';
@@ -231,7 +233,6 @@
       trayCoins.appendChild(c);
     }
 
-    // 檢查是否過關
     if (totalAmount === currentTarget && currentTarget > 0) {
       isWinning = true; 
       playCheerSound(); 
@@ -244,7 +245,6 @@
 
       setTimeout(nextQuestion, 3000);
     } else if (totalAmount < currentTarget && totalAmount > 0) {
-      // 還沒過關，唸出目前累積金額
       speakText(`${totalAmount} 元`, 1.3); 
     }
   }
