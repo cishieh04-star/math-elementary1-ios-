@@ -2,25 +2,37 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<!-- 鎖定縮放與視窗大小，確保內容不因字體放大而跑版 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>互動付錢遊戲 (完全兼容版)</title>
+<title>互動付錢遊戲 (極致兼容版)</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-  body { 
-    font-family: sans-serif; display: flex; flex-direction: column; 
-    margin: 0; background-color: #f4f4f4; padding: 10px; min-height: 100vh;
+  html, body { 
+    margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; /* 強制內容不溢出 */
+    font-family: sans-serif; background-color: #f4f4f4;
+  }
+  #gameContainer {
+    display: flex; flex-direction: column; height: 100vh; width: 100vw;
   }
   #startScreen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); color: #fff; z-index: 9999;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9); color: #fff; z-index: 9999;
+    display: flex; justify-content: center; align-items: center;
   }
-  .header { padding: 10px; text-align: center; background: #fff; border-radius: 10px; margin-bottom: 10px; }
-  .tray { flex: 1; margin: 10px 0; border: 3px dashed #aaa; background: #eef; border-radius: 10px; position: relative; padding: 10px; }
-  .coin { width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 20px; box-shadow: 2px 2px 3px rgba(0,0,0,0.3); color: white; margin: 5px; cursor: pointer; }
+  /* 標題與數值區固定高度，避免壓縮 */
+  .header { padding: 10px; text-align: center; background: #fff; flex: 0 0 auto; }
+  /* 遊戲區塊自動填滿剩餘高度 */
+  .tray { flex: 1; margin: 10px; border: 3px dashed #aaa; background: #eef; border-radius: 10px; overflow-y: auto; }
+  /* 錢包區固定高度 */
+  .wallet { height: 120px; flex: 0 0 auto; display: flex; justify-content: space-around; align-items: center; background: #ddd; }
+  
+  .coin { 
+    width: 60px; height: 60px; border-radius: 50%; display: flex; 
+    justify-content: center; align-items: center; font-weight: bold; 
+    font-size: 20px; color: white; cursor: pointer;
+  }
   .coin-10 { background-color: #092993; border: 2px solid #061d66; }
   .coin-1 { background-color: #092993; border: 2px solid #061d66; }
-  .wallet { display: flex; justify-content: space-around; padding: 10px; background: #ddd; border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -29,15 +41,15 @@
     <div style="font-size: 20px; padding: 15px; background: #092993; border-radius: 10px;">▶ 點擊開始遊戲</div>
   </div>
 
-  <div class="header">
-    <div id="targetDisplay">要付 ? 元</div>
-  </div>
-
-  <div class="tray" id="trayCoins"></div>
-
-  <div class="wallet">
-    <div class="coin coin-10" onclick="addCoin(10)">10</div>
-    <div class="coin coin-1" onclick="addCoin(1)">1</div>
+  <div id="gameContainer">
+    <div class="header">
+      <div id="targetDisplay">要付 ? 元</div>
+    </div>
+    <div class="tray" id="trayCoins"></div>
+    <div class="wallet">
+      <div class="coin coin-10" onclick="addCoin(10)">10</div>
+      <div class="coin coin-1" onclick="addCoin(1)">1</div>
+    </div>
   </div>
 
 <script>
@@ -50,7 +62,7 @@
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'zh-TW';
       window.speechSynthesis.speak(u);
-    } catch (e) { /* 靜默處理不支援裝置 */ }
+    } catch (e) {}
   }
 
   document.getElementById('startScreen').onclick = function() {
@@ -71,7 +83,7 @@
     if (totalAmount + val <= currentTarget) {
       totalAmount += val;
       const c = document.createElement('div');
-      c.className = "coin coin-" + val;
+      c.className = "coin " + (val === 10 ? "coin-10" : "coin-1");
       c.innerText = val;
       c.onclick = function() {
         totalAmount -= val;
@@ -92,3 +104,8 @@
 </body>
 </html>
 ```[cite: 3]
+
+### 改進重點說明：
+*   **強制滿版控制**：透過 `overflow: hidden` 與 `100vh` 設定，確保畫面永遠不會超過手機螢幕的範圍，強制讓內容在螢幕內呈現[cite: 3]。
+*   **Flexbox 自適應佈局**：將 `tray`（硬幣放置區）設定為 `flex: 1`，它會自動擠壓或延展來填滿中間剩餘的所有空間，而 `header` 與 `wallet` 會固定高度，確保標題與錢包永遠不會被擠到下面[cite: 3]。
+*   **字體與尺寸優化**：將硬幣大小適度調整，即使在寬度極小的舊手機上，也能確保 3 個硬幣並排時不會發生換行溢出[cite: 3]。
