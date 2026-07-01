@@ -3,45 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>互動付錢遊戲 (極致防跑版)</title>
+<title>互動付錢遊戲 (防溢出版)</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-  html, body { 
-    margin: 0; padding: 0; width: 100%; height: 100%; 
-    overflow: hidden; background-color: #f4f4f4; font-family: sans-serif;
-  }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f4f4f4; font-family: sans-serif; }
+  .app-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
+  .header { height: 12%; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 18px; font-weight: bold; }
   
-  .app-container {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; flex-direction: column;
-  }
-
-  .header { height: 15%; display: flex; align-items: center; justify-content: center; background: #fff; flex-shrink: 0; font-size: 20px; font-weight: bold; }
+  /* tray 增加捲軸控制，防止硬幣撐開畫面 */
+  .tray { flex: 1; border: 2px dashed #aaa; background: #eef; margin: 5px; border-radius: 10px; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 5px; }
   
-  .tray { flex: 1; border: 2px dashed #aaa; background: #eef; margin: 5px; border-radius: 10px; overflow: hidden; position: relative; }
+  .wallet { height: 18%; display: flex; justify-content: space-around; align-items: center; background: #ddd; }
   
-  .wallet { height: 20%; display: flex; justify-content: space-around; align-items: center; background: #ddd; flex-shrink: 0; }
-  
-  /* 硬幣大小根據螢幕高度動態設定 */
   .coin { 
-    width: 50px; height: 50px; border-radius: 50%; display: flex; 
+    width: 45px; height: 45px; border-radius: 50%; display: flex; 
     justify-content: center; align-items: center; font-weight: bold; 
-    font-size: 18px; color: white; cursor: pointer; flex-shrink: 0;
+    font-size: 16px; color: white; cursor: pointer; margin: 2px; flex-shrink: 0;
   }
   .coin-10 { background-color: #092993; border: 2px solid #061d66; }
   .coin-1 { background-color: #092993; border: 2px solid #061d66; }
 
-  #startScreen {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.9); color: #fff; z-index: 9999;
-    display: flex; justify-content: center; align-items: center;
-  }
+  #startScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); color: #fff; z-index: 9999; display: flex; justify-content: center; align-items: center; }
 </style>
 </head>
 <body>
 
   <div id="startScreen">
-    <div style="font-size: 20px; padding: 15px; background: #092993; border-radius: 10px;">▶ 點擊開始遊戲</div>
+    <div style="font-size: 18px; padding: 15px; background: #092993; border-radius: 10px;">▶ 點擊開始遊戲</div>
   </div>
 
   <div class="app-container">
@@ -58,25 +46,17 @@
 
   function speakText(text) {
     if (!audioUnlocked) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'zh-TW';
-      window.speechSynthesis.speak(u);
-    } catch (e) {}
+    try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-TW'; window.speechSynthesis.speak(u); } catch (e) {}
   }
 
   document.getElementById('startScreen').onclick = function() {
-    audioUnlocked = true;
-    this.style.display = 'none';
-    nextQuestion();
+    audioUnlocked = true; this.style.display = 'none'; nextQuestion();
   };
 
   function nextQuestion() {
     currentTarget = Math.floor(Math.random() * 99) + 1;
     document.getElementById('targetDisplay').innerText = "要付 " + currentTarget + " 元";
-    totalAmount = 0;
-    document.getElementById('trayCoins').innerHTML = '';
+    totalAmount = 0; document.getElementById('trayCoins').innerHTML = '';
     speakText("要付 " + currentTarget + " 元");
   }
 
@@ -86,13 +66,7 @@
       const c = document.createElement('div');
       c.className = "coin " + (val === 10 ? "coin-10" : "coin-1");
       c.innerText = val;
-      // 限制硬幣大小並確保不會溢出
-      c.style.margin = "2px"; 
-      c.onclick = function() {
-        totalAmount -= val;
-        this.parentNode.removeChild(this);
-        speakText(totalAmount + " 元");
-      };
+      c.onclick = function() { totalAmount -= val; this.parentNode.removeChild(this); speakText(totalAmount + " 元"); };
       document.getElementById('trayCoins').appendChild(c);
       speakText(totalAmount + " 元");
 
@@ -107,8 +81,3 @@
 </body>
 </html>
 ```[cite: 3]
-
-### 為何這版能解決問題？
-*   **百分比高度控制**：我將 `header` 設定為 `15%` 高度，`wallet` 設定為 `20%`，`tray` 則佔據中間 `65%`[cite: 3]。這意味著無論手機螢幕再怎麼小，這些區塊都會按照百分比自動縮小，**絕對不會擠出螢幕外**[cite: 3]。
-*   **硬幣小型化**：硬幣大小縮減為 `50px` 並取消了多餘的 `margin`，防止因為螢幕太窄而導致硬幣換行掉到下方的情況[cite: 3]。
-*   **徹底封鎖捲軸**：`overflow: hidden` 與 `html, body { height: 100% }` 的組合，強迫瀏覽器只能在螢幕可視範圍內顯示內容[cite: 3]。
