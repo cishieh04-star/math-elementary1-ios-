@@ -3,124 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>互動付錢遊戲 (iOS 優化版)</title>
+<title>互動付錢遊戲 (完全兼容版)</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-  body {
-    font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column;
-    height: 100dvh; margin: 0; background-color: #f4f4f4; 
-    user-select: none; -webkit-user-select: none; 
-    touch-action: manipulation;
+  body { 
+    font-family: sans-serif; display: flex; flex-direction: column; 
+    margin: 0; background-color: #f4f4f4; padding: 10px; min-height: 100vh;
   }
-  
   #startScreen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.85); color: #fff; z-index: 9999;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
   }
-  #startScreen div { font-size: 28px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
-
-  .header { padding: 15px; text-align: center; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-  .target-display { font-size: 32px; font-weight: bold; color: #d32f2f; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  
-  .icon-btn { background: #e3f2fd; border: 2px solid #90caf9; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; }
-
-  .tray { flex: 1; margin: 15px; border: 3px dashed #aaa; background: #eef; border-radius: 15px; position: relative; padding: 15px; }
-  .tray-coins { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; height: 100%; }
-  #counter { font-size: 40px; font-weight: bold; color: #333; position: absolute; bottom: 15px; right: 20px; }
-  
-  .wallet { height: 140px; background: #cfd8dc; display: flex; justify-content: space-around; align-items: center; padding: 10px; }
-  .coin { width: 75px; height: 75px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 24px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
-  .coin-10 { background-color: #FFD700; border: 2px solid #DAA520; }
-  .coin-1 { background-color: #F0F8FF; border: 2px solid #B0C4DE; }
+  .header { padding: 10px; text-align: center; background: #fff; border-radius: 10px; margin-bottom: 10px; }
+  .tray { flex: 1; margin: 10px 0; border: 3px dashed #aaa; background: #eef; border-radius: 10px; position: relative; padding: 10px; }
+  .coin { width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 20px; box-shadow: 2px 2px 3px rgba(0,0,0,0.3); color: white; margin: 5px; cursor: pointer; }
+  .coin-10 { background-color: #092993; border: 2px solid #061d66; }
+  .coin-1 { background-color: #092993; border: 2px solid #061d66; }
+  .wallet { display: flex; justify-content: space-around; padding: 10px; background: #ddd; border-radius: 10px; }
 </style>
 </head>
 <body>
 
   <div id="startScreen">
-    <div>▶ 點擊開始遊戲</div>
+    <div style="font-size: 20px; padding: 15px; background: #092993; border-radius: 10px;">▶ 點擊開始遊戲</div>
   </div>
 
   <div class="header">
-    <div class="target-display">
-      要付 <span id="displayTarget">?</span> 元
-      <button class="icon-btn" onclick="speakTargetAmount()">🔊</button>
-    </div>
+    <div id="targetDisplay">要付 ? 元</div>
   </div>
 
-  <div class="tray" id="tray">
-    <div class="tray-coins" id="trayCoins"></div>
-    <div id="counter">0</div>
-  </div>
+  <div class="tray" id="trayCoins"></div>
 
   <div class="wallet">
-    <div class="coin coin-10" data-value="10">10</div>
-    <div class="coin coin-1" data-value="1">1</div>
+    <div class="coin coin-10" onclick="addCoin(10)">10</div>
+    <div class="coin coin-1" onclick="addCoin(1)">1</div>
   </div>
 
 <script>
-  let totalAmount = 0;
-  let currentTarget = 0;
-  let audioUnlocked = false;
+  let totalAmount = 0, currentTarget = 0, audioUnlocked = false;
 
-  function speakText(text, rate = 1.0) {
+  function speakText(text) {
     if (!audioUnlocked) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'zh-TW';
-    utterance.rate = rate;
-    
-    // iOS 女性語音篩選
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(v => v.lang.includes('zh-TW') && (v.name.includes('Mei-Jia') || v.name.toLowerCase().includes('female')));
-    if (femaleVoice) utterance.voice = femaleVoice;
-    
-    window.speechSynthesis.speak(utterance);
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-TW';
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* 靜默處理不支援裝置 */ }
   }
 
-  function speakTargetAmount() { speakText(`要付 ${currentTarget} 元`, 0.9); }
-
-  document.getElementById('startScreen').addEventListener('click', () => {
+  document.getElementById('startScreen').onclick = function() {
     audioUnlocked = true;
-    document.getElementById('startScreen').style.display = 'none';
+    this.style.display = 'none';
     nextQuestion();
-  });
+  };
 
   function nextQuestion() {
     currentTarget = Math.floor(Math.random() * 99) + 1;
-    document.getElementById('displayTarget').innerText = currentTarget;
+    document.getElementById('targetDisplay').innerText = "要付 " + currentTarget + " 元";
     totalAmount = 0;
     document.getElementById('trayCoins').innerHTML = '';
-    document.getElementById('counter').innerText = '0';
-    setTimeout(speakTargetAmount, 500);
+    speakText("要付 " + currentTarget + " 元");
   }
 
-  document.addEventListener('pointerdown', (e) => {
-    if (e.target.classList.contains('coin')) {
-      const val = parseInt(e.target.dataset.value);
-      if (e.target.parentNode.id === 'trayCoins') {
-        e.target.remove();
+  function addCoin(val) {
+    if (totalAmount + val <= currentTarget) {
+      totalAmount += val;
+      const c = document.createElement('div');
+      c.className = "coin coin-" + val;
+      c.innerText = val;
+      c.onclick = function() {
         totalAmount -= val;
-      } else {
-        if (totalAmount + val <= currentTarget) {
-          const c = document.createElement('div');
-          c.className = `coin coin-${val}`;
-          c.dataset.value = val;
-          c.innerText = val;
-          document.getElementById('trayCoins').appendChild(c);
-          totalAmount += val;
-        }
-      }
-      document.getElementById('counter').innerText = totalAmount;
-      speakText(`${totalAmount} 元`, 1.2);
+        this.parentNode.removeChild(this);
+        speakText(totalAmount + " 元");
+      };
+      document.getElementById('trayCoins').appendChild(c);
+      speakText(totalAmount + " 元");
 
       if (totalAmount === currentTarget) {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        speakText("太棒了，答對了！", 1.0);
-        setTimeout(nextQuestion, 3000);
+        confetti({ particleCount: 100 });
+        speakText("太棒了，答對了！");
+        setTimeout(nextQuestion, 2000);
       }
     }
-  });
+  }
 </script>
 </body>
 </html>
+```[cite: 3]
