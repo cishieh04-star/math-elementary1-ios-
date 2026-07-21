@@ -85,7 +85,7 @@
         #drop-game-container {
             position: relative;
             width: 100%;
-            height: 180px;
+            height: 160px;
             background: #f1f5f9;
             border: 3px solid #cbd5e1;
             border-radius: 14px;
@@ -118,21 +118,34 @@
 
         @keyframes fall {
             0% { top: -75px; }
-            100% { top: 120px; }
+            100% { top: 100px; }
         }
 
-        button#start-btn { 
-            padding: 15px 35px; 
-            font-size: 24px; 
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        button#start-btn, .control-btn { 
+            padding: 10px 25px; 
+            font-size: 20px; 
             background: #3b82f6; 
             color: white; 
             border: none; 
-            border-radius: 15px; 
+            border-radius: 12px; 
             cursor: pointer; 
             box-shadow: 0 4px 10px rgba(59,130,246,0.3);
             font-weight: bold;
         }
-        button#start-btn:hover { background: #2563eb; }
+        button#start-btn:hover, .control-btn:hover { background: #2563eb; }
+        
+        #pause-btn {
+            background: #d97706;
+        }
+        #pause-btn:hover {
+            background: #b45309;
+        }
     </style>
 </head>
 <body>
@@ -158,15 +171,22 @@
         
         <!-- 掉落答案區域 -->
         <div id="drop-game-container"></div>
+
+        <!-- 暫停按鈕區 -->
+        <div class="btn-group">
+            <button id="pause-btn" class="control-btn" onclick="togglePause()">暫停遊戲</button>
+        </div>
     </div>
 </div>
 
     <script>
-        let currentAns, n1, n2, score = 0, startTime;
+        let currentAns, n1, n2, score = 0;
         let gameInterval = null;
         let activeOptions = [];
         let isAnswered = false;
+        let isPaused = false;
         let timerInterval = null;
+        let totalSeconds = 0; // 記錄累積秒數
         let audioCtx = null;
 
         // 女生聲音讀題
@@ -230,8 +250,10 @@
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'flex';
             score = 0;
+            totalSeconds = 0;
+            isPaused = false;
+            document.getElementById('pause-btn').innerText = "暫停遊戲";
             document.getElementById('score').innerText = `闖關: ${score}`;
-            startTime = Date.now();
             startTimer();
             loadQuestion();
         }
@@ -239,16 +261,44 @@
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                let diff = Math.floor((Date.now() - startTime) / 1000);
-                let m = Math.floor(diff / 60).toString().padStart(2, '0');
-                let s = (diff % 60).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `時間: ${m}:${s}`;
+                if (!isPaused) {
+                    totalSeconds++;
+                    let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                    let s = (totalSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `時間: ${m}:${s}`;
+                }
             }, 1000);
+        }
+
+        // 暫停與繼續切換功能
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+            
+            if (isPaused) {
+                pauseBtn.innerText = "繼續遊戲";
+                pauseBtn.style.backgroundColor = "#16a34a";
+                document.getElementById('feedback').innerText = "⏸️ 遊戲已暫停，去上洗手間吧！";
+                // 將所有掉落中的方塊動畫暫停
+                activeOptions.forEach(el => {
+                    el.style.animationPlayState = 'paused';
+                });
+            } else {
+                pauseBtn.innerText = "暫停遊戲";
+                pauseBtn.style.backgroundColor = "#d97706";
+                document.getElementById('feedback').innerText = "▶️ 遊戲繼續！加油！";
+                // 恢復方塊動畫
+                activeOptions.forEach(el => {
+                    el.style.animationPlayState = 'running';
+                });
+            }
         }
 
         function loadQuestion() {
             isAnswered = false;
-            document.getElementById('feedback').innerText = "注意看！答案掉下來囉！";
+            if (!isPaused) {
+                document.getElementById('feedback').innerText = "注意看！答案掉下來囉！";
+            }
             
             // 清除畫面上舊的掉落方塊
             activeOptions.forEach(el => el.remove());
@@ -271,16 +321,17 @@
             while(options.size < 4) options.add(Math.floor(Math.random() * 10) + 2);
             let optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
 
-            // 依序緩慢從上方掉落選項 (速度不快，確保小朋友能看清楚)
+            // 依序緩慢從上方掉落選項
             let index = 0;
             gameInterval = setInterval(() => {
+                if (isPaused) return; // 暫停時短停掉落計時
                 if (index >= optionsArr.length || isAnswered) {
                     clearInterval(gameInterval);
                     return;
                 }
                 spawnFallingOption(optionsArr[index]);
                 index++;
-            }, 1800); // 每 1.8 秒掉落一顆
+            }, 1800);
         }
 
         function spawnFallingOption(val) {
@@ -290,18 +341,20 @@
             el.className = 'falling-option';
             el.innerText = val;
 
-            // 隨機橫向位置 (保留邊距防超出)
             const randomX = Math.random() * (container.clientWidth - 75);
             el.style.left = randomX + 'px';
             
-            // 掉落動畫時間 (設定 3.5 到 4.5 秒，速度平穩不快)
             const duration = 3.5 + Math.random();
             el.style.animationDuration = duration + 's';
 
-            // 點擊事件
+            // 如果目前是暫停狀態建立的，先讓動畫暫停
+            if (isPaused) {
+                el.style.animationPlayState = 'paused';
+            }
+
             el.onclick = function(e) {
                 e.stopPropagation();
-                if (isAnswered) return;
+                if (isAnswered || isPaused) return;
 
                 if (val === currentAns) {
                     // 【答對了！】
@@ -318,13 +371,14 @@
                     
                     speak(`答案是${currentAns}，太棒了！`);
 
-                    // 停止並清除所有掉落中的選項
                     clearInterval(gameInterval);
                     activeOptions.forEach(opt => opt.remove());
                     activeOptions = [];
 
-                    // 3 秒後自動換題
-                    setTimeout(loadQuestion, 3000);
+                    // 3 秒後自動換題 (若暫停中則不自動切換，等回來繼續)
+                    setTimeout(() => {
+                        if (!isPaused) loadQuestion();
+                    }, 3000);
                 } else {
                     // 【答錯了】
                     playErrorSound();
