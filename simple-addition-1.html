@@ -186,10 +186,10 @@
         let isAnswered = false;
         let isPaused = false;
         let timerInterval = null;
-        let totalSeconds = 0; // 記錄累積秒數
+        let totalSeconds = 0; 
         let audioCtx = null;
+        let optionsArr = []; // 儲存當前題目的選項陣列
 
-        // 女生聲音讀題
         function speak(text) {
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
@@ -204,7 +204,6 @@
 
         window.speechSynthesis.onvoiceschanged = () => {};
 
-        // 答對時的愉悅音效
         function playSuccessSound() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -227,7 +226,6 @@
             osc.stop(audioCtx.currentTime + 0.7);
         }
 
-        // 錯誤音效
         function playErrorSound() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -270,7 +268,6 @@
             }, 1000);
         }
 
-        // 暫停與繼續切換功能
         function togglePause() {
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pause-btn');
@@ -279,7 +276,6 @@
                 pauseBtn.innerText = "繼續遊戲";
                 pauseBtn.style.backgroundColor = "#16a34a";
                 document.getElementById('feedback').innerText = "⏸️ 遊戲已暫停，去上洗手間吧！";
-                // 將所有掉落中的方塊動畫暫停
                 activeOptions.forEach(el => {
                     el.style.animationPlayState = 'paused';
                 });
@@ -287,7 +283,6 @@
                 pauseBtn.innerText = "暫停遊戲";
                 pauseBtn.style.backgroundColor = "#d97706";
                 document.getElementById('feedback').innerText = "▶️ 遊戲繼續！加油！";
-                // 恢復方塊動畫
                 activeOptions.forEach(el => {
                     el.style.animationPlayState = 'running';
                 });
@@ -300,12 +295,10 @@
                 document.getElementById('feedback').innerText = "注意看！答案掉下來囉！";
             }
             
-            // 清除畫面上舊的掉落方塊
             activeOptions.forEach(el => el.remove());
             activeOptions = [];
             if (gameInterval) clearInterval(gameInterval);
 
-            // 隨機題目
             if (Math.random() > 0.5) { n1 = Math.floor(Math.random() * 9) + 1; n2 = 1; }
             else { n1 = 1; n2 = Math.floor(Math.random() * 9) + 1; }
             currentAns = n1 + n2;
@@ -313,22 +306,25 @@
             document.getElementById('question').innerText = `${n1} + ${n2} = ?`;
             renderDots(n1, n2);
 
-            // 語音朗讀題目
             speak(`${n1} 加 ${n2} 等於多少？`);
 
-            // 準備選項 (包含正確答案與干擾項共 4 個)
             let options = new Set([currentAns]);
             while(options.size < 4) options.add(Math.floor(Math.random() * 10) + 2);
-            let optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
+            optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
 
-            // 依序緩慢從上方掉落選項
             let index = 0;
             gameInterval = setInterval(() => {
-                if (isPaused) return; // 暫停時短停掉落計時
-                if (index >= optionsArr.length || isAnswered) {
+                if (isPaused) return; 
+                if (isAnswered) {
                     clearInterval(gameInterval);
                     return;
                 }
+                
+                // 💡 修改處：當選項全部掉完一輪後，將 index 歸零，讓選項無限循環掉落！
+                if (index >= optionsArr.length) {
+                    index = 0;
+                }
+
                 spawnFallingOption(optionsArr[index]);
                 index++;
             }, 1800);
@@ -347,7 +343,6 @@
             const duration = 3.5 + Math.random();
             el.style.animationDuration = duration + 's';
 
-            // 如果目前是暫停狀態建立的，先讓動畫暫停
             if (isPaused) {
                 el.style.animationPlayState = 'paused';
             }
@@ -357,7 +352,6 @@
                 if (isAnswered || isPaused) return;
 
                 if (val === currentAns) {
-                    // 【答對了！】
                     isAnswered = true;
                     score++;
                     document.getElementById('score').innerText = `闖關: ${score}`;
@@ -375,12 +369,10 @@
                     activeOptions.forEach(opt => opt.remove());
                     activeOptions = [];
 
-                    // 3 秒後自動換題 (若暫停中則不自動切換，等回來繼續)
                     setTimeout(() => {
                         if (!isPaused) loadQuestion();
                     }, 3000);
                 } else {
-                    // 【答錯了】
                     playErrorSound();
                     speak("再算算看喔！");
                     document.getElementById('feedback').innerText = "❌ 答錯囉，找找看正確的數字！";
