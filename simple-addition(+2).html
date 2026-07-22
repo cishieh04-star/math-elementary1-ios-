@@ -4,26 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>數學冒險遊戲</title>
+    <!-- 引入灑花特效庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { 
-            background-color: #fdfbf7; display: flex; flex-direction: column; align-items: center; 
-            justify-content: space-between; height: 100vh; margin: 0; padding: 2vh; 
-            font-family: sans-serif; overflow: hidden; box-sizing: border-box;
+            background-color: #fdfbf7; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between; 
+            height: 100vh; 
+            margin: 0; 
+            padding: 2vh; 
+            font-family: sans-serif; 
+            overflow: hidden; 
+            box-sizing: border-box;
+            user-select: none;
+            touch-action: manipulation;
         }
-        #home-screen, #game-ui { text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+        #home-screen, #game-ui { 
+            text-align: center; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+        }
         
-        #status-bar { display: flex; justify-content: space-around; width: 100%; font-size: 6vh; font-weight: bold; color: #2c3e50; margin-bottom: 2vh; border-bottom: 0.3vh solid #ddd; padding: 1vh 0; }
+        #status-bar { 
+            display: flex; 
+            justify-content: space-around; 
+            width: 100%; 
+            font-size: 5vh; 
+            font-weight: bold; 
+            color: #2c3e50; 
+            margin-bottom: 1vh; 
+            border-bottom: 0.3vh solid #ddd; 
+            padding: 1vh 0; 
+        }
         
-        #visual-area { height: 30vh; width: 100%; display: flex; align-items: center; justify-content: center; gap: 1vw; flex-wrap: wrap; overflow-y: auto; }
-        .dot { width: 6vh; height: 6vh; background: #ffaa55; border-radius: 50%; box-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
-        .symbol { font-size: 8vh; font-weight: bold; color: #555; padding: 0 1vw; }
+        #visual-area { 
+            height: 25vh; 
+            width: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 1vw; 
+            flex-wrap: wrap; 
+            overflow-y: auto; 
+        }
+        .dot { width: 5vh; height: 5vh; background: #ffaa55; border-radius: 50%; box-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+        .symbol { font-size: 7vh; font-weight: bold; color: #555; padding: 0 1vw; }
         
-        #question { font-size: 12vh; font-weight: bold; color: #333; margin: 2vh 0; }
-        #feedback { font-size: 8vh; color: #e67e22; font-weight: bold; height: 10vh; }
+        #question { font-size: 10vh; font-weight: bold; color: #333; margin: 1vh 0; }
+        #feedback { font-size: 6vh; color: #e67e22; font-weight: bold; height: 8vh; }
         
-        .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; width: 100%; max-width: 500px; }
-        .btn-opt { padding: 3vh; font-size: 5vh; background: #fff; border: 0.5vh solid #7fc8f8; border-radius: 2vh; cursor: pointer; }
-        button#start-btn { padding: 3vh 6vh; font-size: 6vh; background: #7fc8f8; color: white; border: none; border-radius: 3vh; cursor: pointer; }
+        /* 俄羅斯方塊掉落區域容器 */
+        #drop-game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 32vh;
+            background: #f1f5f9;
+            border: 3px solid #cbd5e1;
+            border-radius: 2vh;
+            overflow: hidden;
+            box-sizing: border-box;
+            margin-bottom: 2vh;
+        }
+
+        /* 提升觸控靈敏度與尺寸的掉落選項球 */
+        .falling-option {
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            background: radial-gradient(circle, #fde047 60%, #eab308 100%);
+            border: 3px solid #ca8a04;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #78350f;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        .falling-option:active { transform: scale(0.9); }
+
+        @keyframes fall {
+            0% { top: -80px; }
+            100% { top: 250px; }
+        }
+
+        button#start-btn { 
+            padding: 3vh 6vh; 
+            font-size: 6vh; 
+            background: #7fc8f8; 
+            color: white; 
+            border: none; 
+            border-radius: 3vh; 
+            cursor: pointer; 
+        }
     </style>
 </head>
 <body>
@@ -41,23 +127,32 @@
         <div id="visual-area"></div>
         <div id="question">? + ? = ?</div>
         <div id="feedback"></div>
-        <div class="options-grid" id="options-container"></div>
+        
+        <!-- 俄羅斯方塊掉落選項區 -->
+        <div id="drop-game-container"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         let currentAns, n1, n2, score = 0, startTime;
+        let gameInterval = null;
+        let activeOptions = [];
+        let isAnswered = false;
+        let timerInterval = null;
+        let optionsArr = [];
 
         function initGame() {
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'flex';
+            score = 0;
+            document.getElementById('score').innerText = `闖關: ${score}`;
             startTime = Date.now();
             startTimer();
             loadQuestion();
         }
 
         function startTimer() {
-            setInterval(() => {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
                 let diff = Math.floor((Date.now() - startTime) / 1000);
                 let m = Math.floor(diff / 60).toString().padStart(2, '0');
                 let s = (diff % 60).toString().padStart(2, '0');
@@ -66,10 +161,15 @@
         }
 
         function loadQuestion() {
-            document.getElementById('feedback').innerText = "";
+            isAnswered = false;
+            document.getElementById('feedback').innerText = "答案掉下來囉！";
             
-            // 邏輯修改：隨機產生 n+2 或 2+n
-            let baseNum = Math.floor(Math.random() * 9) + 1; // 產生 1-9 的數字
+            // 清除畫面上舊的掉落方塊
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            if (gameInterval) clearInterval(gameInterval);
+            
+            let baseNum = Math.floor(Math.random() * 9) + 1; 
             let isSwap = Math.random() > 0.5;
             
             n1 = isSwap ? 2 : baseNum;
@@ -80,36 +180,90 @@
             renderDots(n1, n2);
 
             let utterance = new SpeechSynthesisUtterance(`${n1} 加 ${n2} 等於多少？`);
+            utterance.lang = 'zh-TW';
             window.speechSynthesis.speak(utterance);
 
-            let container = document.getElementById('options-container');
-            container.innerHTML = '';
             let options = new Set([currentAns]);
-            while(options.size < 6) options.add(Math.floor(Math.random() * 11) + 3);
+            while(options.size < 4) options.add(Math.floor(Math.random() * 11) + 3);
+            optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
+
+            // 依序從上方掉落選項，若沒選中則會循環持續掉落
+            let index = 0;
+            gameInterval = setInterval(() => {
+                if (isAnswered) {
+                    clearInterval(gameInterval);
+                    return;
+                }
+                if (index >= optionsArr.length) {
+                    index = 0; // 循環掉落
+                }
+                spawnFallingOption(optionsArr[index]);
+                index++;
+            }, 1600);
+        }
+
+        function spawnFallingOption(val) {
+            if (isAnswered) return;
+            const container = document.getElementById('drop-game-container');
+            const el = document.createElement('div');
+            el.className = 'falling-option';
+            el.innerText = val;
+
+            const randomX = Math.random() * (container.clientWidth - 80);
+            el.style.left = randomX + 'px';
             
-            Array.from(options).sort(() => Math.random() - 0.5).forEach(num => {
-                let btn = document.createElement('button');
-                btn.className = 'btn-opt';
-                btn.innerText = num;
-                btn.onclick = () => { 
-                    if(num === currentAns) {
-                        score++;
-                        document.getElementById('score').innerText = `闖關: ${score}`;
-                        document.getElementById('question').innerText = `${n1} + ${n2} = ${currentAns}`;
-                        document.getElementById('feedback').innerText = "太棒了！👍";
-                        renderResultDots(currentAns);
-                        
-                        let successMsg = new SpeechSynthesisUtterance(`答案是${currentAns}，太棒了！`);
-                        window.speechSynthesis.speak(successMsg);
-                        
-                        confetti();
-                        setTimeout(loadQuestion, 3000); 
-                    } else { 
-                        btn.style.visibility = 'hidden';
-                    }
-                };
-                container.appendChild(btn);
+            const duration = 3.5 + Math.random();
+            el.style.animationDuration = duration + 's';
+
+            // 💡 同時支援滑鼠點擊與手機觸控，大幅提高敏感度
+            const handleSelect = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isAnswered) return;
+
+                if(val === currentAns) {
+                    // 答對了！
+                    isAnswered = true;
+                    score++;
+                    document.getElementById('score').innerText = `闖關: ${score}`;
+                    document.getElementById('question').innerText = `${n1} + ${n2} = ${currentAns}`;
+                    document.getElementById('feedback').innerText = "太棒了！👍";
+                    renderResultDots(currentAns);
+                    
+                    let successMsg = new SpeechSynthesisUtterance(`答案是${currentAns}，太棒了！`);
+                    successMsg.lang = 'zh-TW';
+                    window.speechSynthesis.speak(successMsg);
+                    
+                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                    
+                    clearInterval(gameInterval);
+                    activeOptions.forEach(opt => opt.remove());
+                    activeOptions = [];
+
+                    setTimeout(loadQuestion, 3000); 
+                } else {
+                    // 答錯了，該選項消失
+                    let errorMsg = new SpeechSynthesisUtterance("再算算看喔！");
+                    errorMsg.lang = 'zh-TW';
+                    window.speechSynthesis.speak(errorMsg);
+                    
+                    document.getElementById('feedback').innerText = "❌ 再試一次！";
+                    el.style.transition = "opacity 0.3s";
+                    el.style.opacity = "0";
+                    setTimeout(() => el.remove(), 300);
+                }
+            };
+
+            el.addEventListener('click', handleSelect);
+            el.addEventListener('touchstart', handleSelect);
+
+            el.addEventListener('animationend', () => {
+                el.remove();
+                activeOptions = activeOptions.filter(item => item !== el);
             });
+
+            container.appendChild(el);
+            activeOptions.push(el);
         }
 
         function renderDots(num1, num2) {
