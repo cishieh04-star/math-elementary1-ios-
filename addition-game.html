@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>加法學習遊戲 - 俄羅斯方塊掉落版</title>
+    <title>加法學習遊戲 - 計時與過關統計版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { 
@@ -29,61 +29,71 @@
         }
         #startScreen div { font-size: 32px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
 
-        h1 { color: #333; font-size: 26px; margin: 10px 0; }
+        h1 { color: #333; font-size: 24px; margin: 5px 0; }
         
-        /* 頂部狀態列 (含暫停按鈕) */
+        /* 頂部狀態列 (含時間、過關次數、暫停按鈕) */
         .top-bar {
             width: 100%;
             max-width: 500px;
             display: flex;
-            justify-content: flex-end;
-            margin-bottom: 5px;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+            font-weight: bold;
+            color: #334155;
         }
+
         .pause-btn {
             background-color: #d97706;
             color: white;
             border: none;
-            padding: 8px 16px;
-            font-size: 16px;
-            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 14px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .pause-btn:hover { background-color: #b45309; }
 
-        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 30px; margin: 15px 0; }
+        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 28px; margin: 10px 0; }
         .num-wrapper { display: flex; flex-direction: column; align-items: center; margin: 0 6px; }
         .dots-row { display: flex; flex-wrap: wrap; justify-content: center; width: 70px; margin-bottom: 4px; }
         .dot { height: 10px; width: 10px; background-color: #4682b4; border-radius: 50%; margin: 2px; }
-        .box { width: 100px; height: 100px; border: 4px dashed #333; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; margin: 0 8px; border-radius: 10px; font-weight: bold; font-size: 28px; }
+        .box { width: 90px; height: 90px; border: 4px dashed #333; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; margin: 0 8px; border-radius: 10px; font-weight: bold; font-size: 26px; }
 
         /* 俄羅斯方塊掉落遊戲區域容器 */
         #drop-game-container {
             position: relative;
             width: 100%;
             max-width: 500px;
-            height: 220px;
+            height: 200px;
             background: #f1f5f9;
             border: 3px solid #cbd5e1;
             border-radius: 12px;
             overflow: hidden;
             box-sizing: border-box;
-            margin: 10px auto;
+            margin: 5px auto;
         }
 
         /* 提升觸控靈敏度與尺寸的掉落選項球 */
         .falling-option {
             position: absolute;
-            width: 75px;
-            height: 75px;
+            width: 70px;
+            height: 70px;
             background: radial-gradient(circle, #fde047 60%, #eab308 100%);
             border: 3px solid #ca8a04;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             color: #78350f;
             cursor: pointer;
@@ -94,8 +104,8 @@
         .falling-option:active { transform: scale(0.9); }
 
         @keyframes fall {
-            0% { top: -80px; }
-            100% { top: 150px; }
+            0% { top: -75px; }
+            100% { top: 130px; }
         }
 
         #feedback { font-size: 18px; color: #e67e22; font-weight: bold; height: 25px; margin-top: 5px; }
@@ -110,7 +120,10 @@
 
     <h1>請點選正確答案</h1>
     
+    <!-- 頂部資訊列：時間、過關次數、暫停按鈕 -->
     <div class="top-bar">
+        <div id="timerDisplay">時間: 00:00</div>
+        <div id="scoreDisplay">過關: 0 次</div>
         <button class="pause-btn" id="pauseBtn" onclick="togglePause()">暫停遊戲</button>
     </div>
 
@@ -150,6 +163,10 @@
         let isAnswered = false;
         let isPaused = false;
         let optionsArr = [];
+        
+        let score = 0;
+        let totalSeconds = 0;
+        let timerInterval = null;
 
         function startGame() {
             audioUnlocked = true;
@@ -157,7 +174,23 @@
             window.speechSynthesis.speak(unlockSpeech);
 
             document.getElementById('startScreen').style.display = 'none';
+            score = 0;
+            totalSeconds = 0;
+            document.getElementById('scoreDisplay').innerText = `過關: ${score} 次`;
+            startTimer();
             initGame();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    totalSeconds++;
+                    let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                    let s = (totalSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timerDisplay').innerText = `時間: ${m}:${s}`;
+                }
+            }, 1000);
         }
 
         function initGame() {
@@ -226,7 +259,7 @@
             el.className = 'falling-option';
             el.innerText = val;
 
-            const randomX = Math.random() * (container.clientWidth - 80);
+            const randomX = Math.random() * (container.clientWidth - 75);
             el.style.left = randomX + 'px';
             
             const duration = 3.5 + Math.random();
@@ -245,6 +278,9 @@
 
                 if (val == sum) {
                     isAnswered = true;
+                    score++;
+                    document.getElementById('scoreDisplay').innerText = `過關: ${score} 次`;
+
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                     document.getElementById('dropTarget').innerHTML = `<div>${val}</div>${createDots(val)}`;
                     document.getElementById('feedback').innerText = "太棒了！👍";
@@ -254,7 +290,6 @@
                     activeOptions.forEach(opt => opt.remove());
                     activeOptions = [];
 
-                    // 4秒後自動載入下一題
                     setTimeout(() => {
                         if (!isPaused) initGame();
                     }, 4000);
