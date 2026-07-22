@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>加法學習遊戲 - 俄羅斯方塊掉落版</title>
+    <title>加法學習遊戲 - 持續掉落版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { 
@@ -107,16 +107,13 @@
     <div id="drop-game-container"></div>
 
     <script>
-        // 女生聲音讀題
         function speak(text) {
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'zh-TW';
-            
             const voices = window.speechSynthesis.getVoices();
             const femaleVoice = voices.find(v => v.lang.includes('zh-TW') && (v.name.includes('Mei-Jia') || v.name.toLowerCase().includes('female')));
             if (femaleVoice) msg.voice = femaleVoice;
-            
             window.speechSynthesis.speak(msg);
         }
 
@@ -137,6 +134,7 @@
         let optionsArr = [];
 
         function initGame() {
+            isAnswered = false;
             numA = Math.floor(Math.random() * 10) + 1;
             numB = Math.floor(Math.random() * 9) + 1;
             sum = numA + numB;
@@ -148,33 +146,32 @@
                 =
                 <div class="box" id="dropTarget">?</div>
             `;
+            document.getElementById('feedback').innerText = "答案掉下來囉！";
 
             setTimeout(() => speak(`${numA} 加 ${numB} 等於多少？`), 500);
 
+            // 準備選項 (包含正確答案與干擾項)
             let options = new Set([sum]);
-            while(options.length < 4 || options.size < 4) {
+            while(options.size < 4) {
                 let rand = Math.floor(Math.random() * 19) + 2;
                 options.add(rand);
             }
-            optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
+            optionsArr = Array.from(options);
 
             startFallingLoop();
         }
 
-        // 開始或恢復掉落循環
+        // 確保持續掉落的迴圈
         function startFallingLoop() {
             if (gameInterval) clearInterval(gameInterval);
-            let index = 0;
-
+            
             gameInterval = setInterval(() => {
                 if (isPaused || isAnswered) return;
 
-                if (index >= optionsArr.length) {
-                    index = 0; // 循環掉落，確保未選中時持續掉落
-                }
-                spawnFallingOption(optionsArr[index]);
-                index++;
-            }, 1600);
+                // 從選項中隨機挑選一個掉落，達到源源不絕的效果
+                let randomVal = optionsArr[Math.floor(Math.random() * optionsArr.length)];
+                spawnFallingOption(randomVal);
+            }, 1200); // 每 1.2 秒掉落一顆
         }
 
         function togglePause() {
@@ -215,7 +212,6 @@
                 el.style.animationPlayState = 'paused';
             }
 
-            // 高敏感度點擊與觸控事件
             let isHandled = false;
             const handleSelect = (e) => {
                 e.preventDefault();
@@ -224,7 +220,6 @@
                 isHandled = true;
 
                 if (val == sum) {
-                    // 答對效果
                     isAnswered = true;
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                     document.getElementById('dropTarget').innerHTML = `<div>${val}</div>${createDots(val)}`;
@@ -259,7 +254,6 @@
             activeOptions.push(el);
         }
 
-        // 頁面載入後自動開始第一局
         window.onload = () => {
             initGame();
         };
