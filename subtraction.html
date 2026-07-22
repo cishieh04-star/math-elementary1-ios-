@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>減法互動遊戲</title>
+    <title>減法互動遊戲 - 俄羅斯方塊掉落版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: 'PingFang TC', sans-serif; text-align: center; background-color: #f0f8ff; padding: 10px; margin: 0; touch-action: manipulation; }
+        body { font-family: 'PingFang TC', sans-serif; text-align: center; background-color: #f0f8ff; padding: 10px; margin: 0; touch-action: manipulation; user-select: none; }
         
         /* 首頁設計 */
         #homeScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f0f8ff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
@@ -15,15 +15,87 @@
         .start-btn:active { transform: translateY(6px); box-shadow: none; }
 
         /* 遊戲介面 */
-        .game-ui { display: none; } /* 預設隱藏 */
-        h1 { font-size: 22px; margin: 15px 0; color: #333; }
-        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 30px; margin: 20px 0; }
+        .game-ui { display: none; }
+        
+        /* 頂部狀態列 (含時間、過關次數、暫停按鈕) */
+        .top-bar {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 10px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 8px 15px;
+            box-sizing: border-box;
+            font-size: 16px;
+            font-weight: bold;
+            color: #334155;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .pause-btn {
+            background-color: #d97706;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pause-btn:hover { background-color: #b45309; }
+
+        h1 { font-size: 20px; margin: 10px 0; color: #333; }
+        .equation-container { display: flex; justify-content: center; align-items: center; font-size: 26px; margin: 10px 0; }
         .num-wrapper { display: flex; flex-direction: column; align-items: center; margin: 5px; }
         .dots-row { display: flex; flex-wrap: wrap; justify-content: center; width: 85px; margin-bottom: 5px; }
-        .dot { height: 15px; width: 15px; background-color: #ff6347; border-radius: 50%; margin: 1px; }
-        .box { width: 80px; height: 80px; border: 4px dashed #333; display: flex; align-items: center; justify-content: center; background: white; border-radius: 10px; font-weight: bold; }
-        #options { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
-        .option { width: 60px; height: 60px; background: #87ceeb; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 8px; font-weight: bold; font-size: 24px; box-shadow: 2px 2px 5px #888; }
+        .dot { height: 14px; width: 14px; background-color: #ff6347; border-radius: 50%; margin: 1px; }
+        .box { width: 80px; height: 80px; border: 4px dashed #333; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; border-radius: 10px; font-weight: bold; font-size: 26px; }
+
+        /* 俄羅斯方塊掉落區域容器 */
+        #drop-game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 220px;
+            background: #f1f5f9;
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            overflow: hidden;
+            box-sizing: border-box;
+            margin: 10px auto;
+        }
+
+        /* 提升觸控靈敏度與尺寸的掉落選項球 */
+        .falling-option {
+            position: absolute;
+            width: 75px;
+            height: 75px;
+            background: radial-gradient(circle, #fde047 60%, #eab308 100%);
+            border: 3px solid #ca8a04;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #78350f;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        .falling-option:active { transform: scale(0.9); }
+
+        @keyframes fall {
+            0% { top: -80px; }
+            100% { top: 150px; }
+        }
+
+        #feedback { font-size: 18px; color: #e67e22; font-weight: bold; height: 25px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -34,31 +106,35 @@
     </div>
 
     <div id="gameUI" class="game-ui">
+        <!-- 頂部資訊列：時間、過關次數、暫停按鈕 -->
+        <div class="top-bar">
+            <div id="timerDisplay">時間: 00:00</div>
+            <div id="scoreDisplay">過關: 0 次</div>
+            <button class="pause-btn" id="pauseBtn" onclick="togglePause()">暫停遊戲</button>
+        </div>
+
         <h1>請計算下列減法題目</h1>
         <div id="gameArea" class="equation-container"></div>
-        <div id="options"></div>
+        <div id="feedback"></div>
+
+        <!-- 掉落選項區 -->
+        <div id="drop-game-container"></div>
     </div>
 
     <script>
-        // 設定女生語音與撒花
+        let audioUnlocked = false;
+
         function speak(text) {
+            if (!audioUnlocked) return;
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'zh-TW';
-            // iOS 優先篩選美佳語音
             const voices = window.speechSynthesis.getVoices();
             msg.voice = voices.find(v => v.name.includes('Mei-Jia') || v.name.includes('female')) || voices[0];
             window.speechSynthesis.speak(msg);
         }
 
-        function startGame() {
-            // 切換畫面與解鎖聲音
-            document.getElementById('homeScreen').style.display = 'none';
-            document.getElementById('gameUI').style.display = 'block';
-            let unlock = new SpeechSynthesisUtterance('');
-            window.speechSynthesis.speak(unlock);
-            loadQuestion();
-        }
+        window.speechSynthesis.onvoiceschanged = () => {};
 
         function createDots(n) {
             let dots = '<div class="dots-row">';
@@ -67,10 +143,70 @@
             return dots;
         }
 
+        let numA, numB, diff;
+        let gameInterval = null;
+        let activeOptions = [];
+        let isAnswered = false;
+        let isPaused = false;
+        let optionsArr = [];
+
+        let score = 0;
+        let totalSeconds = 0;
+        let timerInterval = null;
+
+        function startGame() {
+            audioUnlocked = true;
+            let unlock = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlock);
+
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
+
+            score = 0;
+            totalSeconds = 0;
+            document.getElementById('scoreDisplay').innerText = `過關: ${score} 次`;
+            startTimer();
+            loadQuestion();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    totalSeconds++;
+                    let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                    let s = (totalSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timerDisplay').innerText = `時間: ${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            
+            if (isPaused) {
+                pauseBtn.innerText = "繼續遊戲";
+                pauseBtn.style.backgroundColor = "#16a34a";
+                document.getElementById('feedback').innerText = "⏸️ 遊戲已暫停，去上洗手間吧！";
+                activeOptions.forEach(el => {
+                    el.style.animationPlayState = 'paused';
+                });
+            } else {
+                pauseBtn.innerText = "暫停遊戲";
+                pauseBtn.style.backgroundColor = "#d97706";
+                document.getElementById('feedback').innerText = "▶️ 遊戲繼續！";
+                activeOptions.forEach(el => {
+                    el.style.animationPlayState = 'running';
+                });
+            }
+        }
+
         function loadQuestion() {
-            let numA = Math.floor(Math.random() * 10) + 5; 
-            let numB = Math.floor(Math.random() * (numA - 1)) + 1;
-            let diff = numA - numB;
+            isAnswered = false;
+            numA = Math.floor(Math.random() * 10) + 5; 
+            numB = Math.floor(Math.random() * (numA - 1)) + 1;
+            diff = numA - numB;
 
             document.getElementById('gameArea').innerHTML = `
                 <div class="num-wrapper">${createDots(numA)}<div>${numA}</div></div>
@@ -79,34 +215,91 @@
                 ＝
                 <div class="box" id="dropTarget">?</div>
             `;
-            
-            document.getElementById('options').innerHTML = '';
-            
-            let options = [diff];
-            while(options.length < 6) {
-                let rand = Math.floor(Math.random() * 10) + 1;
-                if(!options.includes(rand)) options.push(rand);
-            }
-            options.sort(() => Math.random() - 0.5);
+            document.getElementById('feedback').innerText = "答案掉下來囉！";
 
-            options.forEach(val => {
-                let div = document.createElement('div');
-                div.className = 'option';
-                div.innerText = val;
-                div.onclick = function() {
-                    if (parseInt(this.innerText) === diff) {
-                        document.getElementById('dropTarget').innerHTML = `<div>${diff}</div>${createDots(diff)}`;
-                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                        speak("太棒了！答案是" + diff);
-                        setTimeout(loadQuestion, 4000);
-                    } else {
-                        speak("再算算看喔！");
-                    }
-                };
-                document.getElementById('options').appendChild(div);
+            setTimeout(() => speak(`${numA} 減 ${numB} 等於多少呢？`), 300);
+
+            let options = new Set([diff]);
+            while(options.size < 4) {
+                let rand = Math.floor(Math.random() * 10) + 1;
+                options.add(rand);
+            }
+            optionsArr = Array.from(options);
+
+            startFallingLoop();
+        }
+
+        function startFallingLoop() {
+            if (gameInterval) clearInterval(gameInterval);
+            
+            gameInterval = setInterval(() => {
+                if (isPaused || isAnswered) return;
+
+                let randomVal = optionsArr[Math.floor(Math.random() * optionsArr.length)];
+                spawnFallingOption(randomVal);
+            }, 1200);
+        }
+
+        function spawnFallingOption(val) {
+            if (isAnswered || isPaused) return;
+            const container = document.getElementById('drop-game-container');
+            const el = document.createElement('div');
+            el.className = 'falling-option';
+            el.innerText = val;
+
+            const randomX = Math.random() * (container.clientWidth - 80);
+            el.style.left = randomX + 'px';
+            
+            const duration = 3.5 + Math.random();
+            el.style.animationDuration = duration + 's';
+
+            if (isPaused) {
+                el.style.animationPlayState = 'paused';
+            }
+
+            let isHandled = false;
+            const handleSelect = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isAnswered || isPaused || isHandled) return;
+                isHandled = true;
+
+                if (val === diff) {
+                    isAnswered = true;
+                    score++;
+                    document.getElementById('scoreDisplay').innerText = `過關: ${score} 次`;
+
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    document.getElementById('dropTarget').innerHTML = `<div>${diff}</div>${createDots(diff)}`;
+                    document.getElementById('feedback').innerText = "太棒了！👍";
+                    speak("太棒了！答案是" + diff);
+                    
+                    clearInterval(gameInterval);
+                    activeOptions.forEach(opt => opt.remove());
+                    activeOptions = [];
+
+                    setTimeout(() => {
+                        if (!isPaused) loadQuestion();
+                    }, 4000);
+                } else {
+                    speak("再算算看喔！");
+                    document.getElementById('feedback').innerText = "❌ 再試一次！";
+                    el.style.transition = "opacity 0.3s";
+                    el.style.opacity = "0";
+                    setTimeout(() => el.remove(), 300);
+                }
+            };
+
+            el.addEventListener('click', handleSelect);
+            el.addEventListener('touchstart', handleSelect, { passive: false });
+
+            el.addEventListener('animationend', () => {
+                el.remove();
+                activeOptions = activeOptions.filter(item => item !== el);
             });
 
-            speak(`${numA} 減 ${numB} 等於多少呢？`);
+            container.appendChild(el);
+            activeOptions.push(el);
         }
     </script>
 </body>
