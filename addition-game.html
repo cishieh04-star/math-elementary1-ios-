@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>加法學習遊戲 - 持續掉落版</title>
+    <title>加法學習遊戲 - 俄羅斯方塊掉落版</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { 
@@ -19,6 +19,16 @@
             box-sizing: border-box;
             user-select: none;
         }
+        
+        /* 開始遊戲遮罩：用於解鎖瀏覽器語音 */
+        #startScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); color: #fff; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+        #startScreen div { font-size: 32px; font-weight: bold; margin-bottom: 20px; padding: 15px 30px; background: #ff9800; border-radius: 10px;}
+
         h1 { color: #333; font-size: 26px; margin: 10px 0; }
         
         /* 頂部狀態列 (含暫停按鈕) */
@@ -93,6 +103,11 @@
 </head>
 <body>
 
+    <!-- 點擊以解鎖語音的開始畫面 -->
+    <div id="startScreen" onclick="startGame()">
+        <div>▶ 點擊開始遊戲</div>
+    </div>
+
     <h1>請點選正確答案</h1>
     
     <div class="top-bar">
@@ -107,7 +122,10 @@
     <div id="drop-game-container"></div>
 
     <script>
+        let audioUnlocked = false;
+
         function speak(text) {
+            if (!audioUnlocked) return;
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'zh-TW';
@@ -133,6 +151,15 @@
         let isPaused = false;
         let optionsArr = [];
 
+        function startGame() {
+            audioUnlocked = true;
+            let unlockSpeech = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlockSpeech);
+
+            document.getElementById('startScreen').style.display = 'none';
+            initGame();
+        }
+
         function initGame() {
             isAnswered = false;
             numA = Math.floor(Math.random() * 10) + 1;
@@ -148,9 +175,8 @@
             `;
             document.getElementById('feedback').innerText = "答案掉下來囉！";
 
-            setTimeout(() => speak(`${numA} 加 ${numB} 等於多少？`), 500);
+            setTimeout(() => speak(`${numA} 加 ${numB} 等於多少？`), 300);
 
-            // 準備選項 (包含正確答案與干擾項)
             let options = new Set([sum]);
             while(options.size < 4) {
                 let rand = Math.floor(Math.random() * 19) + 2;
@@ -161,17 +187,15 @@
             startFallingLoop();
         }
 
-        // 確保持續掉落的迴圈
         function startFallingLoop() {
             if (gameInterval) clearInterval(gameInterval);
             
             gameInterval = setInterval(() => {
                 if (isPaused || isAnswered) return;
 
-                // 從選項中隨機挑選一個掉落，達到源源不絕的效果
                 let randomVal = optionsArr[Math.floor(Math.random() * optionsArr.length)];
                 spawnFallingOption(randomVal);
-            }, 1200); // 每 1.2 秒掉落一顆
+            }, 1200);
         }
 
         function togglePause() {
@@ -230,6 +254,7 @@
                     activeOptions.forEach(opt => opt.remove());
                     activeOptions = [];
 
+                    // 4秒後自動載入下一題
                     setTimeout(() => {
                         if (!isPaused) initGame();
                     }, 4000);
@@ -253,10 +278,6 @@
             container.appendChild(el);
             activeOptions.push(el);
         }
-
-        window.onload = () => {
-            initGame();
-        };
     </script>
 </body>
 </html>
