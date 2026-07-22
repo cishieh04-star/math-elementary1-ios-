@@ -43,6 +43,7 @@
             margin-bottom: 1vh; 
             border-bottom: 0.3vh solid #ddd; 
             padding: 1vh 0; 
+            align-items: center;
         }
         
         #visual-area { 
@@ -66,13 +67,13 @@
             position: relative;
             width: 100%;
             max-width: 500px;
-            height: 32vh;
+            height: 28vh;
             background: #f1f5f9;
             border: 3px solid #cbd5e1;
             border-radius: 2vh;
             overflow: hidden;
             box-sizing: border-box;
-            margin-bottom: 2vh;
+            margin-bottom: 1vh;
         }
 
         /* 提升觸控靈敏度與尺寸的掉落選項球 */
@@ -98,17 +99,33 @@
 
         @keyframes fall {
             0% { top: -80px; }
-            100% { top: 250px; }
+            100% { top: 220px; }
         }
 
-        button#start-btn { 
-            padding: 3vh 6vh; 
-            font-size: 6vh; 
-            background: #7fc8f8; 
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1vh;
+        }
+
+        button#start-btn, .control-btn { 
+            padding: 1.5vh 3vh; 
+            font-size: 3.5vh; 
+            background: #3b82f6; 
             color: white; 
             border: none; 
-            border-radius: 3vh; 
+            border-radius: 2vh; 
             cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(59,130,246,0.3);
+            font-weight: bold;
+        }
+        button#start-btn:hover, .control-btn:hover { background: #2563eb; }
+        
+        #pause-btn {
+            background: #d97706;
+        }
+        #pause-btn:hover {
+            background: #b45309;
         }
     </style>
 </head>
@@ -130,22 +147,31 @@
         
         <!-- 俄羅斯方塊掉落選項區 -->
         <div id="drop-game-container"></div>
+
+        <!-- 暫停按鈕區 -->
+        <div class="btn-group">
+            <button id="pause-btn" class="control-btn" onclick="togglePause()">暫停遊戲</button>
+        </div>
     </div>
 
     <script>
-        let currentAns, n1, n2, score = 0, startTime;
+        let currentAns, n1, n2, score = 0;
         let gameInterval = null;
         let activeOptions = [];
         let isAnswered = false;
+        let isPaused = false;
         let timerInterval = null;
+        let totalSeconds = 0;
         let optionsArr = [];
 
         function initGame() {
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'flex';
             score = 0;
+            totalSeconds = 0;
+            isPaused = false;
+            document.getElementById('pause-btn').innerText = "暫停遊戲";
             document.getElementById('score').innerText = `闖關: ${score}`;
-            startTime = Date.now();
             startTimer();
             loadQuestion();
         }
@@ -153,18 +179,45 @@
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                let diff = Math.floor((Date.now() - startTime) / 1000);
-                let m = Math.floor(diff / 60).toString().padStart(2, '0');
-                let s = (diff % 60).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `時間: ${m}:${s}`;
+                if (!isPaused) {
+                    totalSeconds++;
+                    let m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                    let s = (totalSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `時間: ${m}:${s}`;
+                }
             }, 1000);
+        }
+
+        // 暫停與繼續切換功能
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+            
+            if (isPaused) {
+                pauseBtn.innerText = "繼續遊戲";
+                pauseBtn.style.backgroundColor = "#16a34a";
+                document.getElementById('feedback').innerText = "⏸️ 遊戲已暫停，去上洗手間吧！";
+                // 將所有掉落中的選項球動畫暫停
+                activeOptions.forEach(el => {
+                    el.style.animationPlayState = 'paused';
+                });
+            } else {
+                pauseBtn.innerText = "暫停遊戲";
+                pauseBtn.style.backgroundColor = "#d97706";
+                document.getElementById('feedback').innerText = "▶️ 遊戲繼續！加油！";
+                // 恢復選項球動畫
+                activeOptions.forEach(el => {
+                    el.style.animationPlayState = 'running';
+                });
+            }
         }
 
         function loadQuestion() {
             isAnswered = false;
-            document.getElementById('feedback').innerText = "答案掉下來囉！";
+            if (!isPaused) {
+                document.getElementById('feedback').innerText = "答案掉下來囉！";
+            }
             
-            // 清除畫面上舊的掉落方塊
             activeOptions.forEach(el => el.remove());
             activeOptions = [];
             if (gameInterval) clearInterval(gameInterval);
@@ -187,15 +240,15 @@
             while(options.size < 4) options.add(Math.floor(Math.random() * 11) + 3);
             optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
 
-            // 依序從上方掉落選項，若沒選中則會循環持續掉落
             let index = 0;
             gameInterval = setInterval(() => {
+                if (isPaused) return; // 暫停時計時暫停
                 if (isAnswered) {
                     clearInterval(gameInterval);
                     return;
                 }
                 if (index >= optionsArr.length) {
-                    index = 0; // 循環掉落
+                    index = 0; 
                 }
                 spawnFallingOption(optionsArr[index]);
                 index++;
@@ -215,14 +268,16 @@
             const duration = 3.5 + Math.random();
             el.style.animationDuration = duration + 's';
 
-            // 💡 同時支援滑鼠點擊與手機觸控，大幅提高敏感度
+            if (isPaused) {
+                el.style.animationPlayState = 'paused';
+            }
+
             const handleSelect = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (isAnswered) return;
+                if (isAnswered || isPaused) return;
 
                 if(val === currentAns) {
-                    // 答對了！
                     isAnswered = true;
                     score++;
                     document.getElementById('score').innerText = `闖關: ${score}`;
@@ -240,9 +295,10 @@
                     activeOptions.forEach(opt => opt.remove());
                     activeOptions = [];
 
-                    setTimeout(loadQuestion, 3000); 
+                    setTimeout(() => {
+                        if (!isPaused) loadQuestion();
+                    }, 3000); 
                 } else {
-                    // 答錯了，該選項消失
                     let errorMsg = new SpeechSynthesisUtterance("再算算看喔！");
                     errorMsg.lang = 'zh-TW';
                     window.speechSynthesis.speak(errorMsg);
