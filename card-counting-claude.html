@@ -160,3 +160,389 @@
         <div class="instructions">
             <h3>📖 遊戲使用說明</h3>
             <ul>
+                <li>觀察上方翻開的撲克牌，數一數上面的花色符號有幾個？</li>
+                <li>畫面下方會飄上來一顆顆氣球，裡面有數字。</li>
+                <li>點對答案的氣球，戳破它就能過關！</li>
+                <li>卡住了嗎？按「💡提示」會給你線索！</li>
+            </ul>
+        </div>
+        <div class="level-pick-title">請選擇關卡：</div>
+        <div id="levelList" style="width:100%;"></div>
+    </div>
+
+    <div id="gameScreen">
+        <div class="header-bar">
+            <div class="status-left">
+                <span class="level-label" id="levelLabel">關卡</span>
+                <span class="score-display" id="scoreDisplay">闖關數: 0 關</span>
+            </div>
+            <div class="btn-group">
+                <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
+                <button class="control-btn" id="pauseBtn" onclick="togglePause()">暫停</button>
+                <button class="control-btn switch-btn" onclick="showLevelSelect()">🔄換關卡</button>
+            </div>
+        </div>
+
+        <div class="speed-row">
+            <button class="speed-btn" id="speedSlow" onclick="setSpeed('slow')">🐢慢</button>
+            <button class="speed-btn active" id="speedNormal" onclick="setSpeed('normal')">🚶正常</button>
+            <button class="speed-btn" id="speedFast" onclick="setSpeed('fast')">🐇快</button>
+        </div>
+
+        <div class="question-text">數一數，這張牌是幾點呢？</div>
+
+        <div class="card-display" id="cardDisplay">
+            <div class="pip-grid" id="cardPips"></div>
+        </div>
+
+        <div id="drop-game-container"></div>
+
+        <div id="completeOverlay">
+            <div class="big-num" id="completeNum">5</div>
+            <div class="cheer">🌟 數對了，太棒了！</div>
+        </div>
+    </div>
+
+    <script>
+
+    /* ANDROID_SPEECH_WATCHDOG_V1
+       修正 Android（尤其是三星手機常見）瀏覽器的已知臭蟲：
+       語音連續播放一段時間後，瀏覽器會自己把語音佇列「暫停」卡住，
+       導致後面的語音都發不出來。定期 pause() 再 resume() 一次，
+       可以防止瀏覽器自己卡住，對其他裝置沒有副作用。 */
+    if ('speechSynthesis' in window) {
+        setInterval(function () {
+            try {
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.pause();
+                    window.speechSynthesis.resume();
+                }
+            } catch (e) {}
+        }, 8000);
+    }
+        const LEVELS = [
+            { id: 1, name: '第一關：1～5 點', desc: '數一數牌面上 1 到 5 個花色符號。', range: [1, 5] },
+            { id: 2, name: '第二關：6～10 點', desc: '進階挑戰，數一數 6 到 10 個！', range: [6, 10] },
+            { id: 3, name: '第三關：綜合練習 1～10', desc: '不限範圍，1 到 10 點都可能出現，全面複習！', range: [1, 10] }
+        ];
+
+        const suits = [
+            { name: '紅心', symbol: '♥', class: 'red-suit' },
+            { name: '黑桃', symbol: '♠', class: 'black-suit' },
+            { name: '方塊', symbol: '♦', class: 'red-suit' },
+            { name: '梅花', symbol: '♣', class: 'black-suit' }
+        ];
+
+        let currentLevel = null;
+        let score = 0;
+        let isProcessing = false;
+        let gameInterval = null;
+        let activeOptions = [];
+        let currentCardValue = 5;
+        let isPaused = false;
+        let pendingNextQuestion = false;
+        let nextQuestionTimeout = null;
+        let currentOptionsList = [];
+        let currentIndex = 0;
+        let hintLevel = 0;
+        let hintActiveValue = null;
+        let speedMode = 'normal';
+
+        const SPEED_SETTINGS = {
+            slow:   { fallDuration: 8,   spawnInterval: 2600 },
+            normal: { fallDuration: 5.5, spawnInterval: 2000 },
+            fast:   { fallDuration: 3.5, spawnInterval: 1300 }
+        };
+
+        let preferredVoice = null;
+        function loadVoices() {
+            let voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return;
+            preferredVoice = voices.find(v =>
+                v.lang && v.lang.toLowerCase().startsWith('zh') &&
+                /female|女|meijia|mei-jia|yating|ya-ting|tingting|xiaoxiao|xiaoyi|hanhan|sinji|sin-ji|zhiyu|xiaoshuang|yaoyao/i.test(v.name)
+            );
+        }
+        if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
+
+        function speak(text, onEnd) {
+            if (isPaused) { if (onEnd) onEnd(); return; }
+            if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
+            try {
+                window.speechSynthesis.cancel();
+                let finished = false;
+                const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
+                setTimeout(() => {
+                    if (isPaused) { trigger(); return; }
+                    try {
+                        const msg = new SpeechSynthesisUtterance(text);
+                        msg.lang = 'zh-TW';
+                        msg.rate = 0.85;
+                        msg.pitch = 1.1;
+                        if (preferredVoice) msg.voice = preferredVoice;
+                        msg.onend = trigger;
+                        msg.onerror = trigger;
+                        window.speechSynthesis.speak(msg);
+                        setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
+                    } catch (e) { trigger(); }
+                }, 70);
+            } catch (e) { if (onEnd) onEnd(); }
+        }
+
+        function boom() { try { confetti({ particleCount: 130, spread: 80, origin: { y: 0.6 } }); } catch (e) {} }
+
+        function playPopSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator(), gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(700, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
+                gain.gain.setValueAtTime(0.38, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now); osc.stop(now + 0.14);
+            } catch (e) {}
+        }
+
+        function renderCardPips(value, suitSymbol, suitClass) {
+            const pairCount = Math.floor(value / 2);
+            const hasCenter = value % 2 === 1;
+            let html = '';
+            for (let i = 0; i < pairCount; i++) {
+                html += `<span class="pip pip-left ${suitClass}">${suitSymbol}</span>`;
+                html += `<span class="pip pip-right ${suitClass}">${suitSymbol}</span>`;
+            }
+            if (hasCenter) {
+                html += `<span class="pip pip-center ${suitClass}">${suitSymbol}</span>`;
+            }
+            return html;
+        }
+
+        function renderLevelList() {
+            const container = document.getElementById('levelList');
+            container.innerHTML = '';
+            LEVELS.forEach(lv => {
+                const btn = document.createElement('div');
+                btn.className = 'level-btn';
+                btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
+                btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startGame(lv.id); });
+                container.appendChild(btn);
+            });
+        }
+
+        function showLevelSelect() {
+            isPaused = false;
+            pendingNextQuestion = false;
+            if (gameInterval) clearInterval(gameInterval);
+            if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            hideCompletionScreen();
+            try { window.speechSynthesis.cancel(); } catch (e) {}
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        function startGame(levelId) {
+            if (document.getElementById('startScreen').style.display === 'none') return;
+            currentLevel = LEVELS.find(l => l.id === levelId);
+            document.getElementById('levelLabel').innerText = currentLevel.name;
+
+            try { (function(){ var _u = new SpeechSynthesisUtterance('遊戲開始'); _u.volume = 0.01; window.speechSynthesis.speak(_u); })(); } catch (e) {}
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'flex';
+            score = 0;
+            document.getElementById('scoreDisplay').innerText = `闖關數: ${score} 關`;
+            generateQuestion();
+        }
+
+        function setSpeed(mode) {
+            speedMode = mode;
+            ['slow', 'normal', 'fast'].forEach(m => {
+                document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
+            });
+            if (!isPaused && !isProcessing && currentLevel) startFallingLoop();
+        }
+
+        function togglePause() {
+            if (!currentLevel) return;
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            const options = document.querySelectorAll('.falling-option');
+
+            if (isPaused) {
+                pauseBtn.innerText = "繼續";
+                pauseBtn.style.backgroundColor = "#16a34a";
+                if (gameInterval) clearInterval(gameInterval);
+                if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+                options.forEach(el => el.style.animationPlayState = 'paused');
+            } else {
+                pauseBtn.innerText = "暫停";
+                pauseBtn.style.backgroundColor = "#f59e0b";
+                options.forEach(el => el.style.animationPlayState = 'running');
+                if (pendingNextQuestion) {
+                    pendingNextQuestion = false;
+                    hideCompletionScreen();
+                    generateQuestion();
+                } else if (!isProcessing) {
+                    startFallingLoop();
+                }
+            }
+        }
+
+        function generateQuestion() {
+            if (!currentLevel) return;
+            isProcessing = false;
+            isPaused = false;
+            hintLevel = 0;
+            hintActiveValue = null;
+            hideCompletionScreen();
+            document.getElementById('pauseBtn').innerText = "暫停";
+            document.getElementById('pauseBtn').style.backgroundColor = "#f59e0b";
+
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            if (gameInterval) clearInterval(gameInterval);
+
+            const [lo, hi] = currentLevel.range;
+            currentCardValue = lo + Math.floor(Math.random() * (hi - lo + 1));
+            let randomSuit = suits[Math.floor(Math.random() * suits.length)];
+
+            document.getElementById('cardPips').innerHTML = renderCardPips(currentCardValue, randomSuit.symbol, randomSuit.class);
+
+            speak(`看看這張${randomSuit.name}，數一數上面有幾個符號呢？氣球飄上來囉！`);
+
+            const [rlo, rhi] = currentLevel.range;
+            let opts = [currentCardValue];
+            let attempts = 0;
+            while (opts.length < 5 && attempts < 100) {
+                attempts++;
+                const r = rlo + Math.floor(Math.random() * (rhi - rlo + 1));
+                if (!opts.includes(r)) opts.push(r);
+            }
+            let filler = rlo;
+            while (opts.length < 5 && filler <= rhi) {
+                if (!opts.includes(filler)) opts.push(filler);
+                filler++;
+            }
+            opts.sort(() => Math.random() - 0.5);
+            currentOptionsList = opts;
+
+            currentIndex = 0;
+            startFallingLoop();
+        }
+
+        function startFallingLoop() {
+            if (!currentLevel) return;
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                if (isProcessing || isPaused) return;
+                if (currentIndex >= currentOptionsList.length) currentIndex = 0;
+                spawnFallingOption(currentOptionsList[currentIndex]);
+                currentIndex++;
+            }, SPEED_SETTINGS[speedMode].spawnInterval);
+        }
+
+        function useHint() {
+            if (isPaused || isProcessing || !currentLevel) return;
+            hintLevel++;
+            if (hintLevel === 1) {
+                speak(`用手指一個一個指著算算看，總共有幾個符號呢？`);
+            } else {
+                speak(`答案是 ${currentCardValue}，找找看畫面上這個數字的氣球！`);
+                hintActiveValue = currentCardValue;
+                activeOptions.forEach(opt => { if (opt.dataset.val === String(currentCardValue)) opt.classList.add('hint-glow'); });
+            }
+        }
+
+        function showCompletionScreen(val) {
+            document.getElementById('completeNum').innerText = val;
+            document.getElementById('completeOverlay').style.display = 'flex';
+        }
+        function hideCompletionScreen() {
+            document.getElementById('completeOverlay').style.display = 'none';
+        }
+
+        function spawnFallingOption(val) {
+            if (isProcessing || isPaused) return;
+            const container = document.getElementById('drop-game-container');
+            const el = document.createElement('div');
+            el.className = 'falling-option';
+            el.innerText = val;
+            el.dataset.val = String(val);
+            if (hintActiveValue !== null && val === hintActiveValue) el.classList.add('hint-glow');
+
+            const colors = ['#dc2626', '#c2410c', '#ca8a04', '#16a34a', '#0284c7', '#7c3aed', '#db2777'];
+            const dark = colors[Math.floor(Math.random() * colors.length)];
+            el.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.08) 16%, ${dark} 42%, ${dark} 100%)`;
+            el.style.setProperty('--balloon-dark', dark);
+
+            const randomX = Math.random() * (container.clientWidth - 62);
+            el.style.left = randomX + 'px';
+            el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
+            if (isPaused) el.style.animationPlayState = 'paused';
+
+            let isHandled = false;
+            const handleSelect = (e) => {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                if (isProcessing || isHandled || isPaused) return;
+
+                if (val === currentCardValue) {
+                    isProcessing = true;
+                    isHandled = true;
+                    if (gameInterval) clearInterval(gameInterval);
+
+                    playPopSound();
+                    el.classList.add('popping');
+                    setTimeout(() => el.remove(), 320);
+                    activeOptions.forEach(opt => { if (opt !== el) opt.remove(); });
+                    activeOptions = [];
+
+                    score++;
+                    document.getElementById('scoreDisplay').innerText = `闖關數: ${score} 關`;
+                    setTimeout(() => boom(), 150);
+                    showCompletionScreen(val);
+
+                    pendingNextQuestion = true;
+                    const goNext = () => {
+                        if (!pendingNextQuestion) return;
+                        if (isPaused) return;
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        pendingNextQuestion = false;
+                        generateQuestion();
+                    };
+                    speak(`太棒了！就是 ${val} 點。你答對了！`, () => {
+                        if (!pendingNextQuestion) return;
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        nextQuestionTimeout = setTimeout(goNext, 900);
+                    });
+                    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                    nextQuestionTimeout = setTimeout(goNext, 5500);
+
+                } else {
+                    isHandled = true;
+                    speak("再算算看喔！");
+                    el.style.transition = "opacity 0.3s";
+                    el.style.opacity = "0";
+                    setTimeout(() => el.remove(), 300);
+                }
+            };
+
+            el.addEventListener('pointerdown', handleSelect);
+            el.addEventListener('animationend', () => {
+                el.remove();
+                activeOptions = activeOptions.filter(item => item !== el);
+            });
+
+            container.appendChild(el);
+            activeOptions.push(el);
+        }
+
+        renderLevelList();
+    </script>
+</body>
+</html>
