@@ -360,3 +360,185 @@
             } else {
                 pauseBtn.innerText = "暫停";
                 pauseBtn.style.backgroundColor = "#d97706";
+                document.getElementById('feedback').innerText = "";
+                activeOptions.forEach(el => el.style.animationPlayState = 'running');
+                if (pendingNextQuestion) {
+                    pendingNextQuestion = false;
+                    hideCompletionScreen();
+                    loadQuestion();
+                } else if (!isAnswered) {
+                    startFallingLoop();
+                }
+            }
+        }
+
+        function loadQuestion() {
+            if (!currentLevel) return;
+            isAnswered = false;
+            hintLevel = 0;
+            hintActiveValue = null;
+            hideCompletionScreen();
+
+            document.getElementById('feedback').innerText = "氣球飄上來囉！";
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            if (gameInterval) clearInterval(gameInterval);
+
+            currentIcon = ICON_POOL[Math.floor(Math.random() * ICON_POOL.length)];
+
+            if (currentLevel.fixedAdd !== null) {
+                const add = currentLevel.fixedAdd;
+                n1 = 1 + Math.floor(Math.random() * (10 - add)); // n1 範圍 1~(10-add)，確保 n1+add 最多剛好等於10
+                n2 = add;
+            } else {
+                n1 = 1 + Math.floor(Math.random() * 9);
+                n2 = 1 + Math.floor(Math.random() * (10 - n1));
+            }
+            currentAns = n1 + n2;
+
+            document.getElementById('question').innerText = `${n1} + ${n2} = ?`;
+            renderDots(n1, n2);
+
+            speak(`${n1} 加 ${n2} 等於多少呢？`);
+
+            let options = new Set([currentAns]);
+            let attempts = 0;
+            while (options.size < 4 && attempts < 100) {
+                attempts++;
+                const r = 1 + Math.floor(Math.random() * 10);
+                options.add(r);
+            }
+            optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
+
+            startFallingLoop();
+        }
+
+        function startFallingLoop() {
+            if (isPaused || isAnswered || !currentLevel) return;
+            if (gameInterval) clearInterval(gameInterval);
+            let index = 0;
+            gameInterval = setInterval(() => {
+                if (isPaused) return;
+                if (isAnswered) { clearInterval(gameInterval); return; }
+                if (index >= optionsArr.length) index = 0;
+                spawnFallingOption(optionsArr[index]);
+                index++;
+            }, SPEED_SETTINGS[speedMode].spawnInterval);
+        }
+
+        function useHint() {
+            if (isPaused || isAnswered || !currentLevel) return;
+            hintLevel++;
+            if (hintLevel === 1) {
+                speak(`用手指指著圖案一個一個數,${n1} 加 ${n2}，總共是多少呢？`);
+            } else {
+                speak(`答案是 ${currentAns}，找找看畫面上這個數字的氣球！`);
+                hintActiveValue = currentAns;
+                activeOptions.forEach(opt => { if (opt.dataset.val === String(currentAns)) opt.classList.add('hint-glow'); });
+            }
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('completeEquation').innerText = `${n1} + ${n2} = ${currentAns}`;
+            document.getElementById('completeOverlay').style.display = 'flex';
+        }
+        function hideCompletionScreen() {
+            document.getElementById('completeOverlay').style.display = 'none';
+        }
+
+        function spawnFallingOption(val) {
+            if (isAnswered || isPaused) return;
+            const container = document.getElementById('drop-game-container');
+            const el = document.createElement('div');
+            el.className = 'falling-option';
+            el.innerText = val;
+            el.dataset.val = String(val);
+            if (hintActiveValue !== null && val === hintActiveValue) el.classList.add('hint-glow');
+
+            const colors = ['#dc2626', '#c2410c', '#ca8a04', '#16a34a', '#0284c7', '#7c3aed', '#db2777'];
+            const dark = colors[Math.floor(Math.random() * colors.length)];
+            el.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.08) 16%, ${dark} 42%, ${dark} 100%)`;
+            el.style.setProperty('--balloon-dark', dark);
+
+            const randomX = Math.random() * (container.clientWidth - 64);
+            el.style.left = randomX + 'px';
+            el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
+            if (isPaused) el.style.animationPlayState = 'paused';
+
+            let isHandled = false;
+            const handleSelect = (e) => {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                if (isAnswered || isHandled || isPaused) return;
+
+                if (val === currentAns) {
+                    isAnswered = true;
+                    isHandled = true;
+                    if (gameInterval) clearInterval(gameInterval);
+
+                    playPopSound();
+                    el.classList.add('popping');
+                    setTimeout(() => el.remove(), 320);
+                    activeOptions.forEach(opt => { if (opt !== el) opt.remove(); });
+                    activeOptions = [];
+
+                    score++;
+                    document.getElementById('score').innerText = `闖關: ${score}`;
+                    document.getElementById('question').innerText = `${n1} + ${n2} = ${currentAns}`;
+                    document.getElementById('feedback').innerText = "太棒了！👍";
+                    renderResultDots(currentAns);
+                    setTimeout(() => boom(), 150);
+                    showCompletionScreen();
+
+                    pendingNextQuestion = true;
+                    const goNext = () => {
+                        if (!pendingNextQuestion) return;
+                        if (isPaused) return;
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        pendingNextQuestion = false;
+                        loadQuestion();
+                    };
+                    speak(`答案是 ${currentAns}，太棒了！`, () => {
+                        if (!pendingNextQuestion) return;
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        nextQuestionTimeout = setTimeout(goNext, 1000);
+                    });
+                    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                    nextQuestionTimeout = setTimeout(goNext, 6000);
+
+                } else {
+                    isHandled = true;
+                    speak("再算算看喔！");
+                    document.getElementById('feedback').innerText = "❌ 再試一次！";
+                    el.style.transition = "opacity 0.3s";
+                    el.style.opacity = "0";
+                    setTimeout(() => el.remove(), 300);
+                }
+            };
+
+            el.addEventListener('pointerdown', handleSelect);
+            el.addEventListener('animationend', () => {
+                el.remove();
+                activeOptions = activeOptions.filter(item => item !== el);
+            });
+
+            container.appendChild(el);
+            activeOptions.push(el);
+        }
+
+        function renderDots(num1, num2) {
+            let area = document.getElementById('visual-area');
+            area.innerHTML = '';
+            for (let i = 0; i < num1; i++) area.innerHTML += `<span class="dot">${currentIcon}</span>`;
+            area.innerHTML += '<span class="symbol">+</span>';
+            for (let i = 0; i < num2; i++) area.innerHTML += `<span class="dot">${currentIcon}</span>`;
+        }
+        function renderResultDots(res) {
+            let area = document.getElementById('visual-area');
+            area.innerHTML = '';
+            for (let i = 0; i < res; i++) area.innerHTML += `<span class="dot">${currentIcon}</span>`;
+        }
+
+        renderLevelList();
+    </script>
+</body>
+</html>
