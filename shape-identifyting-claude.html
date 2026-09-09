@@ -232,22 +232,6 @@
     </div>
 
     <script>
-
-    /* ANDROID_SPEECH_WATCHDOG_V1
-       修正 Android（尤其是三星手機常見）瀏覽器的已知臭蟲：
-       語音連續播放一段時間後，瀏覽器會自己把語音佇列「暫停」卡住，
-       導致後面的語音都發不出來。定期 pause() 再 resume() 一次，
-       可以防止瀏覽器自己卡住，對其他裝置沒有副作用。 */
-    if ('speechSynthesis' in window) {
-        setInterval(function () {
-            try {
-                if (window.speechSynthesis.speaking) {
-                    window.speechSynthesis.pause();
-                    window.speechSynthesis.resume();
-                }
-            } catch (e) {}
-        }, 8000);
-    }
         const LEVELS = [
             { id: 1, name: '第一關：基礎練習', desc: '形狀種類較少，干擾形狀也比較少。', shapeCount: 4, distractorRange: [1, 2] },
             { id: 2, name: '第二關：進階挑戰', desc: '加入更多形狀種類，干擾也變多了！', shapeCount: 6, distractorRange: [2, 4] }
@@ -263,6 +247,7 @@
         ];
 
         let currentLevel = null;
+        let audioCtx = null;
         let shapeTypes = [];
         let score = 0;
         let isProcessing = false;
@@ -285,54 +270,31 @@
             fast:   { fallDuration: 3.5, spawnInterval: 1300 }
         };
 
-        let preferredVoice = null;
-        function loadVoices() {
-            let voices = window.speechSynthesis.getVoices();
-            if (!voices || voices.length === 0) return;
-            preferredVoice = voices.find(v =>
-                v.lang && v.lang.toLowerCase().startsWith('zh') &&
-                /female|女|meijia|mei-jia|yating|ya-ting|tingting|xiaoxiao|xiaoyi|hanhan|sinji|sin-ji|zhiyu|xiaoshuang|yaoyao/i.test(v.name)
-            );
-        }
-        if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
-
         function speak(text, onEnd) {
-            if (isPaused) { if (onEnd) onEnd(); return; }
             if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
             try {
                 window.speechSynthesis.cancel();
-                let finished = false;
-                const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
-                setTimeout(() => {
-                    if (isPaused) { trigger(); return; }
-                    try {
-                        const msg = new SpeechSynthesisUtterance(text);
-                        msg.lang = 'zh-TW';
-                        msg.rate = 0.85;
-                        msg.pitch = 1.1;
-                        if (preferredVoice) msg.voice = preferredVoice;
-                        msg.onend = trigger;
-                        msg.onerror = trigger;
-                        window.speechSynthesis.speak(msg);
-                        setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
-                    } catch (e) { trigger(); }
-                }, 70);
-            } catch (e) { if (onEnd) onEnd(); }
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'zh-TW';
+                if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
+                window.speechSynthesis.speak(msg);
+            } catch(e) { if (onEnd) onEnd(); }
         }
 
         function boom() { try { confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); } catch (e) {} }
 
         function playPopSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator(), gain = ctx.createGain();
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(700, now);
                 osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
                 gain.gain.setValueAtTime(0.38, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
-                osc.connect(gain); gain.connect(ctx.destination);
+                osc.connect(gain); gain.connect(audioCtx.destination);
                 osc.start(now); osc.stop(now + 0.14);
             } catch (e) {}
         }
@@ -344,7 +306,7 @@
                 const btn = document.createElement('div');
                 btn.className = 'level-btn';
                 btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-                btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startGame(lv.id); });
+                btn.onclick = () => startGame(lv.id);
                 container.appendChild(btn);
             });
         }
@@ -368,7 +330,18 @@
             shapeTypes = ALL_SHAPES.slice(0, currentLevel.shapeCount);
             document.getElementById('levelLabel').innerText = currentLevel.name;
 
-            try { (function(){ var _u = new SpeechSynthesisUtterance('遊戲開始'); _u.volume = 0.01; window.speechSynthesis.speak(_u); })(); } catch (e) {}
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass && !audioCtx) {
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+                }
+            } catch(e) {}
 
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'flex';
