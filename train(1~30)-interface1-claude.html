@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>數學冒險：火車過山洞（魚兒游泳池版）</title>
+    <title>數學冒險：火車過山洞（魚兒游泳池版．30以內間隔1．方向不定）</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
@@ -177,7 +177,7 @@
 
 <div class="main-wrapper">
     <div id="home-screen">
-        <h1>🚂 火車過山洞（魚兒游泳池版）</h1>
+        <h1>🚂 火車過山洞（30以內．方向不定）</h1>
         <p class="subtitle">🐠 找魚作答 × 語音互動 × 數字序列推理！</p>
 
         <div class="intro-card">
@@ -228,11 +228,13 @@
 
 <script>
     const LEVELS = [
-        { id: 1, name: '第一關：10 以內', desc: '數字範圍在 1~10 之間，間隔為 1。', maxNum: 10 },
-        { id: 2, name: '第二關：20 以內', desc: '數字範圍在 1~20 之間，間隔為 1。', maxNum: 20 },
-        { id: 3, name: '第三關：30 以內', desc: '數字範圍在 1~30 之間，間隔為 1。', maxNum: 30 }
+        { id: 1, name: '第一關：空格在最後', desc: '空格固定在最後一節車廂，自己判斷方向！', forceDir: null, blankMode: 'last' },
+        { id: 2, name: '第二關：空格在最前', desc: '空格改到最前面一節，要從後面的數字推算！', forceDir: null, blankMode: 'first' },
+        { id: 3, name: '第三關：空格任意處', desc: '空格可能出現在任何一節，全面挑戰！', forceDir: null, blankMode: 'any' }
     ];
     const MIN_NUM = 1;
+    const MAX_NUM = 30;
+    const STEP = 1;
 
     let currentLevel = null;
     let currentAns, score = 0;
@@ -257,39 +259,15 @@
         fast:   { swimDuration: 3.8, spawnInterval: 1300 }
     };
 
-    let preferredVoice = null;
-    function loadVoices() {
-        let voices = window.speechSynthesis.getVoices();
-        if (!voices || voices.length === 0) return;
-        preferredVoice = voices.find(v =>
-            v.lang && v.lang.toLowerCase().startsWith('zh') &&
-            /female|女|meijia|mei-jia|yating|ya-ting|tingting|xiaoxiao|xiaoyi|hanhan|sinji|sin-ji|zhiyu|xiaoshuang|yaoyao/i.test(v.name)
-        );
-    }
-    if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
-
     function speak(text, onEnd) {
-        if (isPaused) { if (onEnd) onEnd(); return; }
         if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
         try {
             window.speechSynthesis.cancel();
-            let finished = false;
-            const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
-            setTimeout(() => {
-                if (isPaused) { trigger(); return; }
-                try {
-                    const msg = new SpeechSynthesisUtterance(text);
-                    msg.lang = 'zh-TW';
-                    msg.rate = 0.9;
-                    msg.pitch = 1.1;
-                    if (preferredVoice) msg.voice = preferredVoice;
-                    msg.onend = trigger;
-                    msg.onerror = trigger;
-                    window.speechSynthesis.speak(msg);
-                    setTimeout(trigger, Math.max(1500, text.length * 280 / 0.9));
-                } catch (e) { trigger(); }
-            }, 70);
-        } catch (e) { if (onEnd) onEnd(); }
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
+            window.speechSynthesis.speak(msg);
+        } catch(e) { if (onEnd) onEnd(); }
     }
 
     function boom() { try { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); } catch (e) {} }
@@ -353,7 +331,7 @@
             const btn = document.createElement('div');
             btn.className = 'level-btn';
             btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-            btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startGame(lv.id); });
+            btn.onclick = () => startGame(lv.id);
             container.appendChild(btn);
         });
     }
@@ -380,7 +358,7 @@
 
         if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch (e) {}
+        try { window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); } catch (e) {}
 
         document.getElementById('home-screen').style.display = 'none';
         document.getElementById('game-ui').style.display = 'flex';
@@ -441,14 +419,24 @@
         activeOptions = [];
         if (gameInterval) clearInterval(gameInterval);
 
-        const maxNum = currentLevel.maxNum;
-        const baseMax = Math.max(MIN_NUM, maxNum - 3);
-        const baseNum = MIN_NUM + Math.floor(Math.random() * (baseMax - MIN_NUM + 1));
+        const baseMax = Math.max(MIN_NUM, MAX_NUM - 3 * STEP);
+        let baseMin = MIN_NUM;
+        let isAscending = currentLevel.forceDir === 'asc' ? true
+            : currentLevel.forceDir === 'desc' ? false
+            : Math.random() < 0.5;
+
+        if (!isAscending) baseMin = MIN_NUM + 3 * STEP;
+        let baseHigh = isAscending ? baseMax : MAX_NUM;
+        if (baseHigh < baseMin) baseHigh = baseMin;
+        const baseNum = baseMin + Math.floor(Math.random() * (baseHigh - baseMin + 1));
+        const actualStep = isAscending ? STEP : -STEP;
 
         trainSequence = [];
-        for (let i = 0; i < 4; i++) trainSequence.push(baseNum + i);
+        for (let i = 0; i < 4; i++) trainSequence.push(baseNum + i * actualStep);
 
-        const blankIndex = Math.floor(Math.random() * 4);
+        const blankIndex = currentLevel.blankMode === 'last' ? 3
+            : currentLevel.blankMode === 'first' ? 0
+            : Math.floor(Math.random() * 4);
         currentAns = trainSequence[blankIndex];
 
         renderTrain(trainSequence, blankIndex);
@@ -459,11 +447,11 @@
         let attempts = 0;
         while (options.size < 4 && attempts < 100) {
             attempts++;
-            const r = MIN_NUM + Math.floor(Math.random() * maxNum);
+            const r = MIN_NUM + Math.floor(Math.random() * MAX_NUM);
             if (!options.has(r) && !visibleValues.has(r)) options.add(r);
         }
         let filler = MIN_NUM;
-        while (options.size < 4 && filler <= maxNum) {
+        while (options.size < 4 && filler <= MAX_NUM) {
             if (!options.has(filler) && !visibleValues.has(filler)) options.add(filler);
             filler++;
         }
@@ -516,11 +504,17 @@
         if (isPaused || isAnswered || !currentLevel) return;
         hintLevel++;
         let blankIndex = trainSequence.indexOf(currentAns);
+        let isAscending = trainSequence.length > 1 && trainSequence[1] > trainSequence[0];
 
         if (hintLevel === 1) {
             let neighborVal, direction;
-            if (blankIndex > 0) { neighborVal = trainSequence[blankIndex - 1]; direction = '多 1'; }
-            else { neighborVal = trainSequence[blankIndex + 1]; direction = '少 1'; }
+            if (blankIndex > 0) {
+                neighborVal = trainSequence[blankIndex - 1];
+                direction = isAscending ? `多 ${STEP}` : `少 ${STEP}`;
+            } else {
+                neighborVal = trainSequence[blankIndex + 1];
+                direction = isAscending ? `少 ${STEP}` : `多 ${STEP}`;
+            }
             const text = `🔍 提示：旁邊車廂是 ${neighborVal}，這一格要比它${direction}喔！`;
             document.getElementById('feedback').innerText = text;
             speak(text.replace('🔍 提示：', ''));
