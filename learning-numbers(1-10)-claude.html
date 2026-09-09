@@ -193,22 +193,6 @@
     </div>
 
     <script>
-
-    /* ANDROID_SPEECH_WATCHDOG_V1
-       修正 Android（尤其是三星手機常見）瀏覽器的已知臭蟲：
-       語音連續播放一段時間後，瀏覽器會自己把語音佇列「暫停」卡住，
-       導致後面的語音都發不出來。定期 pause() 再 resume() 一次，
-       可以防止瀏覽器自己卡住，對其他裝置沒有副作用。 */
-    if ('speechSynthesis' in window) {
-        setInterval(function () {
-            try {
-                if (window.speechSynthesis.speaking) {
-                    window.speechSynthesis.pause();
-                    window.speechSynthesis.resume();
-                }
-            } catch (e) {}
-        }, 8000);
-    }
         const LEVELS = [
             { id: 1, name: '第一關：認識 1～5', desc: '數一數 1 到 5 個可愛的小東西。', range: [1, 5] },
             { id: 2, name: '第二關：認識 6～10', desc: '進階挑戰，數一數 6 到 10 個！', range: [6, 10] },
@@ -267,20 +251,17 @@
                 window.speechSynthesis.cancel();
                 let finished = false;
                 const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
-                setTimeout(() => {
-                    if (isPaused) { trigger(); return; }
-                    try {
-                        const msg = new SpeechSynthesisUtterance(text);
-                        msg.lang = 'zh-TW';
-                        msg.rate = 0.85;
-                        msg.pitch = 1.1;
-                        if (preferredVoice) msg.voice = preferredVoice;
-                        msg.onend = trigger;
-                        msg.onerror = trigger;
-                        window.speechSynthesis.speak(msg);
-                        setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
-                    } catch (e) { trigger(); }
-                }, 70);
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'zh-TW';
+                msg.rate = 0.85;
+                msg.pitch = 1.1;
+                if (preferredVoice) msg.voice = preferredVoice;
+                msg.onend = trigger;
+                msg.onerror = trigger;
+                window.speechSynthesis.speak(msg);
+                // 保險：語音萬一整個播放失敗、onend/onerror都沒被呼叫，
+                // 最多等這麼久還是會繼續往下走，不會卡住遊戲。
+                setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
             } catch (e) { if (onEnd) onEnd(); }
         }
 
