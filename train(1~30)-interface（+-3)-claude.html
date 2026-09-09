@@ -258,40 +258,15 @@
         normal: { swimDuration: 6,   spawnInterval: 2000 },
         fast:   { swimDuration: 3.8, spawnInterval: 1300 }
     };
-
-    let preferredVoice = null;
-    function loadVoices() {
-        let voices = window.speechSynthesis.getVoices();
-        if (!voices || voices.length === 0) return;
-        preferredVoice = voices.find(v =>
-            v.lang && v.lang.toLowerCase().startsWith('zh') &&
-            /female|女|meijia|mei-jia|yating|ya-ting|tingting|xiaoxiao|xiaoyi|hanhan|sinji|sin-ji|zhiyu|xiaoshuang|yaoyao/i.test(v.name)
-        );
-    }
-    if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
-
     function speak(text, onEnd) {
-        if (isPaused) { if (onEnd) onEnd(); return; }
         if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
         try {
             window.speechSynthesis.cancel();
-            let finished = false;
-            const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
-            setTimeout(() => {
-                if (isPaused) { trigger(); return; }
-                try {
-                    const msg = new SpeechSynthesisUtterance(text);
-                    msg.lang = 'zh-TW';
-                    msg.rate = 0.9;
-                    msg.pitch = 1.1;
-                    if (preferredVoice) msg.voice = preferredVoice;
-                    msg.onend = trigger;
-                    msg.onerror = trigger;
-                    window.speechSynthesis.speak(msg);
-                    setTimeout(trigger, Math.max(1500, text.length * 280 / 0.9));
-                } catch (e) { trigger(); }
-            }, 70);
-        } catch (e) { if (onEnd) onEnd(); }
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
+            window.speechSynthesis.speak(msg);
+        } catch(e) { if (onEnd) onEnd(); }
     }
 
     function boom() { try { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); } catch (e) {} }
@@ -355,7 +330,7 @@
             const btn = document.createElement('div');
             btn.className = 'level-btn';
             btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-            btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startGame(lv.id); });
+            btn.onclick = () => startGame(lv.id);
             container.appendChild(btn);
         });
     }
