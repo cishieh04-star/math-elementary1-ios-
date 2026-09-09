@@ -210,7 +210,8 @@
 <script>
     const LEVELS = [
         { id: 1, name: '第一關：加減 1', desc: '車廂 1～8 節，每次變化 1 節，練習基本加減法。', step: 1, maxCount: 8 },
-        { id: 2, name: '第二關：加減 2', desc: '車廂 1～15 節，每次變化 2 節，進階挑戰！', step: 2, maxCount: 15 }
+        { id: 2, name: '第二關：加減 2', desc: '車廂 1～15 節，每次變化 2 節，進階挑戰！', step: 2, maxCount: 15 },
+        { id: 3, name: '第三關：加減 3', desc: '車廂 1～15 節，每次變化 3 節，更高難度挑戰！', step: 3, maxCount: 15 }
     ];
 
     let currentLevel = null;
@@ -314,7 +315,7 @@
         document.getElementById('home-screen').style.display = 'none';
         document.getElementById('game-ui').style.display = 'flex';
         score = 0;
-        currentCount = Math.min(3, currentLevel.maxCount);
+        currentCount = 1 + Math.floor(Math.random() * currentLevel.maxCount);
         document.getElementById('score').innerText = `闖關: ${score}`;
         const pauseBtn = document.getElementById('pauseBtn');
         pauseBtn.innerText = "暫停"; pauseBtn.style.backgroundColor = "#f59e0b";
