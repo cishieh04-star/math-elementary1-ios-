@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
+<title>付錢互動遊戲(真實貨幣版)</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  * {
+    box-sizing: border-box;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+    background: linear-gradient(135deg, #fdfbf7, #e0f2fe);
+  }
+
+  #gameContainer {
+    display: flex; flex-direction: column; height: 100%; width: 100%;
+    max-width: 600px; margin: 0 auto;
+    position: relative;
+  }
+
+  #startScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: #e0f2fe; color: #1e293b; z-index: 9999;
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+    overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) 20px 20px 20px; text-align: left;
+  }
+  .start-content-box {
+    max-width: 480px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto 0;
+  }
+  #startScreen h1 { font-size: 24px; color: #0284c7; margin: 0 0 10px 0; text-align: center; }
+
+  .intro-card {
+    background: #ffffff; border: 2px solid #cbd5e1;
+    border-radius: 12px; padding: 12px 15px; margin-bottom: 12px; width: 100%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+  .intro-card h3 { margin: 0 0 6px 0; font-size: 14px; color: #78350f; }
+  .intro-card ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; color: #1e293b; }
+  .intro-card li { margin-bottom: 4px; }
+
+  .level-pick-title { font-size: 13px; font-weight: bold; color: #0284c7; margin: 2px 0 8px 0; width: 100%; text-align: left; }
+  .level-btn {
+    width: 100%; text-align: left; background: #fff; border: 2px solid #bae6fd;
+    border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .level-btn:active { transform: scale(0.98); background: #f0f9ff; }
+  .level-btn .lv-name { font-size: 14px; font-weight: bold; color: #0284c7; }
+  .level-btn .lv-desc { font-size: 11px; color: #475569; }
+
+  #quizScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.9); color: #fff; z-index: 8888;
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 15px;
+  }
+  .quiz-box {
+    background: #ffffff; color: #1e293b; width: 100%; max-width: 480px;
+    border-radius: 16px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  }
+  .quiz-box h2 { color: #2563eb; margin-top: 0; font-size: 19px; }
+  .quiz-box p { font-size: 16px; font-weight: bold; margin: 8px 0; }
+
+  .candy-drop-area {
+    width: 100%; height: 260px; background: linear-gradient(180deg, #fdf2f8, #f0f9ff);
+    border: 3px dashed #f9a8d4; border-radius: 14px; position: relative; overflow: hidden; margin: 10px 0;
+  }
+
+  /* 糖果扭一扭泡泡：中間是圓滾滾的糖果本體，兩端是扭轉的糖果紙 */
+  .candy-option {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; cursor: pointer;
+    animation: candyDrift linear infinite;
+  }
+  .candy-body {
+    min-width: 200px; max-width: 320px; height: 58px; border-radius: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: bold; color: #ffffff; padding: 6px 16px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25), inset 0 3px 6px rgba(255,255,255,0.4);
+  }
+  .candy-twist {
+    width: 0; height: 0;
+    border-top: 13px solid transparent;
+    border-bottom: 13px solid transparent;
+  }
+  .candy-twist.left { border-right: 16px solid var(--candy-dark, #be185d); margin-right: -2px; }
+  .candy-twist.right { border-left: 16px solid var(--candy-dark, #be185d); margin-left: -2px; }
+  .candy-option:active .candy-body { transform: scale(0.95); }
+  .candy-option.correct-pick .candy-body { background: #16a34a !important; }
+  .candy-option.wrong-pick { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+
+  @keyframes candyDrift {
+    0%   { top: -70px; margin-left: 0px; }
+    25%  { margin-left: 12px; }
+    50%  { margin-left: -10px; }
+    75%  { margin-left: 8px; }
+    100% { top: 275px; margin-left: 0px; }
+  }
+
+  .header {
+    padding: max(8px, env(safe-area-inset-top)) 10px 6px 10px; text-align: center; background: #fff;
+    flex: 0 0 auto;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; row-gap: 4px;
+  }
+  .header-left { display: flex; align-items: center; gap: 8px; }
+  .box-icon { font-size: 26px; line-height: 1; }
+  .target-display { font-size: 22px; font-weight: bold; color: #d32f2f; }
+  .level-label-tag { font-size: 11px; color: #0284c7; font-weight: bold; }
+
+  .btn-group-header { display: flex; gap: 4px; flex-wrap: wrap; }
+  .control-btn {
+    font-size: 13px; font-weight: bold; padding: 6px 10px;
+    background: #f59e0b; color: white; border: none; border-radius: 8px;
+    cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  .control-btn:active { transform: scale(0.95); }
+  .hint-btn-el { background: #16a34a; }
+  .switch-btn-el { background: #64748b; }
+
+  .speed-row { display: flex; gap: 4px; justify-content: center; padding: 4px 10px; background: #fff; flex-shrink: 0; }
+  .speed-btn {
+    flex: 1; max-width: 100px; background: #f1f5f9; color: #334155; border: 2px solid #cbd5e1;
+    border-radius: 8px; padding: 3px 4px; font-size: 12px; font-weight: bold; cursor: pointer;
+  }
+  .speed-btn.active { background: #0ea5e9; color: #fff; border-color: #0284c7; }
+  .speed-btn:active { transform: scale(0.95); }
+
+  #warningMsg { font-size: 14px; font-weight: bold; color: #e65100; min-height: 20px; background: #fff; text-align: center; }
+
+  .drop-field {
+    flex: 1 1 auto;
+    margin: 8px; padding: 8px;
+    border: 3px dashed #7dd3fc; background: linear-gradient(180deg, #dbeeff, #fdf5e6); border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .tray {
+    height: 84px;
+    flex: 0 0 auto;
+    margin: 0 8px 8px 8px; padding: 8px;
+    border: 2px solid #cbd5e1; background: #ffffff; border-radius: 12px;
+    display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px;
+    overflow-y: auto;
+  }
+
+  .wallet {
+    height: 60px; flex: 0 0 auto;
+    display: flex; justify-content: center; align-items: center;
+    background: #cfd8dc; box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+    font-size: 17px; font-weight: bold; color: #334155;
+  }
+
+  /* 立體感硬幣：雙層漸層 + 滾花邊 + 高光反射 */
+  .coin {
+    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    font-weight: bold; cursor: pointer;
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .coin:active { transform: scale(0.9); }
+
+  .coin-10 {
+    background: radial-gradient(circle at 32% 28%, #fff6cf 0%, #ffd54f 35%, #e8a91a 75%, #a9750a 100%);
+    border: 3px solid #8a5f08;
+    color: #6b4600;
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 0 3px 6px rgba(0,0,0,0.3);
+  }
+  .coin-1 {
+    background: radial-gradient(circle at 32% 28%, #ffffff 0%, #eef4fb 35%, #c7d5e6 75%, #93a3b8 100%);
+    border: 3px solid #7c8ba0;
+    color: #37455a;
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.5), 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .drop-field .coin {
+    position: absolute;
+    width: 78px; height: 78px; font-size: 28px;
+    animation: fall linear forwards;
+    z-index: 10;
+    touch-action: manipulation;
+  }
+
+  @keyframes fall {
+    0% { top: -85px; }
+    100% { top: 300px; }
+  }
+
+  .tray .coin { width: 36px; height: 36px; font-size: 15px; }
+
+  #completeOverlay {
+    display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,255,255,0.97); border-radius: 0; z-index: 9000;
+    flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px;
+  }
+  #completeOverlay .big-num { font-size: 42px; font-weight: bold; color: #16a34a; }
+  #completeOverlay .cheer { font-size: 16px; font-weight: bold; color: #0284c7; }
+</style>
+</head>
+<body>
+
+  <div id="startScreen">
+    <div class="start-content-box">
+      <h1>🪙 互動付錢遊戲(真實貨幣版)</h1>
+
+      <div class="intro-card">
+        <h3>📖 操作使用說明</h3>
+        <ul>
+          <li><strong>看目標：</strong>觀察畫面左上角提示的「要付金額」。</li>
+          <li><strong>點硬幣：</strong>畫面中掉落 1 元或 10 元硬幣時，用手指點擊支付。</li>
+          <li><strong>自動換錢：</strong>累積到 10 個一元硬幣，系統會自動換成一個十元硬幣！</li>
+          <li><strong>糖果挑戰：</strong>集滿金額後，糖果泡泡會飄下來，選出正確的算式糖果！</li>
+          <li><strong>超額處理：</strong>不小心點太多，系統會暫停並可一鍵退回重新開始。</li>
+          <li><strong>卡住了嗎：</strong>按「💡提示」會給你線索！</li>
+        </ul>
+      </div>
+
+      <div class="level-pick-title">請選擇關卡：</div>
+      <div id="levelList" style="width:100%;"></div>
+    </div>
+  </div>
+
+  <div id="quizScreen">
+    <div class="quiz-box">
+      <h2>🍬 糖果算式大挑戰</h2>
+      <p id="quizQuestionText">請選擇正確的算式：</p>
+      <div class="candy-drop-area" id="candyDropArea"></div>
+      <div id="quizFeedback" style="font-size: 14px; font-weight: bold; color: #dc2626; min-height: 20px;"></div>
+    </div>
+  </div>
+
+  <div id="gameContainer">
+    <div class="header">
+      <div class="header-left">
+        <div class="box-icon">🎁</div>
+        <div>
+          <div class="target-display">要付 <span id="displayTarget">?</span> 元</div>
+          <div class="level-label-tag" id="levelLabelTag">關卡</div>
+        </div>
+      </div>
+      <div class="btn-group-header">
+        <button class="control-btn hint-btn-el" onclick="useHint()">💡提示</button>
+        <button class="control-btn" id="pauseBtn" onclick="togglePause()">⏸ 暫停</button>
+        <button class="control-btn switch-btn-el" onclick="showLevelSelect()">🔄換關卡</button>
+      </div>
+    </div>
+
+    <div class="speed-row">
+      <button class="speed-btn" id="speedSlow" onclick="setSpeed('slow')">🐢慢</button>
+      <button class="speed-btn active" id="speedNormal" onclick="setSpeed('normal')">🚶正常</button>
+      <button class="speed-btn" id="speedFast" onclick="setSpeed('fast')">🐇快</button>
+    </div>
+
+    <div id="warningMsg"></div>
+
+    <div class="drop-field" id="dropField">
+      <div id="completeOverlay">
+        <div class="big-num" id="completeNum">30 元</div>
+        <div class="cheer">🌟 支付完成，太棒了！</div>
+      </div>
+    </div>
+    <div class="tray" id="trayCoins"></div>
+
+    <div class="wallet" id="wallet">
+      已支付金額：<span id="currentAmount">0</span> 元
+    </div>
+  </div>
+
+<script>
+  const LEVELS = [
+    { id: 1, name: '第一關：10～30 元', desc: '目標金額在 10 到 30 元之間，練習付錢！', lo: 10, hi: 30 },
+    { id: 2, name: '第二關：30～60 元', desc: '進階挑戰，目標金額在 30 到 60 元之間！', lo: 30, hi: 60 }
+  ];
+
+  let currentLevel = null;
+  let count10 = 0;
+  let count1 = 0;
+  let currentTarget = 0;
+  let audioUnlocked = false;
+  let isAnswering = false;
+  let isPaused = false;
+  let dropInterval = null;
+  let activeCoins = [];
+  let hintLevel = 0;
+  let pendingAdvance = false;
+  let advanceTimeout = null;
+  let speedMode = 'normal';
+
+  const SPEED_SETTINGS = {
+    slow:   { fallDuration: [14, 18] },
+    normal: { fallDuration: [11, 15] },
+    fast:   { fallDuration: [7, 10] }
+  };
+  const SPAWN_INTERVAL = { slow: 3200, normal: 2500, fast: 1700 };
+
+  const displayTarget = document.getElementById('displayTarget');
+  const trayCoins = document.getElementById('trayCoins');
+  const dropField = document.getElementById('dropField');
+  const startScreen = document.getElementById('startScreen');
+  const quizScreen = document.getElementById('quizScreen');
+  const candyDropArea = document.getElementById('candyDropArea');
+  const quizQuestionText = document.getElementById('quizQuestionText');
+  const quizFeedback = document.getElementById('quizFeedback');
+  const currentAmountSpan = document.getElementById('currentAmount');
+  const warningMsg = document.getElementById('warningMsg');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const levelListEl = document.getElementById('levelList');
+  const levelLabelTag = document.getElementById('levelLabelTag');
+  const gameContainer = document.getElementById('gameContainer');
+  const completeOverlay = document.getElementById('completeOverlay');
+  const completeNum = document.getElementById('completeNum');
+
+  let audioCtx;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playTone(freq, type, duration, vol = 0.5) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function playDropSound() { playTone(400, 'square', 0.1, 0.2); }
+  function playPickupSound() { playTone(800, 'sine', 0.1, 0.3); }
+  function playExchangeSound() { playTone(900, 'triangle', 0.2, 0.4); }
+  function playErrorSound() {
+    playTone(150, 'sawtooth', 0.2, 0.4);
+    setTimeout(() => playTone(100, 'sawtooth', 0.3, 0.4), 150);
+  }
+  // 溫和的「不太對」提示音，比 playErrorSound 更柔和，
+  // 用在超額這種「不是真的做錯，只是選太多」的情境，不想讓小朋友感覺被責備。
+  function playGentleNudgeSound() {
+    playTone(440, 'sine', 0.15, 0.25);
+    setTimeout(() => playTone(370, 'sine', 0.18, 0.22), 120);
+  }
+  function playCheerSound() {
+    playTone(523.25, 'sine', 0.2, 0.5);
+    setTimeout(() => playTone(659.25, 'sine', 0.2, 0.5), 150);
+    setTimeout(() => playTone(783.99, 'sine', 0.3, 0.5), 300);
+    setTimeout(() => playTone(1046.50, 'square', 0.5, 0.4), 450);
+  }
+
+  /* ============================================================
+     語音函式：維持最單純、經過驗證可靠的寫法——
+     不加額外延遲、不指定特定聲音物件、不做定期喚醒的介入。
+     ============================================================ */
+  function speakText(text, speedRate) {
+    if (!audioUnlocked) return;
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-TW';
+      utterance.rate = speedRate;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {}
+  }
+
+  function renderLevelList() {
+    levelListEl.innerHTML = '';
+    LEVELS.forEach(lv => {
+      const btn = document.createElement('div');
+      btn.className = 'level-btn';
+      btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
+      // 【重要】用 click 事件觸發，這是喚醒 iOS 語音權限唯一可靠的方式。
+      btn.addEventListener('click', () => startGame(lv.id));
+      levelListEl.appendChild(btn);
+    });
+  }
+
+  function showLevelSelect() {
+    isPaused = false;
+    pendingAdvance = false;
+    if (dropInterval) clearInterval(dropInterval);
+    if (advanceTimeout) clearTimeout(advanceTimeout);
+    activeCoins.forEach(c => c.remove());
+    activeCoins = [];
+    quizScreen.style.display = 'none';
+    completeOverlay.style.display = 'none';
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    gameContainer.style.display = 'none';
+    startScreen.style.display = 'flex';
+  }
+
+  function startGame(levelId) {
+    if (startScreen.style.display === 'none') return;
+    currentLevel = LEVELS.find(l => l.id === levelId);
+    levelLabelTag.innerText = currentLevel.name;
+
+    initAudio();
+    let unlockSpeech = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(unlockSpeech);
+    audioUnlocked = true;
+
+    startScreen.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    nextQuestion();
+  }
+
+  function setSpeed(mode) {
+    speedMode = mode;
+    ['slow', 'normal', 'fast'].forEach(m => {
+      document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
+    });
+  }
+
+  function nextQuestion() {
+    isAnswering = false;
+    isPaused = false;
+    hintLevel = 0;
+    pendingAdvance = false;
+    quizScreen.style.display = 'none';
+    completeOverlay.style.display = 'none';
+    pauseBtn.innerText = "⏸ 暫停";
+    pauseBtn.style.background = "#f59e0b";
+
+    const [lo, hi] = [currentLevel.lo, currentLevel.hi];
+    currentTarget = lo + Math.floor(Math.random() * (hi - lo + 1));
+    displayTarget.innerText = currentTarget;
+    count10 = 0;
+    count1 = 0;
+    warningMsg.innerText = "";
+    renderTray();
+
+    if (dropInterval) clearInterval(dropInterval);
+    activeCoins.forEach(c => c.remove());
+    activeCoins = [];
+
+    dropInterval = setInterval(() => {
+      if (!isAnswering && !isPaused) spawnFallingCoin();
+    }, SPAWN_INTERVAL[speedMode]);
+
+    setTimeout(() => speakText(`要付，${currentTarget} 元`, 0.85), 300);
+  }
+
+  function useHint() {
+    if (isPaused || isAnswering || !currentLevel) return;
+    hintLevel++;
+    let totalAmount = (count10 * 10) + count1;
+    let remaining = currentTarget - totalAmount;
+    if (hintLevel === 1) {
+      warningMsg.innerText = `🔍 提示：還差 ${remaining} 元喔！`;
+      speakText(`還差 ${remaining} 元喔`, 0.9);
+    } else {
+      warningMsg.innerText = `💡 提示：找找看畫面上的 ${remaining} 元硬幣！`;
+      speakText(`找找看畫面上的 ${remaining} 元硬幣`, 0.9);
+    }
+  }
+
+  function togglePause() {
+    if (isAnswering || !currentLevel) return;
+    isPaused = !isPaused;
+
+    if (isPaused) {
+      pauseBtn.innerText = "▶ 繼續";
+      pauseBtn.style.background = "#16a34a";
+      warningMsg.innerText = "⏸️ 遊戲已暫停，可以慢慢思考喔！";
+      activeCoins.forEach(c => { c.style.animationPlayState = 'paused'; });
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    } else {
+      pauseBtn.innerText = "⏸ 暫停";
+      pauseBtn.style.background = "#f59e0b";
+      warningMsg.innerText = "";
+      activeCoins.forEach(c => { c.style.animationPlayState = 'running'; });
+      if (pendingAdvance) {
+        pendingAdvance = false;
+        completeOverlay.style.display = 'none';
+        triggerCandyQuiz();
+      }
+    }
+  }
+
+  function spawnFallingCoin() {
+    if (isPaused) return;
+    const coinType = Math.random() > 0.4 ? 10 : 1;
+    const coinEl = document.createElement('div');
+    coinEl.className = coinType === 10 ? 'coin coin-10' : 'coin coin-1';
+    coinEl.innerText = coinType;
+
+    const randomX = Math.random() * (dropField.clientWidth - 85);
+    coinEl.style.left = randomX + 'px';
+
+    const [dLo, dHi] = SPEED_SETTINGS[speedMode].fallDuration;
+    const duration = dLo + Math.random() * (dHi - dLo);
+    coinEl.style.animationDuration = duration + 's';
+
+    const handleCoinSelect = (e) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      if (isAnswering || isPaused) return;
+
+      let totalAmount = (count10 * 10) + count1;
+
+      if (totalAmount + coinType > currentTarget) {
+        // 【重要】超額的這枚硬幣本來就沒有被真的收下，不需要整個歸零重來，
+        // 只要溫和地讓這枚硬幣消失、給個鼓勵的提示，遊戲繼續進行就好，
+        // 避免小朋友看到「失敗、全部重來」的畫面而感到沮喪。
+        playGentleNudgeSound();
+        warningMsg.innerText = "😊 太多囉！換個小一點的硬幣試試看～";
+        speakText("太多囉，換個小一點的硬幣試試看", 1.0);
+        coinEl.style.transition = "opacity 0.3s, transform 0.3s";
+        coinEl.style.opacity = "0";
+        coinEl.style.transform = "scale(0.6)";
+        setTimeout(() => coinEl.remove(), 300);
+        activeCoins = activeCoins.filter(item => item !== coinEl);
+        return;
+      } else {
+        warningMsg.innerText = "";
+        if (coinType === 10) {
+          count10++;
+        } else {
+          count1++;
+          if (count1 >= 10) {
+            count1 -= 10;
+            count10++;
+            setTimeout(() => {
+              playExchangeSound();
+              speakText("10個一塊錢換成十元硬幣囉！", 1.0);
+            }, 200);
+          }
+        }
+        playDropSound();
+        renderTray();
+      }
+      coinEl.remove();
+      activeCoins = activeCoins.filter(item => item !== coinEl);
+    };
+
+    coinEl.addEventListener('pointerdown', handleCoinSelect);
+
+    coinEl.addEventListener('animationend', () => {
+      coinEl.remove();
+      activeCoins = activeCoins.filter(item => item !== coinEl);
+    });
+
+    dropField.appendChild(coinEl);
+    activeCoins.push(coinEl);
+  }
+
+  function removeCoin(val) {
+    if (isAnswering || isPaused) return;
+    if (val === 10 && count10 > 0) count10--;
+    else if (val === 1 && count1 > 0) count1--;
+    warningMsg.innerText = "";
+    playPickupSound();
+    renderTray();
+  }
+
+  function renderTray() {
+    let totalAmount = (count10 * 10) + count1;
+    trayCoins.innerHTML = '';
+    currentAmountSpan.innerText = totalAmount;
+
+    for (let i = 0; i < count10; i++) {
+      let c = document.createElement('div');
+      c.className = 'coin coin-10';
+      c.innerText = '10';
+      let removeAction = () => removeCoin(10);
+      c.addEventListener('pointerdown', (e) => { e.preventDefault(); removeAction(); });
+      trayCoins.appendChild(c);
+    }
+
+    for (let i = 0; i < count1; i++) {
+      let c = document.createElement('div');
+      c.className = 'coin coin-1';
+      c.innerText = '1';
+      let removeAction = () => removeCoin(1);
+      c.addEventListener('pointerdown', (e) => { e.preventDefault(); removeAction(); });
+      trayCoins.appendChild(c);
+    }
+
+    if (totalAmount === currentTarget && currentTarget > 0) {
+      isAnswering = true;
+      if (dropInterval) clearInterval(dropInterval);
+      activeCoins.forEach(c => c.remove());
+      activeCoins = [];
+
+      playCheerSound();
+      speakText(`${totalAmount} 元，支付完成！`, 1.0);
+      completeNum.innerText = `${totalAmount} 元`;
+      completeOverlay.style.display = 'flex';
+
+      pendingAdvance = true;
+      const goToQuiz = () => {
+        if (!pendingAdvance) return;
+        if (isPaused) return;
+        if (advanceTimeout) clearTimeout(advanceTimeout);
+        pendingAdvance = false;
+        completeOverlay.style.display = 'none';
+        triggerCandyQuiz();
+      };
+      if (advanceTimeout) clearTimeout(advanceTimeout);
+      advanceTimeout = setTimeout(goToQuiz, 4000);
+
+    } else if (totalAmount < currentTarget && totalAmount > 0) {
+      speakText(`${totalAmount} 元`, 1.3);
+    }
+  }
+
+  const CANDY_COLORS = [
+    ['#f472b6', '#be185d'], ['#fb923c', '#c2410c'], ['#a78bfa', '#6d28d9'],
+    ['#34d399', '#047857'], ['#60a5fa', '#1d4ed8'], ['#fbbf24', '#b45309']
+  ];
+
+  function triggerCandyQuiz() {
+    quizScreen.style.display = 'flex';
+    candyDropArea.innerHTML = '';
+    quizFeedback.innerText = '';
+
+    let correctStr = `10×${count10} + 1×${count1} = ${currentTarget}`;
+    if (count10 === 0) {
+      correctStr = `1 × ${count1} = ${currentTarget}`;
+    } else if (count1 === 0) {
+      correctStr = `10 × ${count10} = ${currentTarget}`;
+    }
+
+    quizQuestionText.innerHTML = `總金額 ${currentTarget} 元，正確的組合算式是？<br><small style="color:#2563eb;">(請點選飄下來的正確算式糖果)</small>`;
+    speakText(`總金額 ${currentTarget} 元，正確的算式是什麼呢？`, 1.0);
+
+    let options = [correctStr];
+    let attempts = 0;
+    while (options.length < 4 && attempts < 200) {
+      attempts++;
+      let wrong10 = Math.floor(Math.random() * 5);
+      let wrong1 = Math.floor(Math.random() * 10);
+      let wrongTotal = (wrong10 * 10) + wrong1;
+      let wrongStr = wrong10 === 0 ? `1 × ${wrong1} = ${wrongTotal}` : (wrong1 === 0 ? `10 × ${wrong10} = ${wrongTotal}` : `10×${wrong10} + 1×${wrong1} = ${wrongTotal}`);
+
+      if (!options.includes(wrongStr) && wrongTotal !== currentTarget) {
+        options.push(wrongStr);
+      }
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    options.forEach((optStr, index) => {
+      const optionEl = document.createElement('div');
+      optionEl.className = 'candy-option';
+
+      const [light, dark] = CANDY_COLORS[Math.floor(Math.random() * CANDY_COLORS.length)];
+      optionEl.style.setProperty('--candy-dark', dark);
+      optionEl.innerHTML = `
+        <div class="candy-twist left"></div>
+        <div class="candy-body" style="background: radial-gradient(ellipse at 30% 25%, ${light}, ${dark});">${optStr}</div>
+        <div class="candy-twist right"></div>
+      `;
+
+      let startTop = -70 - (index * 80);
+      optionEl.style.top = startTop + 'px';
+      optionEl.style.animationDuration = '7.5s';
+      optionEl.style.animationDelay = (index * 1.6) + 's';
+      optionEl.style.animationIterationCount = 'infinite';
+
+      let isHandled = false;
+      const selectOption = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isHandled) return;
+
+        if (optStr === correctStr) {
+          isHandled = true;
+          let computedTop = window.getComputedStyle(optionEl).top;
+          optionEl.style.animation = 'none';
+          optionEl.style.top = computedTop;
+          optionEl.classList.add('correct-pick');
+
+          quizFeedback.style.color = '#16a34a';
+          quizFeedback.innerText = `🎉 答對了！${correctStr} 元！`;
+          playCheerSound();
+          speakText("答對了，好棒！", 1.0);
+
+          try {
+            confetti({
+              particleCount: 120, spread: 70, origin: { y: 0.6 },
+              colors: ['#f472b6', '#fbbf24', '#60a5fa', '#34d399']
+            });
+          } catch (err) {}
+
+          setTimeout(() => {
+            quizScreen.style.display = 'none';
+            nextQuestion();
+          }, 3500);
+        } else {
+          playErrorSound();
+          quizFeedback.style.color = '#dc2626';
+          quizFeedback.innerText = `❌ ${optStr} 不對喔，再想想看！`;
+          speakText("再想一下喔", 1.0);
+          optionEl.classList.add('wrong-pick');
+        }
+      };
+
+      optionEl.addEventListener('pointerdown', selectOption);
+      candyDropArea.appendChild(optionEl);
+    });
+  }
+
+  renderLevelList();
+</script>
+</body>
+</html>
