@@ -271,7 +271,7 @@
                 const btn = document.createElement('div');
                 btn.className = 'level-btn';
                 btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-                btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startGame(lv.id); });
+                btn.onclick = () => startGame(lv.id);
                 container.appendChild(btn);
             });
         }
