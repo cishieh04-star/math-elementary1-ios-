@@ -102,27 +102,21 @@
             overflow: hidden; touch-action: manipulation;
         }
 
+        /* 遊戲籌碼造型：呼應撲克牌主題，用同心圓條紋模擬真正籌碼的滾邊花紋 */
         .falling-option {
-            position: absolute; width: 62px; height: 74px;
-            border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
+            position: absolute; width: 66px; height: 66px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: bold; color: #ffffff; cursor: pointer;
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2),
-                        inset -8px -8px 14px rgba(0,0,0,0.15),
-                        inset 8px 8px 14px rgba(255,255,255,0.45);
+            background: radial-gradient(circle,
+                var(--chip-color, #b91c1c) 0% 56%,
+                #fdf6e3 56% 63%,
+                var(--chip-color, #b91c1c) 63% 76%,
+                #fdf6e3 76% 82%,
+                var(--chip-color, #b91c1c) 82% 100%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 0 0 2px rgba(255,255,255,0.35);
             animation: floatUp linear forwards;
             z-index: 99;
-        }
-        .falling-option::before {
-            content: ''; position: absolute; bottom: -6px; left: 50%;
-            width: 0; height: 0; transform: translateX(-50%);
-            border-left: 5px solid transparent; border-right: 5px solid transparent;
-            border-top: 6px solid var(--balloon-dark, #b91c1c);
-        }
-        .falling-option::after {
-            content: ''; position: absolute; bottom: -22px; left: 50%;
-            width: 2px; height: 20px; background: #94a3b8; transform: translateX(-50%);
         }
         .falling-option:active { transform: scale(0.92); }
         .falling-option.hint-glow {
@@ -161,25 +155,24 @@
             <h3>📖 遊戲使用說明</h3>
             <ul>
                 <li>觀察上方翻開的撲克牌，數一數上面的花色符號有幾個？</li>
-                <li>畫面下方會飄上來一顆顆氣球，裡面有數字。</li>
-                <li>點對答案的氣球，戳破它就能過關！</li>
+                <li>畫面下方會飄上來一枚枚遊戲籌碼，上面有數字。</li>
+                <li>點對答案的籌碼就能過關！</li>
                 <li>卡住了嗎？按「💡提示」會給你線索！</li>
+                <li>題目會先從比較小的點數開始，慢慢混入比較大的點數喔！</li>
             </ul>
         </div>
-        <div class="level-pick-title">請選擇關卡：</div>
-        <div id="levelList" style="width:100%;"></div>
+        <button class="start-btn" id="startBtn" onclick="startGame()">🎮 開始遊戲</button>
     </div>
 
     <div id="gameScreen">
         <div class="header-bar">
             <div class="status-left">
-                <span class="level-label" id="levelLabel">關卡</span>
                 <span class="score-display" id="scoreDisplay">闖關數: 0 關</span>
             </div>
             <div class="btn-group">
                 <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
                 <button class="control-btn" id="pauseBtn" onclick="togglePause()">暫停</button>
-                <button class="control-btn switch-btn" onclick="showLevelSelect()">🔄換關卡</button>
+                <button class="control-btn switch-btn" onclick="restartGame()">🔄重新開始</button>
             </div>
         </div>
 
@@ -204,27 +197,19 @@
     </div>
 
     <script>
+        let gameStarted = false;
+        let questionCount = 0; // 追蹤目前是第幾題，用來決定點數範圍要擴大到多少
 
-    /* ANDROID_SPEECH_WATCHDOG_V1
-       修正 Android（尤其是三星手機常見）瀏覽器的已知臭蟲：
-       語音連續播放一段時間後，瀏覽器會自己把語音佇列「暫停」卡住，
-       導致後面的語音都發不出來。定期 pause() 再 resume() 一次，
-       可以防止瀏覽器自己卡住，對其他裝置沒有副作用。 */
-    if ('speechSynthesis' in window) {
-        setInterval(function () {
-            try {
-                if (window.speechSynthesis.speaking) {
-                    window.speechSynthesis.pause();
-                    window.speechSynthesis.resume();
-                }
-            } catch (e) {}
-        }, 8000);
-    }
-        const LEVELS = [
-            { id: 1, name: '第一關：1～5 點', desc: '數一數牌面上 1 到 5 個花色符號。', range: [1, 5] },
-            { id: 2, name: '第二關：6～10 點', desc: '進階挑戰，數一數 6 到 10 個！', range: [6, 10] },
-            { id: 3, name: '第三關：綜合練習 1～10', desc: '不限範圍，1 到 10 點都可能出現，全面複習！', range: [1, 10] }
-        ];
+        // 決定這一題牌面的目標點數：範圍隨著題數增加而快速擴大到10，
+        // 不會一直停留在小點數；而且從一開始就有機會直接出現比較大的點數，
+        // 讓大小點數提早混在一起出現。
+        function pickCurrentCardValue() {
+            const maxRange = Math.min(10, 3 + questionCount * 2);
+            if (Math.random() < 0.3) {
+                return 1 + Math.floor(Math.random() * 10);
+            }
+            return 1 + Math.floor(Math.random() * maxRange);
+        }
 
         const suits = [
             { name: '紅心', symbol: '♥', class: 'red-suit' },
@@ -233,8 +218,8 @@
             { name: '梅花', symbol: '♣', class: 'black-suit' }
         ];
 
-        let currentLevel = null;
         let score = 0;
+        let audioCtx = null;
         let isProcessing = false;
         let gameInterval = null;
         let activeOptions = [];
@@ -254,54 +239,31 @@
             fast:   { fallDuration: 3.5, spawnInterval: 1300 }
         };
 
-        let preferredVoice = null;
-        function loadVoices() {
-            let voices = window.speechSynthesis.getVoices();
-            if (!voices || voices.length === 0) return;
-            preferredVoice = voices.find(v =>
-                v.lang && v.lang.toLowerCase().startsWith('zh') &&
-                /female|女|meijia|mei-jia|yating|ya-ting|tingting|xiaoxiao|xiaoyi|hanhan|sinji|sin-ji|zhiyu|xiaoshuang|yaoyao/i.test(v.name)
-            );
-        }
-        if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
-
         function speak(text, onEnd) {
-            if (isPaused) { if (onEnd) onEnd(); return; }
             if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
             try {
                 window.speechSynthesis.cancel();
-                let finished = false;
-                const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
-                setTimeout(() => {
-                    if (isPaused) { trigger(); return; }
-                    try {
-                        const msg = new SpeechSynthesisUtterance(text);
-                        msg.lang = 'zh-TW';
-                        msg.rate = 0.85;
-                        msg.pitch = 1.1;
-                        if (preferredVoice) msg.voice = preferredVoice;
-                        msg.onend = trigger;
-                        msg.onerror = trigger;
-                        window.speechSynthesis.speak(msg);
-                        setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
-                    } catch (e) { trigger(); }
-                }, 70);
-            } catch (e) { if (onEnd) onEnd(); }
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'zh-TW';
+                if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
+                window.speechSynthesis.speak(msg);
+            } catch(e) { if (onEnd) onEnd(); }
         }
 
         function boom() { try { confetti({ particleCount: 130, spread: 80, origin: { y: 0.6 } }); } catch (e) {} }
 
         function playPopSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator(), gain = ctx.createGain();
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(700, now);
                 osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
                 gain.gain.setValueAtTime(0.38, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
-                osc.connect(gain); gain.connect(ctx.destination);
+                osc.connect(gain); gain.connect(audioCtx.destination);
                 osc.start(now); osc.stop(now + 0.14);
             } catch (e) {}
         }
@@ -320,21 +282,11 @@
             return html;
         }
 
-        function renderLevelList() {
-            const container = document.getElementById('levelList');
-            container.innerHTML = '';
-            LEVELS.forEach(lv => {
-                const btn = document.createElement('div');
-                btn.className = 'level-btn';
-                btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-                btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startGame(lv.id); });
-                container.appendChild(btn);
-            });
-        }
-
-        function showLevelSelect() {
+        function restartGame() {
             isPaused = false;
             pendingNextQuestion = false;
+            gameStarted = false;
+            questionCount = 0;
             if (gameInterval) clearInterval(gameInterval);
             if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
             activeOptions.forEach(el => el.remove());
@@ -345,12 +297,23 @@
             document.getElementById('startScreen').style.display = 'flex';
         }
 
-        function startGame(levelId) {
+        function startGame() {
             if (document.getElementById('startScreen').style.display === 'none') return;
-            currentLevel = LEVELS.find(l => l.id === levelId);
-            document.getElementById('levelLabel').innerText = currentLevel.name;
+            gameStarted = true;
+            questionCount = 0;
 
-            try { (function(){ var _u = new SpeechSynthesisUtterance('遊戲開始'); _u.volume = 0.01; window.speechSynthesis.speak(_u); })(); } catch (e) {}
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass && !audioCtx) {
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+                }
+            } catch(e) {}
 
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'flex';
@@ -364,11 +327,11 @@
             ['slow', 'normal', 'fast'].forEach(m => {
                 document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
             });
-            if (!isPaused && !isProcessing && currentLevel) startFallingLoop();
+            if (!isPaused && !isProcessing && gameStarted) startFallingLoop();
         }
 
         function togglePause() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pauseBtn');
             const options = document.querySelectorAll('.falling-option');
@@ -395,7 +358,7 @@
         }
 
         function generateQuestion() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             isProcessing = false;
             isPaused = false;
             hintLevel = 0;
@@ -408,36 +371,28 @@
             activeOptions = [];
             if (gameInterval) clearInterval(gameInterval);
 
-            const [lo, hi] = currentLevel.range;
-            currentCardValue = lo + Math.floor(Math.random() * (hi - lo + 1));
+            currentCardValue = pickCurrentCardValue();
+            questionCount++;
             let randomSuit = suits[Math.floor(Math.random() * suits.length)];
 
             document.getElementById('cardPips').innerHTML = renderCardPips(currentCardValue, randomSuit.symbol, randomSuit.class);
 
-            speak(`看看這張${randomSuit.name}，數一數上面有幾個符號呢？氣球飄上來囉！`);
+            speak(`看看這張${randomSuit.name}，數一數上面有幾個符號呢？籌碼飄上來囉！`);
 
-            const [rlo, rhi] = currentLevel.range;
-            let opts = [currentCardValue];
+            let opts = new Set([currentCardValue]);
             let attempts = 0;
-            while (opts.length < 5 && attempts < 100) {
+            while (opts.size < 5 && attempts < 100) {
                 attempts++;
-                const r = rlo + Math.floor(Math.random() * (rhi - rlo + 1));
-                if (!opts.includes(r)) opts.push(r);
+                opts.add(1 + Math.floor(Math.random() * 10));
             }
-            let filler = rlo;
-            while (opts.length < 5 && filler <= rhi) {
-                if (!opts.includes(filler)) opts.push(filler);
-                filler++;
-            }
-            opts.sort(() => Math.random() - 0.5);
-            currentOptionsList = opts;
+            currentOptionsList = Array.from(opts).sort(() => Math.random() - 0.5);
 
             currentIndex = 0;
             startFallingLoop();
         }
 
         function startFallingLoop() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(() => {
                 if (isProcessing || isPaused) return;
@@ -448,12 +403,12 @@
         }
 
         function useHint() {
-            if (isPaused || isProcessing || !currentLevel) return;
+            if (isPaused || isProcessing || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
                 speak(`用手指一個一個指著算算看，總共有幾個符號呢？`);
             } else {
-                speak(`答案是 ${currentCardValue}，找找看畫面上這個數字的氣球！`);
+                speak(`答案是 ${currentCardValue}，找找看畫面上這個數字的籌碼！`);
                 hintActiveValue = currentCardValue;
                 activeOptions.forEach(opt => { if (opt.dataset.val === String(currentCardValue)) opt.classList.add('hint-glow'); });
             }
@@ -478,10 +433,9 @@
 
             const colors = ['#dc2626', '#c2410c', '#ca8a04', '#16a34a', '#0284c7', '#7c3aed', '#db2777'];
             const dark = colors[Math.floor(Math.random() * colors.length)];
-            el.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.08) 16%, ${dark} 42%, ${dark} 100%)`;
-            el.style.setProperty('--balloon-dark', dark);
+            el.style.setProperty('--chip-color', dark);
 
-            const randomX = Math.random() * (container.clientWidth - 62);
+            const randomX = Math.random() * (container.clientWidth - 66);
             el.style.left = randomX + 'px';
             el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
             if (isPaused) el.style.animationPlayState = 'paused';
@@ -542,7 +496,6 @@
             activeOptions.push(el);
         }
 
-        renderLevelList();
     </script>
 </body>
 </html>
