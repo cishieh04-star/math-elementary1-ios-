@@ -152,22 +152,21 @@
                 <li>點擊正確的泡泡，戳破它就能過關！</li>
                 <li>卡住了嗎？按「💡提示」會給你線索！</li>
                 <li>遊戲中可隨時點擊「暫停」讓泡泡定格，方便小朋友慢慢數。</li>
+                <li>題目會先從比較小的數字開始，慢慢混入比較大的數字喔！</li>
             </ul>
         </div>
-        <div class="level-pick-title">請選擇關卡：</div>
-        <div id="levelList" style="width:100%;"></div>
+        <button class="start-btn" id="startBtn" onclick="startGame()">🎮 開始遊戲</button>
     </div>
 
     <div id="gameScreen">
         <div class="header-bar">
             <div class="status-left">
-                <span class="level-label" id="levelLabel">關卡</span>
                 <span class="score-display" id="scoreDisplay">闖關數: 0 關</span>
             </div>
             <div class="btn-group">
                 <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
                 <button class="control-btn" id="pauseBtn" onclick="togglePause()">暫停</button>
-                <button class="control-btn switch-btn" onclick="showLevelSelect()">🔄換關卡</button>
+                <button class="control-btn switch-btn" onclick="restartGame()">🔄重新開始</button>
             </div>
         </div>
 
@@ -193,13 +192,19 @@
     </div>
 
     <script>
-        const LEVELS = [
-            { id: 1, name: '第一關：認識 1～5', desc: '數一數 1 到 5 個可愛的小東西。', range: [1, 5] },
-            { id: 2, name: '第二關：認識 6～10', desc: '進階挑戰，數一數 6 到 10 個！', range: [6, 10] },
-            { id: 3, name: '第三關：綜合練習 1～10', desc: '不限範圍，1 到 10 個都可能出現，全面複習！', range: [1, 10] }
-        ];
+        let gameStarted = false;
+        let questionCount = 0; // 追蹤目前是第幾題，用來決定數字範圍要擴大到多少
 
-        let currentLevel = null;
+        // 決定這一題的目標數字：範圍隨著題數增加而快速擴大到10，
+        // 不會一直停留在小數字；而且從一開始就有機會直接出現比較大的數字，
+        // 讓大小數字提早混在一起出現，而不是嚴格照順序小到大。
+        function pickCurrentCount() {
+            const maxRange = Math.min(10, 3 + questionCount * 2);
+            if (Math.random() < 0.3) {
+                return 1 + Math.floor(Math.random() * 10);
+            }
+            return 1 + Math.floor(Math.random() * maxRange);
+        }
         let score = 0;
         let audioCtx = null;
         let isProcessing = false;
@@ -264,21 +269,11 @@
             } catch (e) {}
         }
 
-        function renderLevelList() {
-            const container = document.getElementById('levelList');
-            container.innerHTML = '';
-            LEVELS.forEach(lv => {
-                const btn = document.createElement('div');
-                btn.className = 'level-btn';
-                btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-                btn.onclick = () => startGame(lv.id);
-                container.appendChild(btn);
-            });
-        }
-
-        function showLevelSelect() {
+        function restartGame() {
             isPaused = false;
             pendingNextQuestion = false;
+            gameStarted = false;
+            questionCount = 0;
             if (gameInterval) clearInterval(gameInterval);
             if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
             activeOptions.forEach(el => el.remove());
@@ -289,10 +284,10 @@
             document.getElementById('startScreen').style.display = 'flex';
         }
 
-        function startGame(levelId) {
+        function startGame() {
             if (document.getElementById('startScreen').style.display === 'none') return;
-            currentLevel = LEVELS.find(l => l.id === levelId);
-            document.getElementById('levelLabel').innerText = currentLevel.name;
+            gameStarted = true;
+            questionCount = 0;
 
             try {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -319,11 +314,11 @@
             ['slow', 'normal', 'fast'].forEach(m => {
                 document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
             });
-            if (!isPaused && !isProcessing && currentLevel) startFallingLoop();
+            if (!isPaused && !isProcessing && gameStarted) startFallingLoop();
         }
 
         function togglePause() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pauseBtn');
             const options = document.querySelectorAll('.falling-option');
@@ -350,7 +345,7 @@
         }
 
         function generateQuestion() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             isProcessing = false;
             isPaused = false;
             hintLevel = 0;
@@ -364,8 +359,8 @@
             activeOptions = [];
             if (gameInterval) clearInterval(gameInterval);
 
-            const [lo, hi] = currentLevel.range;
-            currentCount = lo + Math.floor(Math.random() * (hi - lo + 1));
+            currentCount = pickCurrentCount();
+            questionCount++;
             let randomItem = itemPool[Math.floor(Math.random() * itemPool.length)];
 
             document.getElementById('questionText').innerText = `有幾個${randomItem.name}？`;
@@ -377,7 +372,7 @@
             speak(`算一算，有幾個${randomItem.name}呢？泡泡飄上來囉！`);
 
             currentOptionsList = [];
-            for (let n = lo; n <= hi; n++) currentOptionsList.push(n);
+            for (let n = 1; n <= 10; n++) currentOptionsList.push(n);
             currentOptionsList.sort(() => Math.random() - 0.5);
 
             currentIndex = 0;
@@ -385,7 +380,7 @@
         }
 
         function startFallingLoop() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             if (gameInterval) clearInterval(gameInterval);
             gameInterval = setInterval(() => {
                 if (isProcessing || isPaused) return;
@@ -396,7 +391,7 @@
         }
 
         function useHint() {
-            if (isPaused || isProcessing || !currentLevel) return;
+            if (isPaused || isProcessing || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
                 speak(`用手指一個一個指著算算看，總共有幾個呢？`);
@@ -488,8 +483,6 @@
             container.appendChild(el);
             activeOptions.push(el);
         }
-
-        renderLevelList();
     </script>
 </body>
 </html>
