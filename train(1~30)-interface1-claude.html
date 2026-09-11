@@ -44,6 +44,8 @@
             display: flex; flex-direction: column; gap: 2px;
         }
         .level-btn:active { transform: scale(0.98); background: #f0f9ff; }
+        .start-btn { padding: 12px 30px; font-size: 22px; font-weight: bold; background-color: #0ea5e9; color: white; border-radius: 16px; cursor: pointer; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); border: none; width: 100%; max-width: 260px; }
+        .start-btn:active { transform: scale(0.95); background-color: #0284c7; }
         .level-btn .lv-name { font-size: 14px; font-weight: bold; color: #0284c7; }
         .level-btn .lv-desc { font-size: 11px; color: #334155; }
 
@@ -187,23 +189,22 @@
                 <li>池子裡的魚兒會左右游動，身上有數字。</li>
                 <li>點對答案的魚，把牠抓起來就能過關！</li>
                 <li>卡住了嗎？按「💡提示」會給你線索！</li>
+                <li>題目會先從簡單的開始，慢慢加深難度喔！</li>
             </ul>
         </div>
 
-        <div class="level-pick-title">請選擇關卡：</div>
-        <div id="levelList" style="width:100%;"></div>
+        <button class="start-btn" id="startBtn" onclick="startGame()">🎮 開始遊戲</button>
     </div>
 
     <div id="game-ui">
         <div id="status-bar">
             <div class="status-left">
-                <span class="level-label" id="levelLabel">關卡</span>
                 <span id="score">闖關: 0</span>
             </div>
             <div class="btn-group">
                 <button class="control-btn hint-btn-el" onclick="useHint()">💡提示</button>
                 <button class="control-btn pause-btn-el" id="pause-btn" onclick="togglePause()">暫停</button>
-                <button class="control-btn switch-btn-el" onclick="showLevelSelect()">🔄換關卡</button>
+                <button class="control-btn switch-btn-el" onclick="restartGame()">🔄重新開始</button>
             </div>
         </div>
 
@@ -227,16 +228,21 @@
 </div>
 
 <script>
-    const LEVELS = [
-        { id: 1, name: '第一關：空格在最後', desc: '空格固定在最後一節車廂，自己判斷方向！', forceDir: null, blankMode: 'last' },
-        { id: 2, name: '第二關：空格在最前', desc: '空格改到最前面一節，要從後面的數字推算！', forceDir: null, blankMode: 'first' },
-        { id: 3, name: '第三關：空格任意處', desc: '空格可能出現在任何一節，全面挑戰！', forceDir: null, blankMode: 'any' }
-    ];
     const MIN_NUM = 1;
     const MAX_NUM = 30;
     const STEP = 1;
 
-    let currentLevel = null;
+    let questionCount = 0; // 追蹤目前是第幾題，用來決定空格位置模式
+
+    // 難度隨題數漸進提升：空格在最後面（只要往下數）最簡單，先安排較多這種題目；
+    // 接著換成空格在最前面（要往回推算），最後才是空格可能出現在任何位置。
+    function getBlankModeForQuestion() {
+        if (questionCount < 8) return 'last';
+        if (questionCount < 14) return 'first';
+        return 'any';
+    }
+
+    let gameStarted = false;
     let currentAns, score = 0;
     let gameInterval = null;
     let nextQuestionTimeout = null;
@@ -324,22 +330,12 @@
         } catch (e) {}
     }
 
-    function renderLevelList() {
-        const container = document.getElementById('levelList');
-        container.innerHTML = '';
-        LEVELS.forEach(lv => {
-            const btn = document.createElement('div');
-            btn.className = 'level-btn';
-            btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-            btn.onclick = () => startGame(lv.id);
-            container.appendChild(btn);
-        });
-    }
-
-    function showLevelSelect() {
+    function restartGame() {
         isPaused = false;
         pendingAdvance = false;
         pendingNextQuestion = false;
+        gameStarted = false;
+        questionCount = 0;
         if (gameInterval) clearInterval(gameInterval);
         if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
         if (actionTransitionTimeout) clearTimeout(actionTransitionTimeout);
@@ -351,10 +347,10 @@
         document.getElementById('home-screen').style.display = 'flex';
     }
 
-    function startGame(levelId) {
+    function startGame() {
         if (document.getElementById('home-screen').style.display === 'none') return;
-        currentLevel = LEVELS.find(l => l.id === levelId);
-        document.getElementById('levelLabel').innerText = currentLevel.name;
+        gameStarted = true;
+        questionCount = 0;
 
         if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -374,11 +370,11 @@
         ['slow', 'normal', 'fast'].forEach(m => {
             document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
         });
-        if (!isPaused && !isAnswered && currentLevel) startSwimLoop();
+        if (!isPaused && !isAnswered && gameStarted) startSwimLoop();
     }
 
     function togglePause() {
-        if (!currentLevel) return;
+        if (!gameStarted) return;
         isPaused = !isPaused;
         const pauseBtn = document.getElementById('pause-btn');
 
@@ -406,7 +402,7 @@
     }
 
     function loadQuestion() {
-        if (!currentLevel) return;
+        if (!gameStarted) return;
         isAnswered = false;
         hintLevel = 0;
         hintActiveValue = null;
@@ -421,9 +417,7 @@
 
         const baseMax = Math.max(MIN_NUM, MAX_NUM - 3 * STEP);
         let baseMin = MIN_NUM;
-        let isAscending = currentLevel.forceDir === 'asc' ? true
-            : currentLevel.forceDir === 'desc' ? false
-            : Math.random() < 0.5;
+        let isAscending = Math.random() < 0.5;
 
         if (!isAscending) baseMin = MIN_NUM + 3 * STEP;
         let baseHigh = isAscending ? baseMax : MAX_NUM;
@@ -434,8 +428,10 @@
         trainSequence = [];
         for (let i = 0; i < 4; i++) trainSequence.push(baseNum + i * actualStep);
 
-        const blankIndex = currentLevel.blankMode === 'last' ? 3
-            : currentLevel.blankMode === 'first' ? 0
+        const blankMode = getBlankModeForQuestion();
+        questionCount++;
+        const blankIndex = blankMode === 'last' ? 3
+            : blankMode === 'first' ? 0
             : Math.floor(Math.random() * 4);
         currentAns = trainSequence[blankIndex];
 
@@ -461,7 +457,7 @@
     }
 
     function startSwimLoop() {
-        if (isPaused || isAnswered || !currentLevel) return;
+        if (isPaused || isAnswered || !gameStarted) return;
         if (gameInterval) clearInterval(gameInterval);
         let index = 0;
         gameInterval = setInterval(() => {
@@ -501,7 +497,7 @@
     }
 
     function useHint() {
-        if (isPaused || isAnswered || !currentLevel) return;
+        if (isPaused || isAnswered || !gameStarted) return;
         hintLevel++;
         let blankIndex = trainSequence.indexOf(currentAns);
         let isAscending = trainSequence.length > 1 && trainSequence[1] > trainSequence[0];
@@ -638,7 +634,6 @@
         activeOptions.push(el);
     }
 
-    renderLevelList();
 </script>
 </body>
 </html>
