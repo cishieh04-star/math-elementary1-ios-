@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>10以內的加法遊戲(氣球版)</title>
+    <title>10以內的加法遊戲(小跑車版)</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
@@ -38,6 +38,9 @@
         .intro-card h3 { margin: 0 0 4px 0; font-size: 14px; color: #d97706; }
         .intro-card ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; color: #334155; }
         .intro-card li { margin-bottom: 3px; }
+
+        .start-btn { padding: 12px 30px; font-size: 22px; font-weight: bold; background-color: #3b82f6; color: white; border-radius: 16px; cursor: pointer; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); border: none; width: 100%; max-width: 260px; }
+        .start-btn:active { transform: scale(0.95); background-color: #2563eb; }
 
         .level-pick-title { font-size: 13px; font-weight: bold; color: #2563eb; margin: 4px 0 6px 0; width: 100%; text-align: left; }
         .level-btn {
@@ -76,11 +79,13 @@
         .speed-btn:active { transform: scale(0.95); }
 
         #visual-area {
-            min-height: 70px; max-height: 100px; width: 100%; display: flex; align-items: center; justify-content: center;
-            gap: 6px; flex-wrap: wrap; overflow-y: auto; flex-shrink: 0;
-            background: #fff8ec; border: 2px dashed #fbbf24; border-radius: 10px; padding: 6px;
+            min-height: 70px; max-height: 110px; width: 100%; display: flex; align-items: center; justify-content: center;
+            gap: 10px; flex-wrap: wrap; overflow-y: auto; flex-shrink: 0;
+            background: #fff8ec; border: 2px dashed #fbbf24; border-radius: 10px; padding: 8px;
         }
-        .dot { font-size: 26px; line-height: 1; animation: dotBounce 1s infinite alternate; }
+        /* 十格框排列：每排固定5個小圓圈，方便孩子清楚數數 */
+        .dot-group { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .dot { width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; animation: dotBounce 1s infinite alternate; }
         @keyframes dotBounce { 0% { transform: translateY(0); } 100% { transform: translateY(-4px); } }
         .symbol { font-size: 30px; font-weight: bold; color: #64748b; padding: 0 4px; }
 
@@ -94,32 +99,41 @@
             overflow: hidden; box-sizing: border-box;
         }
 
+        /* 小跑車造型：車身+座艙+車窗+兩個輪子，取代原本的氣球 */
         .falling-option {
-            position: absolute; width: 64px; height: 76px;
-            border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px; font-weight: bold; color: #ffffff; cursor: pointer;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.55), 0 0 3px rgba(0,0,0,0.4);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2),
-                        inset -8px -8px 14px rgba(0,0,0,0.15),
-                        inset 8px 8px 14px rgba(255,255,255,0.45);
+            position: absolute; width: 74px; height: 46px; cursor: pointer;
             animation: floatUp linear forwards;
             z-index: 999;
         }
-        .falling-option::before {
-            content: ''; position: absolute; bottom: -6px; left: 50%;
-            width: 0; height: 0; transform: translateX(-50%);
-            border-left: 5px solid transparent; border-right: 5px solid transparent;
-            border-top: 6px solid var(--balloon-dark, #b91c1c);
+        .car-body {
+            position: absolute; bottom: 8px; left: 0; width: 74px; height: 22px;
+            background: var(--car-color, #dc2626); border-radius: 10px 10px 4px 4px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
         }
-        .falling-option::after {
-            content: ''; position: absolute; bottom: -22px; left: 50%;
-            width: 2px; height: 20px; background: #94a3b8; transform: translateX(-50%);
+        .car-cabin {
+            position: absolute; bottom: 22px; left: 15px; width: 42px; height: 14px;
+            background: var(--car-color, #dc2626); border-radius: 10px 10px 0 0;
+        }
+        .car-window {
+            position: absolute; bottom: 24px; left: 19px; width: 34px; height: 9px;
+            background: #dbeeff; border-radius: 5px 5px 0 0;
+        }
+        .car-wheel {
+            position: absolute; bottom: 0; width: 15px; height: 15px; border-radius: 50%;
+            background: #1e293b; border: 2px solid #94a3b8;
+        }
+        .car-wheel.left { left: 10px; }
+        .car-wheel.right { right: 10px; }
+        .car-num {
+            position: absolute; bottom: 8px; left: 0; width: 74px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; font-weight: bold; color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); z-index: 3;
         }
         .falling-option:active { transform: scale(0.92); }
-        .falling-option.hint-glow {
-            box-shadow: 0 0 0 4px #fde047, 0 4px 10px rgba(0,0,0,0.35);
-            animation: floatUp linear forwards, glowPulse 1s ease-in-out infinite;
+        .falling-option.hint-glow .car-body {
+            box-shadow: 0 0 0 3px #fde047, 0 3px 6px rgba(0,0,0,0.3);
+            animation: glowPulse 1s ease-in-out infinite;
         }
         .falling-option.popping { animation: popEffect 0.32s ease-out forwards !important; pointer-events: none; }
         @keyframes glowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
@@ -129,11 +143,11 @@
             100% { transform: scale(0.15) rotate(6deg); opacity: 0; }
         }
         @keyframes floatUp {
-            0%   { top: 100%; transform: translateX(0) rotate(-3deg); }
-            25%  { transform: translateX(8px) rotate(3deg); }
-            50%  { transform: translateX(-6px) rotate(-3deg); }
-            75%  { transform: translateX(6px) rotate(3deg); }
-            100% { top: -85px; transform: translateX(-4px) rotate(-2deg); }
+            0%   { top: 100%; transform: translateX(0); }
+            25%  { transform: translateX(8px); }
+            50%  { transform: translateX(-6px); }
+            75%  { transform: translateX(6px); }
+            100% { top: -60px; transform: translateX(-4px); }
         }
 
         #completeOverlay {
@@ -157,26 +171,25 @@
                 <ul>
                     <li><strong>觀察算式：</strong>看清楚畫面上的加法算式與圖案，數一數幫助思考。</li>
                     <li><strong>算出總和：</strong>動腦算出兩個數字相加的答案。</li>
-                    <li><strong>戳氣球作答：</strong>畫面下方會飄上來一顆顆氣球，點對答案的氣球，戳破它就能過關！</li>
+                    <li><strong>開小車作答：</strong>畫面下方會開來一輛輛小跑車，點對答案的小跑車就能過關！</li>
                     <li><strong>卡住了嗎：</strong>按「💡提示」會給你線索！</li>
+                    <li>題目會先從簡單的加 1 開始，慢慢加深難度喔！</li>
                 </ul>
             </div>
 
-            <div class="level-pick-title">請選擇關卡：</div>
-            <div id="levelList" style="width:100%;"></div>
+            <button class="start-btn" id="startBtn" onclick="startGame()">🎮 開始遊戲</button>
         </div>
     </div>
 
     <div id="game-ui">
         <div id="status-bar">
             <div class="status-left">
-                <span class="level-label" id="levelLabel">關卡</span>
                 <span id="score">闖關: 0</span>
             </div>
             <div class="btn-group">
                 <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
                 <button class="control-btn pause-btn-el" id="pause-btn" onclick="togglePause()">暫停</button>
-                <button class="control-btn switch-btn" onclick="showLevelSelect()">🔄換關卡</button>
+                <button class="control-btn switch-btn" onclick="restartGame()">🔄重新開始</button>
             </div>
         </div>
 
@@ -199,15 +212,18 @@
     </div>
 
     <script>
-        const LEVELS = [
-            { id: 1, name: '第一關：+1 練習', desc: '每一題都是加 1，先熟悉加法的感覺。', fixedAdd: 1 },
-            { id: 2, name: '第二關：+2 練習', desc: '每一題都是加 2，稍微進階一點！', fixedAdd: 2 },
-            { id: 3, name: '第三關：隨機挑戰', desc: '兩個數字都隨機，總和不超過 10。', fixedAdd: null }
-        ];
 
-        const ICON_POOL = ['🍎', '⭐', '🐰', '🐟', '🍌', '💛', '🌼', '🎈'];
+        let questionCount = 0; // 追蹤目前是第幾題，用來決定難度要提升到多少
 
-        let currentLevel = null;
+        // 難度隨題數漸進提升：一開始都是加1的基本題，多練習幾題後才加深，
+        // 前面刻意安排較多簡單題，不會太快跳到隨機挑戰。
+        function getFixedAddForQuestion() {
+            if (questionCount < 8) return 1;
+            if (questionCount < 14) return 2;
+            return null; // 之後進入兩個數字都隨機的挑戰
+        }
+
+        let gameStarted = false;
         let audioCtx = null;
         let currentAns = 0, n1 = 0, n2 = 0, score = 0;
         let gameInterval = null;
@@ -220,7 +236,6 @@
         let hintLevel = 0;
         let hintActiveValue = null;
         let speedMode = 'normal';
-        let currentIcon = '🍎';
 
         const SPEED_SETTINGS = {
             slow:   { fallDuration: 8,   spawnInterval: 2600 },
@@ -257,21 +272,11 @@
             } catch (e) {}
         }
 
-        function renderLevelList() {
-            const container = document.getElementById('levelList');
-            container.innerHTML = '';
-            LEVELS.forEach(lv => {
-                const btn = document.createElement('div');
-                btn.className = 'level-btn';
-                btn.innerHTML = `<span class="lv-name">${lv.name}</span><span class="lv-desc">${lv.desc}</span>`;
-                btn.onclick = () => startGame(lv.id);
-                container.appendChild(btn);
-            });
-        }
-
-        function showLevelSelect() {
+        function restartGame() {
             isPaused = false;
             pendingNextQuestion = false;
+            gameStarted = false;
+            questionCount = 0;
             if (gameInterval) clearInterval(gameInterval);
             if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
             activeOptions.forEach(el => el.remove());
@@ -282,10 +287,10 @@
             document.getElementById('home-screen').style.display = 'flex';
         }
 
-        function startGame(levelId) {
+        function startGame() {
             if (document.getElementById('home-screen').style.display === 'none') return;
-            currentLevel = LEVELS.find(l => l.id === levelId);
-            document.getElementById('levelLabel').innerText = currentLevel.name;
+            gameStarted = true;
+            questionCount = 0;
 
             try {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -314,11 +319,11 @@
             ['slow', 'normal', 'fast'].forEach(m => {
                 document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
             });
-            if (!isPaused && !isAnswered && currentLevel) startFallingLoop();
+            if (!isPaused && !isAnswered && gameStarted) startFallingLoop();
         }
 
         function togglePause() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pause-btn');
 
@@ -346,21 +351,22 @@
         }
 
         function loadQuestion() {
-            if (!currentLevel) return;
+            if (!gameStarted) return;
             isAnswered = false;
             hintLevel = 0;
             hintActiveValue = null;
             hideCompletionScreen();
 
-            document.getElementById('feedback').innerText = "氣球飄上來囉！";
+            document.getElementById('feedback').innerText = "小跑車開過來囉！";
             activeOptions.forEach(el => el.remove());
             activeOptions = [];
             if (gameInterval) clearInterval(gameInterval);
 
-            currentIcon = ICON_POOL[Math.floor(Math.random() * ICON_POOL.length)];
 
-            if (currentLevel.fixedAdd !== null) {
-                const add = currentLevel.fixedAdd;
+            const fixedAdd = getFixedAddForQuestion();
+            questionCount++;
+            if (fixedAdd !== null) {
+                const add = fixedAdd;
                 n1 = 1 + Math.floor(Math.random() * (10 - add)); // n1 範圍 1~(10-add)，確保 n1+add 最多剛好等於10
                 n2 = add;
             } else {
@@ -387,7 +393,7 @@
         }
 
         function startFallingLoop() {
-            if (isPaused || isAnswered || !currentLevel) return;
+            if (isPaused || isAnswered || !gameStarted) return;
             if (gameInterval) clearInterval(gameInterval);
             let index = 0;
             gameInterval = setInterval(() => {
@@ -400,12 +406,12 @@
         }
 
         function useHint() {
-            if (isPaused || isAnswered || !currentLevel) return;
+            if (isPaused || isAnswered || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
                 speak(`用手指指著圖案一個一個數,${n1} 加 ${n2}，總共是多少呢？`);
             } else {
-                speak(`答案是 ${currentAns}，找找看畫面上這個數字的氣球！`);
+                speak(`答案是 ${currentAns}，找找看畫面上這個數字的小跑車！`);
                 hintActiveValue = currentAns;
                 activeOptions.forEach(opt => { if (opt.dataset.val === String(currentAns)) opt.classList.add('hint-glow'); });
             }
@@ -424,16 +430,22 @@
             const container = document.getElementById('drop-game-container');
             const el = document.createElement('div');
             el.className = 'falling-option';
-            el.innerText = val;
             el.dataset.val = String(val);
             if (hintActiveValue !== null && val === hintActiveValue) el.classList.add('hint-glow');
 
             const colors = ['#dc2626', '#c2410c', '#ca8a04', '#16a34a', '#0284c7', '#7c3aed', '#db2777'];
             const dark = colors[Math.floor(Math.random() * colors.length)];
-            el.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.08) 16%, ${dark} 42%, ${dark} 100%)`;
-            el.style.setProperty('--balloon-dark', dark);
+            el.style.setProperty('--car-color', dark);
+            el.innerHTML = `
+                <div class="car-cabin"></div>
+                <div class="car-window"></div>
+                <div class="car-body"></div>
+                <div class="car-num">${val}</div>
+                <div class="car-wheel left"></div>
+                <div class="car-wheel right"></div>
+            `;
 
-            const randomX = Math.random() * (container.clientWidth - 64);
+            const randomX = Math.random() * (container.clientWidth - 74);
             el.style.left = randomX + 'px';
             el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
             if (isPaused) el.style.animationPlayState = 'paused';
@@ -500,18 +512,21 @@
 
         function renderDots(num1, num2) {
             let area = document.getElementById('visual-area');
-            area.innerHTML = '';
-            for (let i = 0; i < num1; i++) area.innerHTML += `<span class="dot">${currentIcon}</span>`;
-            area.innerHTML += '<span class="symbol">+</span>';
-            for (let i = 0; i < num2; i++) area.innerHTML += `<span class="dot">${currentIcon}</span>`;
+            let html = '<div class="dot-group">';
+            for (let i = 0; i < num1; i++) html += `<div class="dot"></div>`;
+            html += '</div><span class="symbol">+</span><div class="dot-group">';
+            for (let i = 0; i < num2; i++) html += `<div class="dot"></div>`;
+            html += '</div>';
+            area.innerHTML = html;
         }
         function renderResultDots(res) {
             let area = document.getElementById('visual-area');
-            area.innerHTML = '';
-            for (let i = 0; i < res; i++) area.innerHTML += `<span class="dot">${currentIcon}</span>`;
+            let html = '<div class="dot-group">';
+            for (let i = 0; i < res; i++) html += `<div class="dot"></div>`;
+            html += '</div>';
+            area.innerHTML = html;
         }
 
-        renderLevelList();
     </script>
 </body>
 </html>
