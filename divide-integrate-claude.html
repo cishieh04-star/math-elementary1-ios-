@@ -76,6 +76,11 @@
         .speed-btn:active { transform: scale(0.95); }
 
         .question-text { font-size: 15px; font-weight: bold; color: #d2691e; margin: 1px 0; flex-shrink: 0; }
+        .equation-text {
+            font-size: 22px; font-weight: bold; color: #78350f; font-family: monospace;
+            background: #fff8dc; border: 2px solid #ffcba4; border-radius: 10px;
+            padding: 4px 14px; margin: 2px 0 4px 0; flex-shrink: 0; letter-spacing: 2px;
+        }
 
         .split-tree {
             display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -96,10 +101,23 @@
         .part.card-box .number-label { color: #166534; }
         .question-mark .number-label { color: #b45309; }
 
+        /* 十格框樣式：固定每排5個、整齊對齊，「劃掉幾個、剩下幾個」看起來更清楚，
+           是特教數學教學中常用的具體教具（ten-frame）。 */
         .dots-grid {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 74px; margin-top: 2px;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; max-width: 90px; margin-top: 3px;
         }
-        .dot-item { font-size: 12px; line-height: 1; }
+        .dot-item {
+            width: 13px; height: 13px; border-radius: 50%; background: #f59e0b;
+            transition: opacity 0.35s, filter 0.35s, background 0.35s;
+        }
+        /* 提示動畫：已經有的部分逐一變灰淡出，代表「劃掉、蓋起來」 */
+        .dot-item.dot-crossed { opacity: 0.2; filter: grayscale(1); }
+        /* 剩下的部分發亮跳動，讓孩子清楚看到「這些沒被劃掉的就是答案」 */
+        .dot-item.dot-remaining-highlight { animation: dotAnswerGlow 0.9s ease-in-out infinite; }
+        @keyframes dotAnswerGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #fbbf24); }
+            50% { transform: scale(1.35); filter: drop-shadow(0 0 9px #fbbf24); }
+        }
 
         .branch-container {
             display: flex; justify-content: center; gap: 20px; position: relative; width: 100%;
@@ -137,7 +155,7 @@
         }
         .falling-option span.opt-num { font-size: 19px; font-weight: bold; line-height: 1; position: relative; z-index: 2; }
         .falling-option .drop-dots { display: flex; gap: 1px; margin-top: 2px; max-width: 50px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 2; }
-        .falling-option .mini-dot { font-size: 9px; line-height: 1; }
+        .falling-option .mini-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; display: inline-block; }
         .falling-option:active { transform: scale(0.92); }
         .falling-option.hint-glow {
             box-shadow: 0 0 0 4px #fde047, 0 4px 10px rgba(0,0,0,0.35);
@@ -205,6 +223,7 @@
         </div>
 
         <div class="question-text" id="questionText">請找出另一部分是多少？</div>
+        <div class="equation-text" id="equationText">9 = 6 + ?</div>
 
         <div class="split-tree">
             <div class="card-box" id="totalCard">
@@ -238,7 +257,6 @@
             { id: 2, name: '第二關：11～20 的分解', desc: '進階挑戰，總數在 11 到 20 之間！', totalRange: [11, 20] }
         ];
 
-        const ICON_POOL = ['⭐', '🍎', '💛', '🌼', '🐟', '🎈', '🍌', '🐰'];
 
         let currentLevel = null;
         let score = 0;
@@ -248,7 +266,6 @@
         let activeOptions = [];
         let total = 7, part1 = 5, targetPart = 2;
         let missingPosition = 'right';
-        let currentIcon = '⭐';
         let isPaused = false;
         let pendingNextQuestion = false;
         let nextQuestionTimeout = null;
@@ -293,14 +310,14 @@
             } catch (e) {}
         }
 
-        function renderDots(count, icon) {
+        function renderDots(count) {
             let html = '';
-            for (let i = 0; i < count; i++) html += `<span class="dot-item">${icon}</span>`;
+            for (let i = 0; i < count; i++) html += `<div class="dot-item"></div>`;
             return html;
         }
-        function renderMiniDots(count, icon) {
+        function renderMiniDots(count) {
             let html = '';
-            for (let i = 0; i < count; i++) html += `<span class="mini-dot">${icon}</span>`;
+            for (let i = 0; i < count; i++) html += `<span class="mini-dot"></span>`;
             return html;
         }
 
@@ -408,7 +425,6 @@
             part1 = 1 + Math.floor(Math.random() * (total - 1));
             targetPart = total - part1;
             missingPosition = Math.random() < 0.5 ? 'left' : 'right';
-            currentIcon = ICON_POOL[Math.floor(Math.random() * ICON_POOL.length)];
 
             let boxLNum = document.getElementById('partA');
             let boxLDots = document.getElementById('partADots');
@@ -418,17 +434,18 @@
             let boxRCard = document.getElementById('partBCard');
 
             document.getElementById('totalVal').innerText = total;
-            document.getElementById('totalDots').innerHTML = renderDots(total, currentIcon);
+            document.getElementById('totalDots').innerHTML = renderDots(total);
 
             if (missingPosition === 'left') {
                 boxLNum.innerText = '?'; boxLDots.innerHTML = ''; boxLCard.className = 'card-box question-mark';
-                boxRNum.innerText = part1; boxRDots.innerHTML = renderDots(part1, currentIcon); boxRCard.className = 'card-box part';
+                boxRNum.innerText = part1; boxRDots.innerHTML = renderDots(part1); boxRCard.className = 'card-box part';
             } else {
-                boxLNum.innerText = part1; boxLDots.innerHTML = renderDots(part1, currentIcon); boxLCard.className = 'card-box part';
+                boxLNum.innerText = part1; boxLDots.innerHTML = renderDots(part1); boxLCard.className = 'card-box part';
                 boxRNum.innerText = '?'; boxRDots.innerHTML = ''; boxRCard.className = 'card-box question-mark';
             }
 
             document.getElementById('questionText').innerText = `${total} 可以分成 ${part1} 和多少呢？`;
+            document.getElementById('equationText').innerText = `${total} = ${part1} + ?`;
             speak(`${total} 可以分成 ${part1} 和多少呢？氣球飄上來囉！`);
 
             let opts = [targetPart];
@@ -462,11 +479,42 @@
             }, SPEED_SETTINGS[speedMode].spawnInterval);
         }
 
+        // 【新增】具體的視覺化數數示範：把「已經有的部分」逐一劃掉變灰，
+        // 剩下沒被劃掉、會發亮跳動的，就是孩子要找的答案數量。
+        // 這是給還沒建立「總數減去已知數＝剩下的」抽象概念的孩子，
+        // 一個看得到、算得出來的具體示範，而不是只靠口頭說明。
+        function showVisualCountingHint(onDone) {
+            const totalDotsContainer = document.getElementById('totalDots');
+            const dots = Array.from(totalDotsContainer.querySelectorAll('.dot-item'));
+            dots.forEach(d => { d.classList.remove('dot-crossed', 'dot-remaining-highlight'); });
+
+            let i = 0;
+            function crossNext() {
+                if (i < part1 && i < dots.length) {
+                    dots[i].classList.add('dot-crossed');
+                    i++;
+                    setTimeout(crossNext, 350);
+                } else {
+                    for (let j = part1; j < dots.length; j++) {
+                        dots[j].classList.add('dot-remaining-highlight');
+                    }
+                    if (onDone) onDone();
+                }
+            }
+            crossNext();
+        }
+
         function useHint() {
             if (isPaused || isProcessing || !currentLevel) return;
             hintLevel++;
             if (hintLevel === 1) {
-                speak(`總共是 ${total} 個，已經有 ${part1} 個了，用手指數數看還差多少！`);
+                speak(`總共是 ${total} 個，已經有 ${part1} 個了，我們一起把已經有的部分蓋起來，剩下的就是答案！`);
+            } else if (hintLevel === 2) {
+                speak(`來，我們一起數一數，把已經有的部分蓋起來！`, () => {
+                    showVisualCountingHint(() => {
+                        speak(`看，剩下發亮跳動的這幾個，數一數，總共是 ${targetPart} 個，那就是答案！`);
+                    });
+                });
             } else {
                 speak(`答案是 ${targetPart}，找找看畫面上這個數字的氣球！`);
                 hintActiveValue = targetPart;
@@ -488,7 +536,7 @@
             const el = document.createElement('div');
             el.className = 'falling-option';
             el.dataset.val = String(val);
-            el.innerHTML = `<span class="opt-num">${val}</span><div class="drop-dots">${renderMiniDots(val, currentIcon)}</div>`;
+            el.innerHTML = `<span class="opt-num">${val}</span><div class="drop-dots">${renderMiniDots(val)}</div>`;
             if (hintActiveValue !== null && val === hintActiveValue) el.classList.add('hint-glow');
 
             const colors = ['#dc2626', '#c2410c', '#ca8a04', '#16a34a', '#0284c7', '#7c3aed', '#db2777'];
@@ -519,11 +567,11 @@
 
                     if (missingPosition === 'left') {
                         document.getElementById('partA').innerText = val;
-                        document.getElementById('partADots').innerHTML = renderDots(val, currentIcon);
+                        document.getElementById('partADots').innerHTML = renderDots(val);
                         document.getElementById('partACard').className = 'card-box part';
                     } else {
                         document.getElementById('partB').innerText = val;
-                        document.getElementById('partBDots').innerHTML = renderDots(val, currentIcon);
+                        document.getElementById('partBDots').innerHTML = renderDots(val);
                         document.getElementById('partBCard').className = 'card-box part';
                     }
 
