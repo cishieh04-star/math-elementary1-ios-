@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>10以內的減法遊戲(小飛機版)</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+        html, body {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #fdfbf7, #e0f7ff);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; touch-action: manipulation;
+        }
+
+        #home-screen, #game-ui {
+            width: 100%; max-width: 500px; height: 100%; max-height: 100dvh;
+            display: flex; flex-direction: column; align-items: center;
+            background: #fff; border-radius: 18px; border: 3px solid #0ea5e9;
+            padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: auto; position: relative;
+            overflow-y: auto; gap: 6px;
+        }
+        #home-screen { justify-content: flex-start; }
+        #game-ui { display: none; justify-content: flex-start; }
+
+        h1 { font-size: 22px; color: #1e293b; margin: 4px 0; }
+        .subtitle { color: #64748b; font-size: 13px; margin: 0 0 8px 0; }
+
+        .intro-card {
+            background: #f0f9ff; border: 2px solid #bae6fd;
+            border-radius: 12px; padding: 8px 14px; margin-bottom: 10px; width: 100%;
+            text-align: left; box-sizing: border-box;
+        }
+        .intro-card h3 { margin: 0 0 4px 0; font-size: 14px; color: #0369a1; }
+        .intro-card ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; color: #334155; }
+        .intro-card li { margin-bottom: 3px; }
+
+        .start-btn { padding: 12px 30px; font-size: 22px; font-weight: bold; background-color: #0ea5e9; color: white; border-radius: 16px; cursor: pointer; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); border: none; width: 100%; max-width: 260px; }
+        .start-btn:active { transform: scale(0.95); background-color: #0284c7; }
+
+        #status-bar {
+            display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; row-gap: 4px;
+            font-size: 13px; font-weight: bold; color: #1e293b;
+            border-bottom: 2px solid #e0f2fe; padding-bottom: 4px; flex-shrink: 0;
+        }
+        .status-left { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
+
+        .btn-group { display: flex; gap: 4px; flex-wrap: wrap; row-gap: 4px; }
+        .control-btn {
+            padding: 5px 10px; font-size: 12px; background: #0ea5e9; color: white; border: none;
+            border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .control-btn:active { transform: scale(0.95); background: #0284c7; }
+        .hint-btn { background: #16a34a; }
+        .pause-btn-el { background: #d97706; }
+        .switch-btn { background: #64748b; }
+
+        .speed-row { display: flex; gap: 4px; justify-content: center; width: 100%; flex-shrink: 0; }
+        .speed-btn {
+            flex: 1; max-width: 100px; background: #f0f9ff; color: #334155; border: 2px solid #bae6fd;
+            border-radius: 8px; padding: 3px 4px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+        .speed-btn.active { background: #0ea5e9; color: #fff; border-color: #0284c7; }
+        .speed-btn:active { transform: scale(0.95); }
+
+        #visual-area {
+            min-height: 70px; max-height: 110px; width: 100%; display: flex; align-items: center; justify-content: center;
+            gap: 10px; flex-wrap: wrap; overflow-y: auto; flex-shrink: 0;
+            background: #f0f9ff; border: 2px dashed #7dd3fc; border-radius: 10px; padding: 8px;
+        }
+        /* 十格框排列：每排固定5個小圓圈，方便孩子清楚數數 */
+        .dot-group { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .dot { width: 20px; height: 20px; border-radius: 50%; background: #38bdf8; animation: dotBounce 1s infinite alternate; }
+        @keyframes dotBounce { 0% { transform: translateY(0); } 100% { transform: translateY(-4px); } }
+        .symbol { font-size: 30px; font-weight: bold; color: #64748b; padding: 0 4px; }
+
+        #question { font-size: 34px; font-weight: bold; color: #1e293b; margin: 2px 0; flex-shrink: 0; }
+        #feedback { font-size: 15px; color: #0369a1; font-weight: bold; min-height: 22px; flex-shrink: 0; }
+
+        #drop-game-container {
+            position: relative; width: 100%; height: 150px; min-height: 150px; flex-grow: 1; max-height: 250px;
+            background: linear-gradient(180deg, #e0f2fe, #f1f5f9);
+            border: 3px solid #7dd3fc; border-radius: 14px;
+            overflow: hidden; box-sizing: border-box;
+        }
+
+        /* 小飛機造型：呼應減法「拿走、飛走變少」的概念，取代原本的按鈕 */
+        .falling-option {
+            position: absolute; width: 78px; height: 50px; cursor: pointer;
+            animation: floatUp linear forwards;
+            z-index: 999;
+        }
+        .plane-wing {
+            position: absolute; top: 6px; left: 20px; width: 36px; height: 14px;
+            background: var(--plane-color, #0ea5e9); border-radius: 4px;
+            transform: skewX(-18deg); opacity: 0.85;
+        }
+        .plane-body {
+            position: absolute; top: 17px; left: 6px; width: 58px; height: 17px;
+            background: var(--plane-color, #0ea5e9); border-radius: 50% 50% 40% 40% / 65% 65% 35% 35%;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.28);
+        }
+        .plane-nose {
+            position: absolute; top: 19px; left: 60px; width: 0; height: 0;
+            border-top: 6.5px solid transparent; border-bottom: 6.5px solid transparent;
+            border-left: 14px solid var(--plane-color, #0ea5e9);
+        }
+        .plane-tail {
+            position: absolute; top: 8px; left: 4px; width: 13px; height: 13px;
+            background: var(--plane-color, #0ea5e9); border-radius: 3px;
+            transform: skewX(18deg);
+        }
+        .plane-num {
+            position: absolute; top: 17px; left: 6px; width: 58px; height: 17px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: bold; color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); z-index: 3;
+        }
+        .falling-option:active { transform: scale(0.92); }
+        .falling-option.hint-glow .plane-body {
+            box-shadow: 0 0 0 3px #fde047, 0 3px 6px rgba(0,0,0,0.3);
+            animation: glowPulse 1s ease-in-out infinite;
+        }
+        .falling-option.popping { animation: popEffect 0.32s ease-out forwards !important; pointer-events: none; }
+        @keyframes glowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+        @keyframes popEffect {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            35% { transform: scale(1.35) rotate(-4deg); opacity: 1; }
+            100% { transform: scale(0.15) rotate(10deg); opacity: 0; }
+        }
+        @keyframes floatUp {
+            0%   { top: 100%; transform: translateX(0); }
+            25%  { transform: translateX(10px); }
+            50%  { transform: translateX(-8px); }
+            75%  { transform: translateX(8px); }
+            100% { top: -60px; transform: translateX(-4px); }
+        }
+
+        #completeOverlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.96); border-radius: 16px; z-index: 5000;
+            flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 16px;
+        }
+        #completeOverlay .equation { font-size: 26px; font-weight: bold; color: #0284c7; font-family: monospace; }
+        #completeOverlay .cheer { font-size: 15px; font-weight: bold; color: #0369a1; }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen">
+        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
+            <h1>➖ 10以內的減法遊戲</h1>
+            <p class="subtitle">快樂學習 10 以內減法，輕鬆闖關！</p>
+
+            <div class="intro-card">
+                <h3>📖 遊戲使用說明</h3>
+                <ul>
+                    <li><strong>觀察算式：</strong>看清楚畫面上的減法算式與圖案，數一數幫助思考。</li>
+                    <li><strong>算出答案：</strong>動腦算出拿走之後還剩下多少。</li>
+                    <li><strong>抓飛機作答：</strong>畫面下方會飛來一架架小飛機，點對答案的飛機就能過關！</li>
+                    <li><strong>卡住了嗎：</strong>按「💡提示」會給你線索！</li>
+                    <li>題目會先從簡單的減 1 開始，慢慢加深難度喔！</li>
+                </ul>
+            </div>
+
+            <button class="start-btn" id="startBtn" onclick="startGame()">🎮 開始遊戲</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <div id="status-bar">
+            <div class="status-left">
+                <span id="score">闖關: 0</span>
+            </div>
+            <div class="btn-group">
+                <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
+                <button class="control-btn pause-btn-el" id="pause-btn" onclick="togglePause()">暫停</button>
+                <button class="control-btn switch-btn" onclick="restartGame()">🔄重新開始</button>
+            </div>
+        </div>
+
+        <div class="speed-row">
+            <button class="speed-btn" id="speedSlow" onclick="setSpeed('slow')">🐢慢</button>
+            <button class="speed-btn active" id="speedNormal" onclick="setSpeed('normal')">🚶正常</button>
+            <button class="speed-btn" id="speedFast" onclick="setSpeed('fast')">🐇快</button>
+        </div>
+
+        <div id="visual-area"></div>
+        <div id="question">? - ? = ?</div>
+        <div id="feedback"></div>
+
+        <div id="drop-game-container"></div>
+
+        <div id="completeOverlay">
+            <div class="equation" id="completeEquation">7 - 4 = 3</div>
+            <div class="cheer">🌟 太棒了，答對了！</div>
+        </div>
+    </div>
+
+    <script>
+
+        let questionCount = 0; // 追蹤目前是第幾題，用來決定難度要提升到多少
+
+        // 難度隨題數漸進提升：一開始都是減1的基本題，多練習幾題後才加深，
+        // 前面刻意安排較多簡單題，不會太快跳到較大的減數。
+        function getSubtractionParams() {
+            let n1, n2;
+            if (questionCount < 8) {
+                n2 = 1;
+                n1 = 2 + Math.floor(Math.random() * 9); // 2~10
+            } else if (questionCount < 14) {
+                n2 = 1 + Math.floor(Math.random() * 2); // 1~2
+                n1 = n2 + 1 + Math.floor(Math.random() * (10 - n2)); // n1 範圍 [n2+1, 10]
+            } else {
+                n1 = 2 + Math.floor(Math.random() * 9); // 2~10
+                const maxN2 = Math.min(n1 - 1, 5);
+                n2 = 1 + Math.floor(Math.random() * maxN2); // 確保 n2 < n1
+            }
+            return { n1, n2 };
+        }
+
+        let gameStarted = false;
+        let audioCtx = null;
+        let currentAns = 0, n1 = 0, n2 = 0, score = 0;
+        let gameInterval = null;
+        let activeOptions = [];
+        let isAnswered = false;
+        let isPaused = false;
+        let pendingNextQuestion = false;
+        let nextQuestionTimeout = null;
+        let optionsArr = [];
+        let hintLevel = 0;
+        let hintActiveValue = null;
+        let speedMode = 'normal';
+
+        const SPEED_SETTINGS = {
+            slow:   { fallDuration: 8,   spawnInterval: 2600 },
+            normal: { fallDuration: 5.5, spawnInterval: 2000 },
+            fast:   { fallDuration: 3.5, spawnInterval: 1300 }
+        };
+
+        function speak(text, onEnd) {
+            if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
+            try {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'zh-TW';
+                if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
+                window.speechSynthesis.speak(msg);
+            } catch(e) { if (onEnd) onEnd(); }
+        }
+
+        function boom() { try { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); } catch (e) {} }
+
+        function playPopSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(700, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
+                gain.gain.setValueAtTime(0.38, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.14);
+            } catch (e) {}
+        }
+
+        function restartGame() {
+            isPaused = false;
+            pendingNextQuestion = false;
+            gameStarted = false;
+            questionCount = 0;
+            if (gameInterval) clearInterval(gameInterval);
+            if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            hideCompletionScreen();
+            try { window.speechSynthesis.cancel(); } catch (e) {}
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('home-screen').style.display = 'flex';
+        }
+
+        function startGame() {
+            if (document.getElementById('home-screen').style.display === 'none') return;
+            gameStarted = true;
+            questionCount = 0;
+
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass && !audioCtx) {
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+                }
+            } catch(e) {}
+
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'flex';
+            score = 0;
+            document.getElementById('score').innerText = `闖關: ${score}`;
+            const pauseBtn = document.getElementById('pause-btn');
+            pauseBtn.innerText = "暫停"; pauseBtn.style.backgroundColor = "#d97706";
+            loadQuestion();
+        }
+
+        function setSpeed(mode) {
+            speedMode = mode;
+            ['slow', 'normal', 'fast'].forEach(m => {
+                document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
+            });
+            if (!isPaused && !isAnswered && gameStarted) startFallingLoop();
+        }
+
+        function togglePause() {
+            if (!gameStarted) return;
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+
+            if (isPaused) {
+                pauseBtn.innerText = "繼續";
+                pauseBtn.style.backgroundColor = "#16a34a";
+                document.getElementById('feedback').innerText = "⏸️ 遊戲已暫停，休息一下！";
+                activeOptions.forEach(el => el.style.animationPlayState = 'paused');
+                if (gameInterval) clearInterval(gameInterval);
+                if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            } else {
+                pauseBtn.innerText = "暫停";
+                pauseBtn.style.backgroundColor = "#d97706";
+                document.getElementById('feedback').innerText = "";
+                activeOptions.forEach(el => el.style.animationPlayState = 'running');
+                if (pendingNextQuestion) {
+                    pendingNextQuestion = false;
+                    hideCompletionScreen();
+                    loadQuestion();
+                } else if (!isAnswered) {
+                    startFallingLoop();
+                }
+            }
+        }
+
+        function loadQuestion() {
+            if (!gameStarted) return;
+            isAnswered = false;
+            hintLevel = 0;
+            hintActiveValue = null;
+            hideCompletionScreen();
+
+            document.getElementById('feedback').innerText = "小飛機飛過來囉！";
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            if (gameInterval) clearInterval(gameInterval);
+
+            const params = getSubtractionParams();
+            questionCount++;
+            n1 = params.n1;
+            n2 = params.n2;
+            currentAns = n1 - n2;
+
+            document.getElementById('question').innerText = `${n1} - ${n2} = ?`;
+            renderDots(n1, n2);
+
+            speak(`${n1} 減 ${n2} 等於多少呢？`);
+
+            let options = new Set([currentAns]);
+            let attempts = 0;
+            while (options.size < 4 && attempts < 100) {
+                attempts++;
+                const r = 1 + Math.floor(Math.random() * 10);
+                options.add(r);
+            }
+            optionsArr = Array.from(options).sort(() => Math.random() - 0.5);
+
+            startFallingLoop();
+        }
+
+        function startFallingLoop() {
+            if (isPaused || isAnswered || !gameStarted) return;
+            if (gameInterval) clearInterval(gameInterval);
+            let index = 0;
+            gameInterval = setInterval(() => {
+                if (isPaused) return;
+                if (isAnswered) { clearInterval(gameInterval); return; }
+                if (index >= optionsArr.length) index = 0;
+                spawnFallingOption(optionsArr[index]);
+                index++;
+            }, SPEED_SETTINGS[speedMode].spawnInterval);
+        }
+
+        function useHint() {
+            if (isPaused || isAnswered || !gameStarted) return;
+            hintLevel++;
+            if (hintLevel === 1) {
+                speak(`用手指指著上面的圖案數一數，${n1} 個裡面拿走 ${n2} 個，還剩下多少呢？`);
+            } else {
+                speak(`答案是 ${currentAns}，找找看畫面上這個數字的小飛機！`);
+                hintActiveValue = currentAns;
+                activeOptions.forEach(opt => { if (opt.dataset.val === String(currentAns)) opt.classList.add('hint-glow'); });
+            }
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('completeEquation').innerText = `${n1} - ${n2} = ${currentAns}`;
+            document.getElementById('completeOverlay').style.display = 'flex';
+        }
+        function hideCompletionScreen() {
+            document.getElementById('completeOverlay').style.display = 'none';
+        }
+
+        function spawnFallingOption(val) {
+            if (isAnswered || isPaused) return;
+            const container = document.getElementById('drop-game-container');
+            const el = document.createElement('div');
+            el.className = 'falling-option';
+            el.dataset.val = String(val);
+            if (hintActiveValue !== null && val === hintActiveValue) el.classList.add('hint-glow');
+
+            const colors = ['#0ea5e9', '#0284c7', '#0891b2', '#16a34a', '#7c3aed', '#db2777', '#ca8a04'];
+            const dark = colors[Math.floor(Math.random() * colors.length)];
+            el.style.setProperty('--plane-color', dark);
+            el.innerHTML = `
+                <div class="plane-wing"></div>
+                <div class="plane-tail"></div>
+                <div class="plane-body"></div>
+                <div class="plane-nose"></div>
+                <div class="plane-num">${val}</div>
+            `;
+
+            const randomX = Math.random() * (container.clientWidth - 78);
+            el.style.left = randomX + 'px';
+            el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
+            if (isPaused) el.style.animationPlayState = 'paused';
+
+            let isHandled = false;
+            const handleSelect = (e) => {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                if (isAnswered || isHandled || isPaused) return;
+
+                if (val === currentAns) {
+                    isAnswered = true;
+                    isHandled = true;
+                    if (gameInterval) clearInterval(gameInterval);
+
+                    playPopSound();
+                    el.classList.add('popping');
+                    setTimeout(() => el.remove(), 320);
+                    activeOptions.forEach(opt => { if (opt !== el) opt.remove(); });
+                    activeOptions = [];
+
+                    score++;
+                    document.getElementById('score').innerText = `闖關: ${score}`;
+                    document.getElementById('question').innerText = `${n1} - ${n2} = ${currentAns}`;
+                    document.getElementById('feedback').innerText = "太棒了！👍";
+                    renderResultDots(currentAns);
+                    setTimeout(() => boom(), 150);
+                    showCompletionScreen();
+
+                    pendingNextQuestion = true;
+                    const goNext = () => {
+                        if (!pendingNextQuestion) return;
+                        if (isPaused) return;
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        pendingNextQuestion = false;
+                        loadQuestion();
+                    };
+                    speak(`答案是 ${currentAns}，太棒了！`, () => {
+                        if (!pendingNextQuestion) return;
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        nextQuestionTimeout = setTimeout(goNext, 1000);
+                    });
+                    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                    nextQuestionTimeout = setTimeout(goNext, 6000);
+
+                } else {
+                    isHandled = true;
+                    speak("再算算看喔！");
+                    document.getElementById('feedback').innerText = "❌ 再試一次！";
+                    el.style.transition = "opacity 0.3s";
+                    el.style.opacity = "0";
+                    setTimeout(() => el.remove(), 300);
+                }
+            };
+
+            el.addEventListener('pointerdown', handleSelect);
+            el.addEventListener('animationend', () => {
+                el.remove();
+                activeOptions = activeOptions.filter(item => item !== el);
+            });
+
+            container.appendChild(el);
+            activeOptions.push(el);
+        }
+
+        // 題目圖像：num1 個亮圓圈，扣掉的 num2 個顯示成變灰的圓圈，
+        // 讓孩子直接看到「拿走」的概念，而不只是抽象的減號。
+        function renderDots(num1, num2) {
+            let area = document.getElementById('visual-area');
+            let html = '<div class="dot-group">';
+            for (let i = 0; i < num1; i++) html += `<div class="dot"></div>`;
+            html += '</div><span class="symbol">-</span><div class="dot-group">';
+            for (let i = 0; i < num2; i++) html += `<div class="dot"></div>`;
+            html += '</div>';
+            area.innerHTML = html;
+        }
+        function renderResultDots(res) {
+            let area = document.getElementById('visual-area');
+            let html = '<div class="dot-group">';
+            for (let i = 0; i < res; i++) html += `<div class="dot"></div>`;
+            html += '</div>';
+            area.innerHTML = html;
+        }
+
+    </script>
+</body>
+</html>
