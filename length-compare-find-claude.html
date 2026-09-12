@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>長度比較樂：找一找</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+        html, body {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #fdfbf7, #eff6ff);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; touch-action: manipulation;
+        }
+
+        #home-screen, #game-ui {
+            width: 100%; max-width: 500px; height: 100%; max-height: 100dvh;
+            display: flex; flex-direction: column; align-items: center;
+            background: #fff; border-radius: 18px; border: 3px solid #3b82f6;
+            padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: auto; position: relative;
+            overflow-y: auto; gap: 6px;
+        }
+        #home-screen { justify-content: flex-start; }
+        #game-ui { display: none; justify-content: flex-start; }
+
+        h1 { font-size: 20px; color: #1e3a8a; margin: 4px 0; }
+        .subtitle { color: #2563eb; font-size: 13px; margin: 0 0 8px 0; font-weight: bold; }
+
+        .intro-card {
+            background: #eff6ff; border: 2px solid #bfdbfe;
+            border-radius: 12px; padding: 8px 14px; margin-bottom: 10px; width: 100%;
+            text-align: left; box-sizing: border-box;
+        }
+        .intro-card h3 { margin: 0 0 4px 0; font-size: 14px; color: #1d4ed8; }
+        .intro-card ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; color: #334155; }
+        .intro-card li { margin-bottom: 3px; }
+
+        .start-btn { padding: 12px 30px; font-size: 22px; font-weight: bold; background-color: #3b82f6; color: white; border-radius: 16px; cursor: pointer; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); border: none; width: 100%; max-width: 260px; }
+        .start-btn:active { transform: scale(0.95); background-color: #1d4ed8; }
+
+        #status-bar {
+            display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; row-gap: 4px;
+            font-size: 13px; font-weight: bold; color: #1e293b;
+            border-bottom: 2px solid #eff6ff; padding-bottom: 4px; flex-shrink: 0;
+        }
+        .btn-group { display: flex; gap: 4px; flex-wrap: wrap; row-gap: 4px; }
+        .control-btn {
+            padding: 5px 10px; font-size: 12px; background: #3b82f6; color: white; border: none;
+            border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .control-btn:active { transform: scale(0.95); background: #1d4ed8; }
+        .hint-btn { background: #16a34a; }
+        .pause-btn-el { background: #d97706; }
+        .switch-btn { background: #64748b; }
+
+        .speed-row { display: flex; gap: 4px; width: 100%; justify-content: center; margin-bottom: 4px; flex-shrink: 0; }
+        .speed-btn {
+            flex: 1; max-width: 100px; background: #eff6ff; color: #1e3a8a; border: 2px solid #bfdbfe;
+            border-radius: 8px; padding: 3px 4px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+        .speed-btn.active { background: #3b82f6; color: #fff; border-color: #1d4ed8; }
+        .speed-btn:active { transform: scale(0.95); }
+
+        /* 參考物固定區 */
+        #reference-area {
+            width: 100%; flex-shrink: 0;
+            background: #fff7ed; border: 3px solid #fb923c; border-radius: 12px;
+            padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .reference-label { font-size: 12px; font-weight: bold; color: #c2410c; }
+        .object-bar { height: 30px; border-radius: 7px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .object-decor { position: absolute; font-size: 22px; }
+
+        #question-text { font-size: 17px; font-weight: bold; color: #1e3a8a; margin: 6px 0 2px 0; flex-shrink: 0; text-align: center; }
+        #progress-text { font-size: 14px; color: #16a34a; font-weight: bold; margin-bottom: 2px; flex-shrink: 0; }
+        #feedback { font-size: 13px; color: #2563eb; font-weight: bold; min-height: 18px; flex-shrink: 0; }
+
+        /* 掉落區 */
+        #drop-game-container {
+            position: relative; width: 100%; flex-grow: 1; min-height: 180px; max-height: 280px;
+            background: linear-gradient(180deg, #dbeafe, #f8fafc);
+            border: 3px solid #93c5fd; border-radius: 14px;
+            overflow: hidden; touch-action: manipulation;
+        }
+        .falling-object {
+            position: absolute; cursor: pointer;
+            animation: floatDown linear forwards;
+            z-index: 999;
+            display: flex; align-items: center;
+        }
+        .falling-object:active { transform: scale(0.93); }
+        .falling-object.hint-glow .object-bar {
+            box-shadow: 0 0 0 3px #fde047, 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .falling-object.popping { animation: popEffect 0.3s ease-out forwards !important; pointer-events: none; }
+        @keyframes popEffect {
+            0% { transform: scale(1); opacity: 1; }
+            40% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.1); opacity: 0; }
+        }
+        @keyframes floatDown {
+            0%   { top: -50px; }
+            100% { top: 100%; }
+        }
+
+        #completeOverlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.96); border-radius: 16px; z-index: 5000;
+            flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 16px;
+        }
+        #completeOverlay .cheer { font-size: 18px; font-weight: bold; color: #1e3a8a; }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen">
+        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
+            <h1>🔍 長度比較樂：找一找 🔍</h1>
+            <p class="subtitle">找出比參考物更長或更短的物品！</p>
+
+            <div class="intro-card">
+                <h3>📖 遊戲使用說明</h3>
+                <ul>
+                    <li>上方會固定出現一個「參考物」。</li>
+                    <li>看清楚題目，要找「比它長的」還是「比它短的」。</li>
+                    <li>下方會飄下來各種長度不同的物品，點對符合條件的，連續抓對 3 個就過關！</li>
+                    <li>點錯了沒關係，那個物品會消失，繼續找下一個就好。</li>
+                    <li>卡住了嗎？按「💡提示」會給你線索！</li>
+                    <li>題目會先從差異很明顯的開始，慢慢變得需要仔細比較喔！</li>
+                </ul>
+            </div>
+
+            <button class="start-btn" id="startBtn" onclick="startGame()">🎮 開始遊戲</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <div id="status-bar">
+            <span id="score">闖關: 0</span>
+            <div class="btn-group">
+                <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
+                <button class="control-btn pause-btn-el" id="pause-btn" onclick="togglePause()">暫停</button>
+                <button class="control-btn switch-btn" onclick="restartGame()">🔄重新開始</button>
+            </div>
+        </div>
+
+        <div class="speed-row">
+            <button class="speed-btn" id="speedSlow" onclick="setSpeed('slow')">🐢慢</button>
+            <button class="speed-btn active" id="speedNormal" onclick="setSpeed('normal')">🚶正常</button>
+            <button class="speed-btn" id="speedFast" onclick="setSpeed('fast')">🐇快</button>
+        </div>
+
+        <div id="reference-area">
+            <span class="reference-label">📌 參考物</span>
+            <div class="object-bar" id="refBar"></div>
+        </div>
+
+        <div id="question-text">找出比它長的！</div>
+        <div id="progress-text">已找到: 0 / 3</div>
+        <div id="feedback"></div>
+
+        <div id="drop-game-container"></div>
+
+        <div id="completeOverlay">
+            <div class="cheer">🌟 太棒了，都找對了！</div>
+        </div>
+    </div>
+
+    <script>
+        let roundCount = 0; // 追蹤目前是第幾輪，用來決定難度
+
+        // 難度隨輪數漸進提升：一開始物品跟參考物的長度差異很明顯，
+        // 之後差異慢慢縮小，需要更仔細比較才能分辨。
+        function getRatioRange() {
+            if (roundCount < 3) return [1.7, 2.2];
+            if (roundCount < 6) return [1.35, 1.6];
+            return [1.15, 1.3];
+        }
+
+        const OBJECT_THEMES = [
+            { name: '鉛筆', barColor: '#fbbf24', barBorder: '#b45309', tip: '✏️' },
+            { name: '吸管', barColor: '#38bdf8', barBorder: '#0369a1', tip: '🥤' },
+            { name: '緞帶', barColor: '#f472b6', barBorder: '#9d174d', tip: '🎀' },
+            { name: '蠟燭', barColor: '#fef3c7', barBorder: '#d97706', tip: '🕯️' },
+            { name: '湯匙', barColor: '#cbd5e1', barBorder: '#64748b', tip: '🥄' }
+        ];
+
+        const TARGET_CATCHES = 3;
+        const SPEED_SETTINGS = {
+            slow:   { fallDuration: 8,   spawnInterval: 2200 },
+            normal: { fallDuration: 6,   spawnInterval: 1700 },
+            fast:   { fallDuration: 4,   spawnInterval: 1200 }
+        };
+
+        let gameStarted = false;
+        let audioCtx = null;
+        let score = 0;
+        let isPaused = false;
+        let hintLevel = 0;
+        let speedMode = 'normal';
+        let gameInterval = null;
+        let activeOptions = [];
+        let pendingNextQuestion = false;
+        let nextQuestionTimeout = null;
+
+        let refLen = 0;
+        let askForLonger = true;
+        let currentTheme = OBJECT_THEMES[0];
+        let caughtCount = 0;
+        let isRoundDone = false;
+
+        function speak(text, onEnd) {
+            if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
+            try {
+                window.speechSynthesis.cancel();
+                let finished = false;
+                const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'zh-TW';
+                msg.onend = trigger;
+                msg.onerror = trigger;
+                window.speechSynthesis.speak(msg);
+                setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
+            } catch (e) { if (onEnd) onEnd(); }
+        }
+
+        function boom() { try { confetti({ particleCount: 150, spread: 85, origin: { y: 0.6 } }); } catch (e) {} }
+
+        function playPopSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1300, now + 0.13);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.17);
+            } catch (e) {}
+        }
+        function playGentleNudgeSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(420, now);
+                osc.frequency.exponentialRampToValueAtTime(340, now + 0.16);
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.18);
+            } catch (e) {}
+        }
+
+        function restartGame() {
+            isPaused = false;
+            pendingNextQuestion = false;
+            gameStarted = false;
+            roundCount = 0;
+            if (gameInterval) clearInterval(gameInterval);
+            if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            hideCompletionScreen();
+            try { window.speechSynthesis.cancel(); } catch (e) {}
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('home-screen').style.display = 'flex';
+        }
+
+        function startGame() {
+            if (document.getElementById('home-screen').style.display === 'none') return;
+            gameStarted = true;
+            roundCount = 0;
+
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass && !audioCtx) {
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+                }
+            } catch(e) {}
+
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'flex';
+            score = 0;
+            document.getElementById('score').innerText = `闖關: ${score}`;
+            const pauseBtn = document.getElementById('pause-btn');
+            pauseBtn.innerText = "暫停"; pauseBtn.style.backgroundColor = "#d97706";
+            startRound();
+        }
+
+        function setSpeed(mode) {
+            speedMode = mode;
+            ['slow', 'normal', 'fast'].forEach(m => {
+                document.getElementById('speed' + m.charAt(0).toUpperCase() + m.slice(1)).classList.toggle('active', m === mode);
+            });
+            if (!isPaused && !isRoundDone && gameStarted) startFallingLoop();
+        }
+
+        function togglePause() {
+            if (!gameStarted) return;
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+
+            if (isPaused) {
+                pauseBtn.innerText = "繼續";
+                pauseBtn.style.backgroundColor = "#16a34a";
+                document.getElementById('feedback').innerText = "⏸️ 遊戲已暫停，休息一下！";
+                activeOptions.forEach(el => el.style.animationPlayState = 'paused');
+                if (gameInterval) clearInterval(gameInterval);
+                if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            } else {
+                pauseBtn.innerText = "暫停";
+                pauseBtn.style.backgroundColor = "#d97706";
+                document.getElementById('feedback').innerText = "";
+                activeOptions.forEach(el => el.style.animationPlayState = 'running');
+                if (pendingNextQuestion) {
+                    pendingNextQuestion = false;
+                    hideCompletionScreen();
+                    startRound();
+                } else if (!isRoundDone) {
+                    startFallingLoop();
+                }
+            }
+        }
+
+        function startRound() {
+            if (!gameStarted) return;
+            isRoundDone = false;
+            hintLevel = 0;
+            caughtCount = 0;
+            hideCompletionScreen();
+            activeOptions.forEach(el => el.remove());
+            activeOptions = [];
+            if (gameInterval) clearInterval(gameInterval);
+
+            roundCount++;
+            refLen = 90 + Math.floor(Math.random() * 60);
+            askForLonger = Math.random() < 0.5;
+            currentTheme = OBJECT_THEMES[Math.floor(Math.random() * OBJECT_THEMES.length)];
+
+            renderReference();
+            document.getElementById('question-text').innerText = askForLonger ? '找出比它長的！' : '找出比它短的！';
+            document.getElementById('progress-text').innerText = `已找到: ${caughtCount} / ${TARGET_CATCHES}`;
+            document.getElementById('feedback').innerText = '';
+
+            speak(askForLonger ? '找找看，比它長的是哪些呢？' : '找找看，比它短的是哪些呢？');
+
+            startFallingLoop();
+        }
+
+        function renderReference() {
+            const bar = document.getElementById('refBar');
+            bar.style.width = refLen + 'px';
+            bar.style.background = currentTheme.barColor;
+            bar.style.border = `2px solid ${currentTheme.barBorder}`;
+            bar.innerHTML = `<span class="object-decor" style="right:-13px;">${currentTheme.tip}</span>`;
+        }
+
+        function generateTestLength(ratioRange) {
+            const isLonger = Math.random() < 0.5;
+            const [minR, maxR] = ratioRange;
+            const ratio = minR + Math.random() * (maxR - minR);
+            const len = isLonger ? refLen * ratio : refLen / ratio;
+            return { len: Math.round(Math.max(30, Math.min(240, len))), isLonger };
+        }
+
+        function startFallingLoop() {
+            if (!gameStarted || isPaused || isRoundDone) return;
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                if (isPaused || isRoundDone) return;
+                spawnFallingOption();
+            }, SPEED_SETTINGS[speedMode].spawnInterval);
+        }
+
+        function useHint() {
+            if (isPaused || isRoundDone || !gameStarted) return;
+            hintLevel++;
+            if (hintLevel === 1) {
+                speak(`比比看，跟參考物比起來，要找${askForLonger ? '更長' : '更短'}的喔！`);
+            } else {
+                // 在畫面上現有的物品裡，找一個真的符合條件的，標示發光。
+                const match = activeOptions.find(el => el.dataset.matches === 'true');
+                if (match) {
+                    match.classList.add('hint-glow');
+                    speak('找找看發亮的這一個！');
+                } else {
+                    speak(`繼續看，比它${askForLonger ? '長' : '短'}的等一下就會出現囉！`);
+                }
+            }
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('completeOverlay').style.display = 'flex';
+        }
+        function hideCompletionScreen() {
+            document.getElementById('completeOverlay').style.display = 'none';
+        }
+
+        function spawnFallingOption() {
+            if (isPaused || isRoundDone) return;
+            const container = document.getElementById('drop-game-container');
+            const ratioRange = getRatioRange();
+            const { len, isLonger } = generateTestLength(ratioRange);
+            const matches = askForLonger ? isLonger : !isLonger;
+
+            const el = document.createElement('div');
+            el.className = 'falling-object';
+            el.dataset.matches = matches ? 'true' : 'false';
+
+            const bar = document.createElement('div');
+            bar.className = 'object-bar';
+            bar.style.width = len + 'px';
+            bar.style.background = currentTheme.barColor;
+            bar.style.border = `2px solid ${currentTheme.barBorder}`;
+            bar.innerHTML = `<span class="object-decor" style="right:-13px;">${currentTheme.tip}</span>`;
+            el.appendChild(bar);
+
+            const maxLeft = Math.max(10, container.clientWidth - len - 24);
+            el.style.left = Math.floor(Math.random() * maxLeft) + 'px';
+            el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
+            if (isPaused) el.style.animationPlayState = 'paused';
+
+            let isHandled = false;
+            const handleSelect = (e) => {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                if (isHandled || isPaused || isRoundDone) return;
+                isHandled = true;
+
+                if (matches) {
+                    playPopSound();
+                    el.classList.add('popping');
+                    setTimeout(() => el.remove(), 300);
+                    activeOptions = activeOptions.filter(item => item !== el);
+
+                    caughtCount++;
+                    document.getElementById('progress-text').innerText = `已找到: ${caughtCount} / ${TARGET_CATCHES}`;
+                    document.getElementById('feedback').innerText = '太棒了！👍';
+
+                    if (caughtCount >= TARGET_CATCHES) {
+                        isRoundDone = true;
+                        if (gameInterval) clearInterval(gameInterval);
+                        activeOptions.forEach(opt => opt.remove());
+                        activeOptions = [];
+
+                        score++;
+                        document.getElementById('score').innerText = `闖關: ${score}`;
+                        setTimeout(() => boom(), 150);
+                        showCompletionScreen();
+
+                        pendingNextQuestion = true;
+                        const goNext = () => {
+                            if (!pendingNextQuestion) return;
+                            if (isPaused) return;
+                            if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                            pendingNextQuestion = false;
+                            startRound();
+                        };
+                        speak('都找對了，太棒了！', () => {
+                            if (!pendingNextQuestion) return;
+                            if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                            nextQuestionTimeout = setTimeout(goNext, 1000);
+                        });
+                        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+                        nextQuestionTimeout = setTimeout(goNext, 5000);
+                    }
+                } else {
+                    playGentleNudgeSound();
+                    document.getElementById('feedback').innerText = '😊 這個不對喔，再找找看！';
+                    el.style.transition = 'opacity 0.3s';
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                    activeOptions = activeOptions.filter(item => item !== el);
+                }
+            };
+
+            el.addEventListener('pointerdown', handleSelect);
+            el.addEventListener('animationend', () => {
+                el.remove();
+                activeOptions = activeOptions.filter(item => item !== el);
+            });
+
+            container.appendChild(el);
+            activeOptions.push(el);
+        }
+    </script>
+</body>
+</html>
