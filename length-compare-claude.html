@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>長度比較遊戲(對齊比一比)</title>
+    <title>長度比較樂：對齊比一比</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
@@ -67,6 +67,18 @@
             display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
             padding: 20px 12px; gap: 30px; position: relative; overflow: hidden;
         }
+        /* 尺規：對齊物品的起始邊，讓孩子可以看刻度輔助比較長短 */
+        #ruler-wrap { width: 100%; padding: 0 12px; box-sizing: border-box; flex-shrink: 0; }
+        #ruler { position: relative; height: 26px; width: 100%; }
+        .ruler-tick {
+            position: absolute; bottom: 2px; width: 2px; background: #475569;
+        }
+        .ruler-tick.major { height: 14px; background: #1e293b; }
+        .ruler-tick.minor { height: 8px; }
+        .ruler-num {
+            position: absolute; bottom: 15px; font-size: 10px; font-weight: bold; color: #1e293b;
+            transform: translateX(-50%);
+        }
         .object-row {
             display: flex; align-items: center; position: relative;
             transition: margin-left 1.1s cubic-bezier(0.4, 0, 0.2, 1);
@@ -109,7 +121,7 @@
 
     <div id="home-screen">
         <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
-            <h1>📏 長度比較遊戲(對齊比一比) 📏</h1>
+            <h1>📏 長度比較樂：對齊比一比 📏</h1>
             <p class="subtitle">先對齊，再比較，學會正確的比較方法！</p>
 
             <div class="intro-card">
@@ -139,6 +151,10 @@
 
         <div id="question-text">哪一個比較長？</div>
         <div id="feedback">先按「對齊比一比」，看清楚再選喔！</div>
+
+        <div id="ruler-wrap">
+            <div id="ruler"></div>
+        </div>
 
         <div id="compare-area">
             <div class="object-row" id="rowA">
@@ -278,8 +294,38 @@
             document.getElementById('score').innerText = `闖關: ${score}`;
             const pauseBtn = document.getElementById('pause-btn');
             pauseBtn.innerText = "暫停"; pauseBtn.style.backgroundColor = "#d97706";
+            renderRuler();
             generateQuestion();
         }
+
+        // 畫出尺規刻度：每 20px 一個刻度，每 5 格畫一個較長的主刻度並標數字，
+        // 寬度依照畫面實際大小自動計算，跟下方物品的起始邊對齊。
+        function renderRuler() {
+            const ruler = document.getElementById('ruler');
+            if (!ruler) return;
+            ruler.innerHTML = '';
+            const width = ruler.clientWidth || 300;
+            const tickGap = 20;
+            const tickCount = Math.floor(width / tickGap);
+
+            for (let i = 0; i <= tickCount; i++) {
+                const x = i * tickGap;
+                const isMajor = i % 5 === 0;
+                const tick = document.createElement('div');
+                tick.className = 'ruler-tick ' + (isMajor ? 'major' : 'minor');
+                tick.style.left = x + 'px';
+                ruler.appendChild(tick);
+
+                if (isMajor) {
+                    const num = document.createElement('span');
+                    num.className = 'ruler-num';
+                    num.style.left = x + 'px';
+                    num.innerText = i;
+                    ruler.appendChild(num);
+                }
+            }
+        }
+        window.addEventListener('resize', () => { if (gameStarted) renderRuler(); });
 
         function togglePause() {
             if (!gameStarted) return;
