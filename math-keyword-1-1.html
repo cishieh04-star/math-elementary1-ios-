@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>數學關鍵字五題挑戰＋拼字遊戲</title>
+<style>
+  :root{
+    --ink:#3a3a3a;
+    --cream:#fbf6ec;
+    --c-count:#8b5cf6;
+    --c-count-bg:#efe9fe; --c-count-fg:#6b3fd6;
+    --c-compare:#14b8a6;
+    --c-compare-bg:#dcf6f2; --c-compare-fg:#0d7f72;
+    --c-total:#f59e0b;
+    --c-total-bg:#fef1da; --c-total-fg:#b8730a;
+    --c-combine:#fb7a3c;
+    --c-combine-bg:#ffe6d8; --c-combine-fg:#c2500f;
+    --c-take:#22c55e;
+    --c-take-bg:#dff7e6; --c-take-fg:#16803c;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    font-family:"Microsoft JhengHei","PingFang TC","Heiti TC",sans-serif;
+    background:linear-gradient(180deg,#fdf6ec 0%,#eef7f6 100%);
+    color:var(--ink);
+  }
+  #app{ min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:16px 16px 40px; }
+  .screen{ width:100%; max-width:720px; display:none; flex-direction:column; align-items:center; }
+  .screen.active{ display:flex; animation:fadeIn .35s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .topbar{ width:100%; max-width:720px; display:flex; justify-content:space-between; margin-bottom:6px; }
+  .icon-btn{
+    width:50px; height:50px; border-radius:15px; border:3px solid #fff;
+    background:rgba(255,255,255,.95); box-shadow:0 3px 0 rgba(0,0,0,.10);
+    font-size:1.5rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .icon-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.10); }
+
+  h1{ font-size:1.5rem; text-align:center; margin:6px 0 2px; }
+  .subtitle{ font-size:1rem; color:#666; text-align:center; margin-bottom:8px;}
+  .mascot{ font-size:4.6rem; margin:4px 0; animation:bob 2.6s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-8px) rotate(2deg);} }
+
+  .card{ background:#fff; border-radius:26px; padding:22px 20px; width:100%; box-shadow:0 8px 0 rgba(0,0,0,.06); text-align:center; }
+
+  .big-btn{
+    font-size:1.3rem; font-weight:bold; padding:16px 34px; border-radius:28px;
+    border:none; color:#fff; background:linear-gradient(180deg,#ffb454,#ff8c2b);
+    box-shadow:0 6px 0 #d9691a; cursor:pointer; margin:12px 4px;
+  }
+  .big-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #d9691a; }
+  .big-btn.blue{ background:linear-gradient(180deg,#6ec3f4,#3a9be0); box-shadow:0 6px 0 #2679b3; }
+  .big-btn.blue:active{ box-shadow:0 2px 0 #2679b3; }
+  .big-btn.green{ background:linear-gradient(180deg,#7bdc9c,#3fbf6a); box-shadow:0 6px 0 #2c9450; }
+  .big-btn.green:active{ box-shadow:0 2px 0 #2c9450; }
+  .big-btn.small{ font-size:1.05rem; padding:12px 24px; }
+  .nav-row{ display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:6px; }
+
+  .star-badge{
+    display:inline-flex; align-items:center; gap:6px; background:#fff;
+    border-radius:20px; padding:7px 16px; font-size:1.05rem; font-weight:800;
+    color:#b8730a; box-shadow:0 4px 0 rgba(0,0,0,.08); margin:8px 0;
+  }
+  .progress-track{ display:flex; gap:8px; margin:8px 0 12px; }
+  .progress-seg{ width:32px; height:8px; border-radius:5px; background:#eee; }
+  .progress-seg.done{ background:#3fbf6a; }
+  .progress-seg.current{ background:#ffcf8a; }
+
+  .source-tag{ font-size:.9rem; color:#999; margin-bottom:6px; }
+  .kw-hl{ font-weight:900; padding:1px 6px; border-radius:8px; }
+  .q-sentence{ background:var(--cream); border-radius:18px; padding:16px; font-size:1.3rem; line-height:1.8; margin:10px 0; }
+  .q-visual{ font-size:2.3rem; margin:6px 0; letter-spacing:2px; }
+  .choices{ display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .choice-btn{
+    width:74px; height:74px; border-radius:20px; border:4px solid #ffd27a; font-size:1.6rem; font-weight:900;
+    background:#fff; color:#8a5a10; box-shadow:0 5px 0 #e0ab3f; cursor:pointer;
+  }
+  .choice-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #e0ab3f; }
+  .choice-btn.correct{ background:#eafcef; border-color:#3fbf6a; color:#2c9450; }
+  .choice-btn.wrong{ background:#fff0ef; border-color:#e0785a; color:#c0503a; }
+
+  .pick-row{ display:flex; gap:16px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
+  .pick-card{
+    flex:1 1 200px; max-width:260px; background:#fff8ef; border:4px solid #ffe1b0; border-radius:22px;
+    padding:18px 10px; cursor:pointer; box-shadow:0 5px 0 #f0c988;
+  }
+  .pick-card:active{ transform:translateY(3px); box-shadow:0 2px 0 #f0c988; }
+  .pick-card.correct{ background:#eafcef; border-color:#3fbf6a; box-shadow:0 5px 0 #bfe9cc; }
+  .pick-card.wrong{ background:#fff0ef; border-color:#e0785a; box-shadow:0 5px 0 #f3c9c0; }
+  .bar{ height:26px; border-radius:14px; background:linear-gradient(180deg,#8fd6c8,#4fb9a6); margin:0 auto 8px; }
+  .pick-label{ font-size:1.4rem; }
+
+  .feedback{ min-height:32px; font-size:1.1rem; font-weight:700; margin-top:10px; }
+
+  /* spelling game */
+  .slot-row{ display:flex; justify-content:center; gap:10px; margin:16px 0; flex-wrap:wrap; }
+  .slot{
+    width:64px; height:64px; border-radius:16px; border:3px dashed #d8b98a; background:#fffaf1;
+    display:flex; align-items:center; justify-content:center; font-size:1.9rem; font-weight:900; color:#8a5a10;
+  }
+  .slot.filled{ border-style:solid; border-color:#3fbf6a; background:#eafcef; color:#237a45; }
+  .tile-row{ display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .tile{
+    width:64px; height:64px; border-radius:16px; border:none; font-size:1.9rem; font-weight:900;
+    background:#fff; box-shadow:0 5px 0 #ddd; cursor:pointer; color:var(--ink);
+  }
+  .tile:active{ transform:translateY(3px); box-shadow:0 2px 0 #ddd; }
+  .tile.used{ visibility:hidden; }
+  .tile.shake{ animation:shake .35s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .kw-meaning-line{ font-size:1.05rem; color:#666; margin-top:10px; }
+
+  .confetti{ font-size:2.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <button class="icon-btn" id="homeBtn" title="回首頁">🏠</button>
+    <button class="icon-btn" id="muteBtn" title="靜音">🔊</button>
+  </div>
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <div class="mascot">🐻</div>
+    <h1>數學關鍵字五題挑戰</h1>
+    <div class="subtitle">從練習單精選 5 題 ＋ 關鍵字拼字遊戲</div>
+    <div class="card">
+      <p style="font-size:1.1rem; line-height:1.8;">
+        小熊幫你從練習單裡，挑出 <b>5 題</b> 最重要的題目，<br>
+        先練習「看到關鍵字、知道怎麼算」，<br>
+        再玩「拼字遊戲」把關鍵字牢牢記住！
+      </p>
+    </div>
+    <button class="big-btn" id="startBtn">▶️ 開始挑戰</button>
+    <div class="star-badge" id="totalStarBadge">🏆 累積星星：0</div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <h1 style="font-size:1.25rem;">五題挑戰</h1>
+    <div class="progress-track" id="quizProgress"></div>
+    <div class="card" id="quizCard"></div>
+  </div>
+
+  <!-- TRANSITION -->
+  <div class="screen" id="screen-transition">
+    <div class="mascot">🎉</div>
+    <h1>五題都答對了！</h1>
+    <div class="card">
+      <p style="font-size:1.15rem;">接下來，我們用拼字遊戲，把剛剛學到的關鍵字拼出來，記得更牢固！</p>
+    </div>
+    <button class="big-btn green" id="toSpellBtn">🔤 開始拼字遊戲</button>
+  </div>
+
+  <!-- SPELLING GAME -->
+  <div class="screen" id="screen-spell">
+    <h1 style="font-size:1.25rem;">關鍵字拼字遊戲</h1>
+    <div class="progress-track" id="spellProgress"></div>
+    <div class="card">
+      <div class="source-tag" id="spellUnitTag"></div>
+      <div id="spellPrompt" style="font-size:1.15rem; font-weight:700;"></div>
+      <div class="slot-row" id="slotRow"></div>
+      <div class="tile-row" id="tileRow"></div>
+      <div class="feedback" id="spellFeedback"></div>
+      <div class="kw-meaning-line" id="spellMeaning"></div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="screen" id="screen-end">
+    <div class="confetti">🎉🐻🎉</div>
+    <h1>太棒了！挑戰完成！</h1>
+    <div class="card">
+      <p style="font-size:1.05rem; line-height:2;">
+        你認識了這些數學關鍵字朋友：<br>
+        <span class="kw-hl" style="background:var(--c-count-bg);color:var(--c-count-fg);">數數看</span>
+        <span class="kw-hl" style="background:var(--c-compare-bg);color:var(--c-compare-fg);">比較長</span>
+        <span class="kw-hl" style="background:var(--c-total-bg);color:var(--c-total-fg);">全部有</span>
+        <span class="kw-hl" style="background:var(--c-combine-bg);color:var(--c-combine-fg);">合起來</span>
+        <span class="kw-hl" style="background:var(--c-take-bg);color:var(--c-take-fg);">拿走⋯還剩下</span>
+      </p>
+    </div>
+    <div class="star-badge" id="endStarBadge">🏆 累積星星：0</div>
+    <div class="nav-row">
+      <button class="big-btn" id="replayBtn">🔁 再玩一次</button>
+      <button class="big-btn blue" id="homeBtn2">🏠 回首頁</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- Speech ---------------- */
+let muted = false;
+let zhVoice = null;
+function pickVoice(){
+  const voices = speechSynthesis.getVoices();
+  zhVoice = voices.find(v=>/zh[-_]?TW/i.test(v.lang)) || voices.find(v=>/zh/i.test(v.lang)) || null;
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+let speechQueue = [];
+let speaking = false;
+function enqueueSpeech(text, onDone){
+  if(muted || !('speechSynthesis' in window)){ if(onDone) onDone(); return; }
+  speechQueue.push({text, onDone});
+  processSpeechQueue();
+}
+function processSpeechQueue(){
+  if(speaking || speechQueue.length===0) return;
+  speaking = true;
+  const item = speechQueue.shift();
+  const u = new SpeechSynthesisUtterance(item.text.replace(/[（(].*?[）)]/g,''));
+  if(zhVoice) u.voice = zhVoice;
+  u.lang='zh-TW'; u.rate=0.95;
+  let done = false;
+  const finish = ()=>{
+    if(done) return; done=true; speaking=false;
+    setTimeout(processSpeechQueue, 60);
+    if(item.onDone) item.onDone();
+  };
+  u.onend = finish;
+  u.onerror = finish;
+  setTimeout(finish, Math.max(1800, item.text.length*260));
+  setTimeout(()=>speechSynthesis.speak(u), 60);
+}
+function stopAllSpeech(){
+  speechQueue = [];
+  speaking = false;
+  try{ speechSynthesis.cancel(); }catch(e){}
+}
+
+/* ---------------- Stars ---------------- */
+let totalStars = 0;
+try{ totalStars = parseInt(localStorage.getItem('kw5_stars')||'0',10)||0; }catch(e){ totalStars=0; }
+function saveStars(){ try{ localStorage.setItem('kw5_stars', String(totalStars)); }catch(e){} }
+function addStar(){ totalStars++; saveStars(); updateStarBadges(); }
+function updateStarBadges(){
+  const t = `🏆 累積星星：${totalStars}`;
+  const b1=document.getElementById('totalStarBadge'); if(b1) b1.textContent=t;
+  const b2=document.getElementById('endStarBadge'); if(b2) b2.textContent=t;
+}
+
+/* ---------------- Navigation ---------------- */
+const screens=['start','quiz','transition','spell','end'];
+function showScreen(name){ screens.forEach(s=>document.getElementById('screen-'+s).classList.toggle('active', s===name)); }
+document.getElementById('homeBtn').onclick=()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('homeBtn2').onclick=()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('muteBtn').onclick=(e)=>{ muted=!muted; e.target.textContent = muted?'🔇':'🔊'; if(muted) stopAllSpeech(); };
+updateStarBadges();
+
+/* ---------------- Quiz data (real questions drawn from the uploaded worksheets) ---------------- */
+const QUIZ = [
+  {
+    id:'count', unit:'第一單元・10以內的數（練習單1）',
+    kw:'數數看', bg:'var(--c-count-bg)', fg:'var(--c-count-fg)',
+    sentenceTpl:(hl)=>`${hl}，有多少頂帽子？`,
+    visual:'🎩🎩🎩', answer:3, choices:[2,3,4,5]
+  },
+  {
+    id:'compare', unit:'第二單元・比長短（練習單3）',
+    kw:'比較長', bg:'var(--c-compare-bg)', fg:'var(--c-compare-fg)',
+    sentenceTpl:(hl)=>`哪一條線${hl}？`,
+    type:'pick',
+    options:[ {label:'A', width:230}, {label:'B', width:100} ],
+    answerIdx:0
+  },
+  {
+    id:'total', unit:'第三單元・排順序、比多少（練習單4）',
+    kw:'全部有', bg:'var(--c-total-bg)', fg:'var(--c-total-fg)',
+    sentenceTpl:(hl)=>`${hl}幾個小朋友？`,
+    visual:'🧒🧒👧🧒👧', answer:5, choices:[4,5,6,7]
+  },
+  {
+    id:'combine', unit:'第四單元・分與合（練習單5）',
+    kw:'合起來', bg:'var(--c-combine-bg)', fg:'var(--c-combine-fg)',
+    sentenceTpl:(hl)=>`4個玉米和4個玉米${hl}是幾個？`,
+    visual:'🌽🌽🌽🌽　🌽🌽🌽🌽', answer:8, choices:[6,7,8,9]
+  },
+  {
+    id:'takeaway', unit:'第四單元・分與合（練習單5）',
+    kw:'拿走⋯還剩下', bg:'var(--c-take-bg)', fg:'var(--c-take-fg)',
+    sentenceTpl:(hl)=>`10個蘋果${hl}5個，還剩下幾個？`,
+    visual:'🍎 × 10', answer:5, choices:[3,4,5,6]
+  }
+];
+
+let quizIndex = 0;
+function renderQuizProgress(){
+  const track = document.getElementById('quizProgress');
+  track.innerHTML = QUIZ.map((_,i)=>{
+    const cls = i<quizIndex ? 'done' : (i===quizIndex ? 'current' : '');
+    return `<div class="progress-seg ${cls}"></div>`;
+  }).join('');
+}
+
+document.getElementById('startBtn').onclick=()=>{
+  quizIndex = 0;
+  renderQuiz();
+  showScreen('quiz');
+};
+
+function renderQuiz(){
+  renderQuizProgress();
+  const q = QUIZ[quizIndex];
+  const hl = `<span class="kw-hl" style="background:${q.bg};color:${q.fg};">${q.kw}</span>`;
+  const card = document.getElementById('quizCard');
+
+  if(q.type==='pick'){
+    card.innerHTML = `
+      <div class="source-tag">來自：${q.unit}</div>
+      <div class="q-sentence">${q.sentenceTpl(hl)}</div>
+      <div class="pick-row" id="pickRow"></div>
+      <div class="feedback" id="quizFeedback"></div>
+    `;
+    const row = document.getElementById('pickRow');
+    q.options.forEach((opt, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'pick-card';
+      div.innerHTML = `<div class="bar" style="width:${opt.width}px;"></div><div class="pick-label">🐛 ${opt.label}</div>`;
+      div.onclick = ()=>onQuizPick(idx, div, q);
+      row.appendChild(div);
+    });
+    enqueueSpeech(q.sentenceTpl(q.kw));
+  } else {
+    card.innerHTML = `
+      <div class="source-tag">來自：${q.unit}</div>
+      <div class="q-sentence">${q.sentenceTpl(hl)}</div>
+      <div class="q-visual">${q.visual}</div>
+      <div class="choices" id="quizChoices"></div>
+      <div class="feedback" id="quizFeedback"></div>
+    `;
+    const el = document.getElementById('quizChoices');
+    q.choices.forEach(num=>{
+      const b = document.createElement('button');
+      b.className='choice-btn'; b.textContent=num;
+      b.onclick=()=>onQuizNumber(num, b, q);
+      el.appendChild(b);
+    });
+    enqueueSpeech(q.sentenceTpl(q.kw));
+  }
+}
+
+function goNextQuiz(){
+  if(quizIndex < QUIZ.length-1){
+    quizIndex++;
+    renderQuiz();
+  } else {
+    showScreen('transition');
+    enqueueSpeech('五題都答對了！接下來我們玩拼字遊戲！');
+  }
+}
+
+function onQuizPick(idx, el, q){
+  const cards = document.querySelectorAll('.pick-card');
+  if(idx === q.answerIdx){
+    cards.forEach(c=>c.style.pointerEvents='none');
+    el.classList.add('correct');
+    document.getElementById('quizFeedback').textContent='✅ 答對了！';
+    document.getElementById('quizFeedback').style.color='#2c9450';
+    addStar();
+    enqueueSpeech(`答對了！${q.kw}的意思是比較長的那一條！`, ()=> setTimeout(goNextQuiz, 500));
+  } else {
+    el.classList.add('wrong');
+    document.getElementById('quizFeedback').textContent='再看看，哪一條比較長？';
+    document.getElementById('quizFeedback').style.color='#c0503a';
+    enqueueSpeech('再看看，哪一條比較長？');
+    setTimeout(()=>el.classList.remove('wrong'), 700);
+  }
+}
+
+function onQuizNumber(num, btn, q){
+  if(num === q.answer){
+    document.querySelectorAll('#quizChoices .choice-btn').forEach(b=>b.disabled=true);
+    btn.classList.add('correct');
+    document.getElementById('quizFeedback').textContent='✅ 答對了！';
+    document.getElementById('quizFeedback').style.color='#2c9450';
+    addStar();
+    enqueueSpeech(`答對了！答案是${num}！`, ()=> setTimeout(goNextQuiz, 500));
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('quizFeedback').textContent='再算算看喔！';
+    document.getElementById('quizFeedback').style.color='#c0503a';
+    enqueueSpeech('再算算看喔！');
+    setTimeout(()=>btn.classList.remove('wrong'), 700);
+  }
+}
+
+document.getElementById('toSpellBtn').onclick=()=>{
+  spellIndex = 0;
+  renderSpell();
+  showScreen('spell');
+};
+
+/* ---------------- Spelling game ---------------- */
+const SPELL_WORDS = [
+  { phrase:'數數看', unit:QUIZ[0].unit, bg:QUIZ[0].bg, fg:QUIZ[0].fg, meaning:'「數數看」就是要你一個一個數出來，看有多少個！' },
+  { phrase:'比較長', unit:QUIZ[1].unit, bg:QUIZ[1].bg, fg:QUIZ[1].fg, meaning:'「比較長」就是要你看一看，哪一個比較長！' },
+  { phrase:'全部有', unit:QUIZ[2].unit, bg:QUIZ[2].bg, fg:QUIZ[2].fg, meaning:'「全部有」就是問你，全部加起來一共有幾個！' },
+  { phrase:'合起來', unit:QUIZ[3].unit, bg:QUIZ[3].bg, fg:QUIZ[3].fg, meaning:'「合起來」就是把兩堆東西加在一起！' },
+  { phrase:'拿走還剩下', unit:QUIZ[4].unit, bg:QUIZ[4].bg, fg:QUIZ[4].fg, meaning:'「拿走、還剩下」就是從一堆裡面拿走一些，剩下的就是答案！' }
+];
+
+let spellIndex = 0;
+let spellState = { chars:[], next:0, tileEls:[] };
+
+function renderSpellProgress(){
+  const track = document.getElementById('spellProgress');
+  track.innerHTML = SPELL_WORDS.map((_,i)=>{
+    const cls = i<spellIndex ? 'done' : (i===spellIndex ? 'current' : '');
+    return `<div class="progress-seg ${cls}"></div>`;
+  }).join('');
+}
+
+function renderSpell(){
+  renderSpellProgress();
+  const w = SPELL_WORDS[spellIndex];
+  document.getElementById('spellUnitTag').textContent = '來自：' + w.unit;
+  document.getElementById('spellPrompt').innerHTML = `請依照順序，把關鍵字拼出來：<span class="kw-hl" style="background:${w.bg};color:${w.fg};">${w.phrase}</span>`;
+  document.getElementById('spellFeedback').textContent = '';
+  document.getElementById('spellMeaning').textContent = '';
+
+  const chars = w.phrase.split('');
+  spellState = { chars, next:0, tileEls:[] };
+
+  const slotRow = document.getElementById('slotRow');
+  slotRow.innerHTML = chars.map(()=>`<div class="slot"></div>`).join('');
+
+  const shuffled = chars.map((c,i)=>({c,i}));
+  for(let i=shuffled.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; }
+
+  const tileRow = document.getElementById('tileRow');
+  tileRow.innerHTML = '';
+  shuffled.forEach(item=>{
+    const btn = document.createElement('button');
+    btn.className = 'tile';
+    btn.textContent = item.c;
+    btn.dataset.sourceIndex = item.i;
+    btn.onclick = ()=>onTileTap(item.i, btn);
+    tileRow.appendChild(btn);
+    spellState.tileEls[item.i] = btn;
+  });
+
+  enqueueSpeech('請把關鍵字拼出來：' + w.phrase);
+}
+
+function onTileTap(sourceIndex, btn){
+  const w = SPELL_WORDS[spellIndex];
+  if(sourceIndex === spellState.next){
+    const slots = document.querySelectorAll('#slotRow .slot');
+    const slot = slots[spellState.next];
+    slot.textContent = spellState.chars[spellState.next];
+    slot.classList.add('filled');
+    btn.classList.add('used');
+    enqueueSpeech(spellState.chars[spellState.next]);
+    spellState.next++;
+    if(spellState.next === spellState.chars.length){
+      document.getElementById('spellFeedback').textContent = '🎉 拼對了！';
+      document.getElementById('spellFeedback').style.color = '#2c9450';
+      document.getElementById('spellMeaning').textContent = w.meaning;
+      addStar();
+      setTimeout(()=>{
+        enqueueSpeech(w.phrase + '。' + w.meaning, ()=> setTimeout(goNextSpell, 500));
+      }, 300);
+    }
+  } else {
+    btn.classList.add('shake');
+    document.getElementById('spellFeedback').textContent = '再看看，順序不對喔！';
+    document.getElementById('spellFeedback').style.color = '#c0503a';
+    setTimeout(()=>btn.classList.remove('shake'), 400);
+  }
+}
+
+function goNextSpell(){
+  if(spellIndex < SPELL_WORDS.length-1){
+    spellIndex++;
+    renderSpell();
+  } else {
+    showScreen('end');
+    updateStarBadges();
+    enqueueSpeech('太棒了！你把所有的關鍵字都拼出來了！');
+  }
+}
+
+document.getElementById('replayBtn').onclick=()=>{ showScreen('start'); };
+</script>
+</body>
+</html>

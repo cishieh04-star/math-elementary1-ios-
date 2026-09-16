@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>數學關鍵字大冒險－分與合</title>
+<style>
+  :root{
+    --combine:#ff9f43;
+    --split:#4aa3df;
+    --take:#42b06c;
+    --ink:#3a3a3a;
+    --cream:#fff8ec;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:"Microsoft JhengHei","PingFang TC","Heiti TC","Arial Rounded MT Bold",sans-serif;
+    background:linear-gradient(160deg,#fff3d6 0%,#ffe3ec 45%,#dff3ff 100%);
+    color:var(--ink);
+    overflow-x:hidden;
+  }
+  #app{
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    align-items:center;
+    padding:16px 16px 40px;
+  }
+  .screen{ width:100%; max-width:720px; display:none; flex-direction:column; align-items:center; }
+  .screen.active{ display:flex; animation:fadeIn .4s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  h1{ font-size:1.6rem; text-align:center; margin:8px 0 4px; }
+  .subtitle{ font-size:1.05rem; color:#666; text-align:center; margin-bottom:10px;}
+
+  .topbar{
+    width:100%; max-width:720px; display:flex; justify-content:space-between;
+    align-items:center; margin-bottom:6px;
+  }
+  .icon-btn{
+    width:52px; height:52px; border-radius:16px; border:3px solid #fff;
+    background:rgba(255,255,255,.9); box-shadow:0 3px 0 rgba(0,0,0,.12);
+    font-size:1.6rem; display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.12); }
+
+  .mascot{ font-size:5rem; margin:6px 0; animation:bob 2.4s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-10px) rotate(2deg);} }
+
+  .big-btn{
+    font-size:1.4rem; font-weight:bold; padding:18px 40px; border-radius:30px;
+    border:none; color:#fff; background:linear-gradient(180deg,#ffb454,#ff8c2b);
+    box-shadow:0 6px 0 #d9691a; cursor:pointer; margin:14px 4px;
+  }
+  .big-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #d9691a; }
+  .big-btn.blue{ background:linear-gradient(180deg,#6ec3f4,#3a9be0); box-shadow:0 6px 0 #2679b3; }
+  .big-btn.blue:active{ box-shadow:0 2px 0 #2679b3; }
+  .big-btn.green{ background:linear-gradient(180deg,#7bdc9c,#3fbf6a); box-shadow:0 6px 0 #2c9450; }
+  .big-btn.green:active{ box-shadow:0 2px 0 #2c9450; }
+  .big-btn.small{ font-size:1.1rem; padding:12px 26px; }
+
+  .dots{ display:flex; gap:8px; margin:10px 0; }
+  .dot{ width:12px; height:12px; border-radius:50%; background:#ddd; }
+  .dot.on{ background:#ff8c2b; }
+
+  /* ---- Learn card ---- */
+  .learn-card{
+    background:#fff; border-radius:28px; padding:22px 20px; width:100%;
+    box-shadow:0 10px 0 rgba(0,0,0,.06); text-align:center; position:relative;
+  }
+  .kw-badge{
+    display:inline-block; font-size:1.7rem; font-weight:900; color:#fff;
+    padding:8px 26px; border-radius:20px; margin-bottom:14px;
+  }
+  .anim-stage{ min-height:110px; display:flex; align-items:center; justify-content:center; position:relative; margin-bottom:10px; padding:8px 0;}
+  .sentence-box{
+    background:var(--cream); border-radius:18px; padding:16px; font-size:1.35rem;
+    line-height:1.9; margin:10px 0;
+  }
+  .blank{ color:#d1451f; font-weight:900; border-bottom:4px solid #d1451f; padding:0 6px;}
+  .kw-hl{ font-weight:900; padding:1px 4px; border-radius:8px; }
+  .meaning{ font-size:1.05rem; color:#555; margin-top:4px; }
+  .nav-row{ display:flex; justify-content:center; gap:14px; margin-top:6px; flex-wrap:wrap; }
+
+  /* ---- Cluster illustration system (item count always matches the real numbers) ---- */
+  .cluster-stage{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:nowrap; }
+  .cluster-stage-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .cluster-row{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+  .op-symbol.down{ font-size:1.3rem; margin:0; }
+  .cluster-box{ display:flex; flex-direction:column; align-items:center; gap:4px; min-width:56px; }
+  .cluster-items{
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:center;
+    gap:4px; max-width:168px;
+  }
+  .cluster-items .cluster-item{
+    font-size:1.9rem; line-height:1; display:inline-block;
+    animation:clusterPulse 2.4s ease-in-out infinite;
+  }
+  .cluster-items.dense .cluster-item{ font-size:1.3rem; }
+  @keyframes clusterPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.1); } }
+  .cluster-item.item-faded{ opacity:.32; filter:grayscale(70%); animation:none; }
+  .op-symbol{ font-size:1.8rem; font-weight:900; color:var(--combine); }
+  .cluster-tag{
+    font-size:.8rem; font-weight:800; color:#777; background:#f4f0ea;
+    padding:2px 10px; border-radius:10px; white-space:nowrap;
+  }
+  .unknown-box{
+    width:52px; height:52px; border-radius:14px; border:3px dashed #e0a1a1;
+    display:flex; align-items:center; justify-content:center; font-size:1.7rem;
+    color:#c0503a; background:#fff8ec; font-weight:900;
+    animation:clusterPulse 2.4s ease-in-out infinite;
+  }
+
+  /* ---- Matching game ---- */
+  .board{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:100%; margin:10px 0; }
+  .card{
+    aspect-ratio:1/1; border-radius:20px; background:linear-gradient(180deg,#ffe6a8,#ffd27a);
+    box-shadow:0 5px 0 #e0ab3f; display:flex; align-items:center; justify-content:center;
+    font-size:1.15rem; font-weight:800; text-align:center; padding:8px; cursor:pointer; color:#8a5a10;
+  }
+  .card.flipped{ background:#fff; box-shadow:0 5px 0 #ddd; color:var(--ink); }
+  .card.matched{ background:#eafcef; box-shadow:0 5px 0 #bfe9cc; color:#2c9450; cursor:default; }
+  .card.shake{ animation:shake .4s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .card .icon-symbol{ font-size:2.2rem; }
+
+  .status-line{ font-size:1.15rem; margin:6px 0 2px; font-weight:700; }
+
+  /* ---- Apply phase ---- */
+  .q-card{ background:#fff; border-radius:24px; padding:20px; width:100%; box-shadow:0 10px 0 rgba(0,0,0,.06); text-align:center; }
+  .choices{ display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:16px; }
+  .choice-btn{
+    width:76px; height:76px; border-radius:20px; border:none; font-size:1.7rem; font-weight:900;
+    background:#fff; border:4px solid #ffd27a; color:#8a5a10; box-shadow:0 5px 0 #e0ab3f; cursor:pointer;
+  }
+  .choice-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #e0ab3f; }
+  .choice-btn.correct{ background:#eafcef; border-color:#3fbf6a; color:#2c9450; }
+  .choice-btn.wrong{ background:#fff0ef; border-color:#e0785a; color:#c0503a; }
+  .feedback{ min-height:34px; font-size:1.15rem; font-weight:700; margin-top:12px; }
+  .progress-track{ display:flex; gap:8px; margin:8px 0 16px; }
+  .progress-seg{ width:34px; height:8px; border-radius:5px; background:#eee; }
+  .progress-seg.done{ background:#3fbf6a; }
+
+  /* end screen */
+  .confetti{ font-size:3rem; text-align:center; }
+
+  /* ---- Drill (daily practice) ---- */
+  .star-badge{
+    display:inline-flex; align-items:center; gap:6px; background:#fff;
+    border-radius:20px; padding:8px 18px; font-size:1.15rem; font-weight:800;
+    color:#a85b00; box-shadow:0 4px 0 rgba(0,0,0,.08); margin-bottom:10px;
+  }
+  .drill-sentence{
+    background:var(--cream); border-radius:20px; padding:20px; font-size:1.4rem;
+    line-height:1.9; margin:14px 0; min-height:70px; display:flex; align-items:center; justify-content:center; text-align:center;
+  }
+  .guess-row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+  .kwguess-btn{
+    flex:1 1 150px; max-width:200px; padding:16px 10px; border-radius:20px; border:4px solid #eee;
+    background:#fff; font-size:1.15rem; font-weight:800; cursor:pointer; box-shadow:0 5px 0 #ddd;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .kwguess-btn .sym{ font-size:1.8rem; }
+  .kwguess-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #ddd; }
+  .kwguess-btn.correct{ border-color:#3fbf6a; background:#eafcef; }
+  .kwguess-btn.wrong{ border-color:#e0785a; background:#fff0ef; }
+  .drill-progress{ font-size:1.05rem; color:#777; margin-top:4px; }
+  .again-btn-wrap{ margin-top:14px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <button class="icon-btn" id="homeBtn" title="回首頁">🏠</button>
+    <button class="icon-btn" id="muteBtn" title="靜音">🔊</button>
+  </div>
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <div class="mascot">🐻</div>
+    <h1>數學關鍵字大冒險</h1>
+    <div class="subtitle">第四單元：分與合</div>
+    <div class="learn-card" style="margin-top:10px;">
+      <p style="font-size:1.15rem; line-height:1.8;">
+        小熊要帶你認識<b style="color:var(--combine)">3個數學關鍵字朋友</b>：<br>
+        <span class="kw-hl" style="background:#ffe3c2;color:#a85b00;">合起來</span>、
+        <span class="kw-hl" style="background:#d9edfb;color:#1b6fa8;">分成</span>、
+        <span class="kw-hl" style="background:#dff3e6;color:#237a45;">拿走…還剩下</span><br>
+        認識他們，就能看懂數學問題囉！
+      </p>
+    </div>
+    <div class="nav-row">
+      <button class="big-btn" id="startBtn">🌱 認識關鍵字朋友</button>
+      <button class="big-btn green" id="dailyBtn">🔥 天天練習</button>
+    </div>
+    <div class="star-badge" id="totalStarBadge">🏆 累積星星：0</div>
+  </div>
+
+  <!-- LEARN -->
+  <div class="screen" id="screen-learn">
+    <h1 style="font-size:1.3rem;">認識關鍵字朋友</h1>
+    <div class="dots" id="learnDots"></div>
+    <div class="learn-card" id="learnCard"></div>
+    <div class="nav-row">
+      <button class="big-btn small blue" id="listenBtn">🔊 再聽一次</button>
+      <button class="big-btn small" id="nextLearnBtn">下一個 ➡️</button>
+    </div>
+  </div>
+
+  <!-- MATCH -->
+  <div class="screen" id="screen-match">
+    <h1 style="font-size:1.3rem;">關鍵字配對遊戲</h1>
+    <div class="subtitle">找出關鍵字和它的意思，把它們配成一對！</div>
+    <div class="status-line" id="matchStatus">已配對：0 / 3</div>
+    <div class="board" id="board"></div>
+    <button class="big-btn green" id="toApplyBtn" style="display:none;">下一步：實戰練習 ➡️</button>
+  </div>
+
+  <!-- APPLY -->
+  <div class="screen" id="screen-apply">
+    <h1 style="font-size:1.3rem;">實戰練習</h1>
+    <div class="progress-track" id="progressTrack"></div>
+    <div class="q-card" id="qCard"></div>
+  </div>
+
+  <!-- DRILL (daily practice) -->
+  <div class="screen" id="screen-drill">
+    <h1 style="font-size:1.3rem;">🔥 天天練習</h1>
+    <div class="star-badge" id="drillStarBadge">⭐ 這次練習：0　🏆 累積星星：0</div>
+    <div class="q-card" style="width:100%;">
+      <div class="drill-sentence" id="drillSentence"></div>
+      <div id="drillStepArea"></div>
+      <div class="feedback" id="drillFeedback"></div>
+      <div class="drill-progress" id="drillProgress"></div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="screen" id="screen-end">
+    <div class="confetti">🎉🐻🎉</div>
+    <h1>你認識了3個數學關鍵字朋友！</h1>
+    <div class="learn-card">
+      <p style="font-size:1.1rem; line-height:2;">
+        <span class="kw-hl" style="background:#ffe3c2;color:#a85b00;">合起來</span> → 兩堆變一堆，用加的<br>
+        <span class="kw-hl" style="background:#d9edfb;color:#1b6fa8;">分成</span> → 一堆變兩堆，用分的<br>
+        <span class="kw-hl" style="background:#dff3e6;color:#237a45;">拿走…還剩下</span> → 拿走一些，用減的
+      </p>
+    </div>
+    <div class="nav-row">
+      <button class="big-btn" id="replayBtn">🔁 再玩一次</button>
+      <button class="big-btn blue" id="homeBtn2">🏠 回首頁</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- Speech ---------------- */
+let muted = false;
+let voiceReady = false;
+let zhVoice = null;
+function pickVoice(){
+  const voices = speechSynthesis.getVoices();
+  zhVoice = voices.find(v=>/zh[-_]?TW/i.test(v.lang)) || voices.find(v=>/zh/i.test(v.lang)) || null;
+  voiceReady = true;
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+let speechQueue = [];
+let speaking = false;
+function enqueueSpeech(text, onDone){
+  if(muted || !('speechSynthesis' in window)){ if(onDone) onDone(); return; }
+  speechQueue.push({text, onDone});
+  processQueue();
+}
+function processQueue(){
+  if(speaking || speechQueue.length===0) return;
+  speaking = true;
+  const item = speechQueue.shift();
+  const u = new SpeechSynthesisUtterance(item.text.replace(/[（(].*?[）)]/g,''));
+  if(zhVoice) u.voice = zhVoice;
+  u.lang = 'zh-TW';
+  u.rate = 0.95;
+  let done = false;
+  const finish = ()=>{
+    if(done) return; done = true; speaking = false;
+    setTimeout(processQueue, 60);
+    if(item.onDone) item.onDone();
+  };
+  u.onend = finish;
+  u.onerror = finish;
+  setTimeout(finish, Math.max(1800, item.text.length*260));
+  speechSynthesis.cancel();
+  setTimeout(()=>speechSynthesis.speak(u), 60);
+}
+function stopAllSpeech(){
+  speechQueue = [];
+  speaking = false;
+  try{ speechSynthesis.cancel(); }catch(e){}
+}
+
+/* ---------------- Cluster illustration helpers ----------------
+   These build the example pictures so the number of items shown
+   ALWAYS matches the numbers stated in the sentence. */
+function clusterHTML(emoji, count, opts){
+  opts = Object.assign({ faded:false, tag:'' }, opts||{});
+  const n = Math.max(0, count|0);
+  const itemClass = 'cluster-item' + (opts.faded ? ' item-faded' : '');
+  const items = Array.from({length:n}).map(()=>`<span class="${itemClass}">${emoji}</span>`).join('');
+  const denseClass = n>6 ? ' dense' : '';
+  return `<div class="cluster-box">
+      <div class="cluster-items${denseClass}">${items}</div>
+      ${opts.tag ? `<div class="cluster-tag">${opts.tag}</div>` : ''}
+    </div>`;
+}
+function unknownClusterHTML(tag){
+  return `<div class="cluster-box">
+      <div class="unknown-box">❓</div>
+      ${tag ? `<div class="cluster-tag">${tag}</div>` : ''}
+    </div>`;
+}
+function twoClusterAnim(leftHTML, opSymbol, rightHTML){
+  return `<div class="anim-stage cluster-stage">
+      ${leftHTML}
+      <div class="op-symbol">${opSymbol}</div>
+      ${rightHTML}
+    </div>`;
+}
+/* Shows both addends AND the combined total, e.g. 4個玉米 ＋ 4個玉米 ＝ 8個玉米 */
+function combineTotalAnim(emoji, a, b){
+  const total = a + b;
+  return `<div class="anim-stage cluster-stage-col">
+      <div class="cluster-row">
+        ${clusterHTML(emoji, a, {tag:`${a}個`})}
+        <div class="op-symbol">＋</div>
+        ${clusterHTML(emoji, b, {tag:`${b}個`})}
+      </div>
+      <div class="op-symbol down">＝</div>
+      ${clusterHTML(emoji, total, {tag:`合起來共${total}個`})}
+    </div>`;
+}
+
+/* ---------------- Data ---------------- */
+const KEYWORDS = [
+  {
+    id:'combine',
+    word:'合起來',
+    color:'var(--combine)',
+    badgeBg:'#ffe3c2', badgeFg:'#a85b00',
+    animHTML:combineTotalAnim('🌽', 4, 4),
+    sentenceHTML:'4個玉米和4個玉米<span class="kw-hl" style="background:#ffe3c2;color:#a85b00;">合起來</span>是<span class="blank">8</span>個玉米',
+    meaning:'「合起來」就是把兩堆東西放在一起，變成一堆更多的－要用「加」的！',
+    narration:'合起來，就是把兩堆東西加在一起，變成一堆更多的！比如說：四個玉米和四個玉米合起來，是八個玉米。',
+    iconSymbol:'➕',
+    iconLabel:'兩堆併一堆'
+  },
+  {
+    id:'split',
+    word:'分成',
+    color:'var(--split)',
+    badgeBg:'#d9edfb', badgeFg:'#1b6fa8',
+    animHTML:twoClusterAnim(
+      clusterHTML('🐟', 5, {tag:'5條'}),
+      '｜',
+      clusterHTML('🐟', 2, {tag:'2條'})
+    ),
+    sentenceHTML:'7條魚可以<span class="kw-hl" style="background:#d9edfb;color:#1b6fa8;">分成</span>5條魚和<span class="blank">2</span>條魚',
+    meaning:'「分成」就是把一堆東西，分開變成兩堆小的！',
+    narration:'分成，就是把一堆東西分開，變成兩堆小的。比如說：七條魚可以分成五條魚和兩條魚。',
+    iconSymbol:'✂️',
+    iconLabel:'一堆分兩堆'
+  },
+  {
+    id:'takeaway',
+    word:'拿走…還剩下',
+    color:'var(--take)',
+    badgeBg:'#dff3e6', badgeFg:'#237a45',
+    animHTML:twoClusterAnim(
+      clusterHTML('🍎', 5, {faded:true, tag:'拿走 5個'}),
+      '→',
+      clusterHTML('🍎', 5, {tag:'還剩下 5個'})
+    ),
+    sentenceHTML:'10個蘋果<span class="kw-hl" style="background:#dff3e6;color:#237a45;">拿走</span>5個，<span class="kw-hl" style="background:#dff3e6;color:#237a45;">還剩下</span><span class="blank">5</span>個',
+    meaning:'「拿走…還剩下」就是從一堆東西裡面拿走一些，剩下的就是答案－要用「減」的！',
+    narration:'拿走、還剩下，就是從一堆東西裡面拿走一些，剩下的就是答案。比如說：十個蘋果拿走五個，還剩下五個。',
+    iconSymbol:'➖',
+    iconLabel:'拿走剩下的'
+  }
+];
+
+const QUESTIONS = [
+  { kwId:'combine', text:'4個玉米和4個玉米合起來是幾個玉米？', hlWord:'合起來', emoji:'🌽',
+    visualHTML: twoClusterAnim(clusterHTML('🌽',4), '＋', clusterHTML('🌽',4)),
+    answer:8, choices:[6,7,8,9] },
+  { kwId:'split', text:'6片西瓜可以分成2片和幾片西瓜？', hlWord:'分成', emoji:'🍉',
+    visualHTML: twoClusterAnim(clusterHTML('🍉',2,{tag:'2片'}), '｜', unknownClusterHTML('幾片？')),
+    answer:4, choices:[3,4,5,6] },
+  { kwId:'takeaway', text:'10個蘋果拿走3個，還剩下幾個？', hlWord:'拿走…還剩下', emoji:'🍎',
+    visualHTML: twoClusterAnim(clusterHTML('🍎',3,{faded:true, tag:'拿走 3個'}), '→', unknownClusterHTML('還剩下幾個？')),
+    answer:7, choices:[6,7,8,9] }
+];
+
+/* ---------------- Stars (persisted) ---------------- */
+let totalStars = 0;
+try{
+  totalStars = parseInt(localStorage.getItem('fenyuhe_stars') || '0', 10) || 0;
+}catch(e){ totalStars = 0; }
+function saveStars(){
+  try{ localStorage.setItem('fenyuhe_stars', String(totalStars)); }catch(e){ /* ignore */ }
+}
+let drillSessionCount = 0;
+function addStar(){
+  totalStars++;
+  saveStars();
+  updateStarBadges();
+}
+function updateStarBadges(){
+  const b1 = document.getElementById('totalStarBadge');
+  if(b1) b1.textContent = `🏆 累積星星：${totalStars}`;
+  const b2 = document.getElementById('drillStarBadge');
+  if(b2) b2.textContent = `⭐ 這次練習：${drillSessionCount}　🏆 累積星星：${totalStars}`;
+}
+
+/* ---------------- Navigation ---------------- */
+const screens = ['start','learn','match','apply','drill','end'];
+function showScreen(name){
+  screens.forEach(s=>{
+    document.getElementById('screen-'+s).classList.toggle('active', s===name);
+  });
+}
+
+document.getElementById('homeBtn').onclick = ()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('homeBtn2').onclick = ()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('muteBtn').onclick = (e)=>{
+  muted = !muted;
+  e.target.textContent = muted ? '🔇' : '🔊';
+  if(muted) stopAllSpeech();
+};
+
+document.getElementById('startBtn').onclick = ()=>{
+  learnIndex = 0;
+  renderLearn();
+  showScreen('learn');
+};
+document.getElementById('dailyBtn').onclick = ()=>{
+  drillSessionCount = 0;
+  updateStarBadges();
+  nextDrillQuestion();
+  showScreen('drill');
+};
+updateStarBadges();
+
+/* ---------------- Learn phase ---------------- */
+let learnIndex = 0;
+function renderLearn(){
+  const kw = KEYWORDS[learnIndex];
+  const dotsEl = document.getElementById('learnDots');
+  dotsEl.innerHTML = KEYWORDS.map((_,i)=>`<div class="dot ${i===learnIndex?'on':''}"></div>`).join('');
+  const card = document.getElementById('learnCard');
+  card.innerHTML = `
+    <div class="kw-badge" style="background:${kw.color}">${kw.word}</div>
+    ${kw.animHTML}
+    <div class="sentence-box">${kw.sentenceHTML}</div>
+    <div class="meaning">${kw.meaning}</div>
+  `;
+  document.getElementById('nextLearnBtn').textContent = learnIndex === KEYWORDS.length-1 ? '進入配對遊戲 🎮' : '下一個 ➡️';
+  enqueueSpeech(kw.narration);
+}
+document.getElementById('listenBtn').onclick = ()=> enqueueSpeech(KEYWORDS[learnIndex].narration);
+document.getElementById('nextLearnBtn').onclick = ()=>{
+  if(learnIndex < KEYWORDS.length-1){
+    learnIndex++;
+    renderLearn();
+  } else {
+    setupMatch();
+    showScreen('match');
+  }
+};
+
+/* ---------------- Match phase ---------------- */
+let matchState = { cards:[], flipped:[], matchedCount:0, lock:false };
+function setupMatch(){
+  const cards = [];
+  KEYWORDS.forEach(kw=>{
+    cards.push({ pairId:kw.id, type:'word', label:kw.word, kw });
+    cards.push({ pairId:kw.id, type:'icon', label:kw.iconSymbol+'\n'+kw.iconLabel, kw });
+  });
+  // shuffle
+  for(let i=cards.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]] = [cards[j],cards[i]];
+  }
+  matchState = { cards, flipped:[], matchedCount:0, lock:false };
+  renderBoard();
+  document.getElementById('toApplyBtn').style.display = 'none';
+  document.getElementById('matchStatus').textContent = '已配對：0 / 3';
+  enqueueSpeech('請找出關鍵字，和它代表的意思，把它們配成一對！');
+}
+function renderBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  matchState.cards.forEach((c, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.dataset.idx = idx;
+    div.innerHTML = '❓';
+    div.onclick = ()=>onCardClick(idx);
+    board.appendChild(div);
+  });
+}
+function onCardClick(idx){
+  if(matchState.lock) return;
+  const c = matchState.cards[idx];
+  if(c.matched || matchState.flipped.includes(idx)) return;
+  const el = document.querySelectorAll('.card')[idx];
+  el.classList.add('flipped');
+  if(c.type==='word'){
+    el.innerHTML = c.label;
+    enqueueSpeech(c.kw.word);
+  } else {
+    el.innerHTML = `<div><div class="icon-symbol">${c.kw.iconSymbol}</div>${c.kw.iconLabel}</div>`;
+  }
+  matchState.flipped.push(idx);
+  if(matchState.flipped.length===2){
+    matchState.lock = true;
+    const [i1,i2] = matchState.flipped;
+    const c1 = matchState.cards[i1], c2 = matchState.cards[i2];
+    if(c1.pairId === c2.pairId){
+      setTimeout(()=>{
+        c1.matched = c2.matched = true;
+        document.querySelectorAll('.card')[i1].classList.add('matched');
+        document.querySelectorAll('.card')[i2].classList.add('matched');
+        matchState.matchedCount++;
+        document.getElementById('matchStatus').textContent = `已配對：${matchState.matchedCount} / 3`;
+        enqueueSpeech(`配對成功！${c1.kw.word}，${c1.kw.meaning}`);
+        matchState.flipped = [];
+        matchState.lock = false;
+        if(matchState.matchedCount===3){
+          document.getElementById('toApplyBtn').style.display = 'inline-block';
+        }
+      }, 500);
+    } else {
+      const els=[document.querySelectorAll('.card')[i1],document.querySelectorAll('.card')[i2]];
+      els.forEach(e=>e.classList.add('shake'));
+      setTimeout(()=>{
+        els.forEach(e=>{ e.classList.remove('flipped','shake'); e.innerHTML='❓'; });
+        matchState.flipped = [];
+        matchState.lock = false;
+      }, 900);
+    }
+  }
+}
+document.getElementById('toApplyBtn').onclick = ()=>{
+  applyIndex = 0;
+  renderApply();
+  showScreen('apply');
+};
+
+/* ---------------- Apply phase ---------------- */
+let applyIndex = 0;
+function renderApply(){
+  const track = document.getElementById('progressTrack');
+  track.innerHTML = QUESTIONS.map((_,i)=>`<div class="progress-seg ${i<applyIndex?'done':''}"></div>`).join('');
+  const q = QUESTIONS[applyIndex];
+  const kw = KEYWORDS.find(k=>k.id===q.kwId);
+  const highlighted = q.text.replace(q.hlWord, `<span class="kw-hl" style="background:${kw.badgeBg};color:${kw.badgeFg};">${q.hlWord}</span>`);
+  const card = document.getElementById('qCard');
+  card.innerHTML = `
+    ${q.visualHTML}
+    <div class="sentence-box" style="font-size:1.3rem;">${highlighted}</div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+  `;
+  const choicesEl = document.getElementById('choices');
+  q.choices.forEach(num=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = num;
+    btn.onclick = ()=>onChoose(num, btn, q, kw);
+    choicesEl.appendChild(btn);
+  });
+  enqueueSpeech(q.text);
+}
+function onChoose(num, btn, q, kw){
+  const allBtns = document.querySelectorAll('.choice-btn');
+  if(num === q.answer){
+    allBtns.forEach(b=>b.disabled=true);
+    btn.classList.add('correct');
+    document.getElementById('feedback').textContent = '✅ 答對了！';
+    document.getElementById('feedback').style.color = '#2c9450';
+    enqueueSpeech(`答對了！${kw.word}，${kw.meaning}`, ()=>{
+      setTimeout(()=>{
+        if(applyIndex < QUESTIONS.length-1){
+          applyIndex++;
+          renderApply();
+        } else {
+          showScreen('end');
+          enqueueSpeech('太棒了！你已經認識了合起來、分成、拿走還剩下這三個數學關鍵字朋友！');
+        }
+      }, 500);
+    });
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('feedback').textContent = '再想想看喔！';
+    document.getElementById('feedback').style.color = '#c0503a';
+    enqueueSpeech('再想想看喔！');
+    setTimeout(()=>btn.classList.remove('wrong'), 700);
+  }
+}
+
+document.getElementById('replayBtn').onclick = ()=>{
+  showScreen('start');
+};
+
+/* ---------------- Daily drill (random, repeatable practice) ---------------- */
+const ITEM_BANK = [
+  {emoji:'🌽', name:'玉米', counter:'個'},
+  {emoji:'🍎', name:'蘋果', counter:'個'},
+  {emoji:'🍉', name:'西瓜', counter:'片'},
+  {emoji:'🐟', name:'魚',   counter:'條'},
+  {emoji:'🐰', name:'兔子', counter:'隻'},
+  {emoji:'🎈', name:'氣球', counter:'顆'},
+  {emoji:'⚽', name:'球',   counter:'顆'},
+  {emoji:'🍬', name:'糖果', counter:'顆'}
+];
+const TEMPLATES = {
+  combine:[
+    (a,b,total,it)=>`${a}${it.counter}${it.name}和${b}${it.counter}${it.name}<KW>合起來</KW>是幾${it.counter}${it.name}？`,
+    (a,b,total,it)=>`這邊有${a}${it.counter}${it.name}，那邊有${b}${it.counter}${it.name}，<KW>合起來</KW>是幾${it.counter}${it.name}？`
+  ],
+  split:[
+    (total,a,b,it)=>`${total}${it.counter}${it.name}<KW>可以分成</KW>${a}${it.counter}和幾${it.counter}${it.name}？`,
+    (total,a,b,it)=>`${total}${it.counter}${it.name}${it.emoji}，<KW>分成</KW>兩堆，一堆${a}${it.counter}，另一堆是幾${it.counter}？`
+  ],
+  takeaway:[
+    (total,take,left,it)=>`${total}${it.counter}${it.name}<KW>拿走</KW>${take}${it.counter}，<KW>還剩下</KW>幾${it.counter}？`,
+    (total,take,left,it)=>`原本有${total}${it.counter}${it.name}，<KW>拿走</KW>${take}${it.counter}後，<KW>還剩下</KW>幾${it.counter}？`
+  ]
+};
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function generateDrillQuestion(){
+  const kwId = pick(['combine','split','takeaway']);
+  const kw = KEYWORDS.find(k=>k.id===kwId);
+  const item = pick(ITEM_BANK);
+  let sentence, answer, a, b, total, take, left;
+  if(kwId==='combine'){
+    a = randInt(1,8); b = randInt(1, Math.max(1,10-a));
+    total = a+b;
+    sentence = pick(TEMPLATES.combine)(a,b,total,item);
+    answer = total;
+  } else if(kwId==='split'){
+    total = randInt(3,10); a = randInt(1,total-1); b = total-a;
+    sentence = pick(TEMPLATES.split)(total,a,b,item);
+    answer = b;
+  } else {
+    total = randInt(2,10); take = randInt(1,total); left = total-take;
+    sentence = pick(TEMPLATES.takeaway)(total,take,left,item);
+    answer = left;
+  }
+  // build 4 unique choices around the answer, within 0..10 (bounded, always terminates)
+  const choiceSet = new Set([answer]);
+  const deltas = [-2,-1,1,2,3,-3,4,-4,5,-5];
+  for(const delta of deltas){
+    if(choiceSet.size>=4) break;
+    const val = answer + delta;
+    if(val>=0 && val<=10) choiceSet.add(val);
+  }
+  let filler = 0;
+  while(choiceSet.size<4 && filler<=10){ choiceSet.add(filler); filler++; }
+  const choices = Array.from(choiceSet).slice(0,4);
+  for(let i=choices.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [choices[i],choices[j]]=[choices[j],choices[i]]; }
+  return { kwId, kw, item, sentence, answer, choices };
+}
+
+let currentDrillQ = null;
+let drillGuessAttempts = 0;
+
+function plainSentence(sentence){
+  return sentence.replace(/<\/?KW>/g,'');
+}
+function highlightedSentence(sentence, kw){
+  return sentence.replace(/<KW>(.*?)<\/KW>/g, (m,p1)=>`<span class="kw-hl" style="background:${kw.badgeBg};color:${kw.badgeFg};">${p1}</span>`);
+}
+
+function nextDrillQuestion(){
+  currentDrillQ = generateDrillQuestion();
+  drillGuessAttempts = 0;
+  document.getElementById('drillProgress').textContent = '';
+  document.getElementById('drillFeedback').textContent = '';
+  renderDrillGuessStep();
+}
+
+function renderDrillGuessStep(){
+  const q = currentDrillQ;
+  document.getElementById('drillSentence').innerHTML = plainSentence(q.sentence);
+  document.getElementById('drillProgress').textContent = '第 1 步：找出關鍵字朋友';
+  const area = document.getElementById('drillStepArea');
+  const order = [...KEYWORDS];
+  for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  area.innerHTML = `<div class="guess-row" id="guessRow"></div>`;
+  const row = document.getElementById('guessRow');
+  order.forEach(kw=>{
+    const btn = document.createElement('button');
+    btn.className = 'kwguess-btn';
+    btn.innerHTML = `<span class="sym">${kw.iconSymbol}</span>${kw.word}`;
+    btn.onclick = ()=>onDrillGuess(kw, btn);
+    row.appendChild(btn);
+  });
+  enqueueSpeech('這一題的關鍵字朋友是誰？');
+}
+
+function onDrillGuess(kw, btn){
+  if(kw.id === currentDrillQ.kwId){
+    btn.classList.add('correct');
+    document.querySelectorAll('.kwguess-btn').forEach(b=>b.disabled=true);
+    document.getElementById('drillSentence').innerHTML = highlightedSentence(currentDrillQ.sentence, currentDrillQ.kw);
+    document.getElementById('drillFeedback').textContent = '✅ 找對了！';
+    document.getElementById('drillFeedback').style.color = '#2c9450';
+    enqueueSpeech(`找對了！這一題是「${kw.word}」！`, ()=> setTimeout(renderDrillSolveStep, 500));
+  } else {
+    drillGuessAttempts++;
+    btn.classList.add('wrong');
+    document.getElementById('drillFeedback').textContent = '再看看句子裡的字喔！';
+    document.getElementById('drillFeedback').style.color = '#c0503a';
+    enqueueSpeech('再看看句子裡的字喔！');
+    setTimeout(()=>btn.classList.remove('wrong'), 600);
+    if(drillGuessAttempts>=2){
+      document.getElementById('drillSentence').innerHTML = highlightedSentence(currentDrillQ.sentence, currentDrillQ.kw);
+    }
+  }
+}
+
+function renderDrillSolveStep(){
+  const q = currentDrillQ;
+  document.getElementById('drillFeedback').textContent = '';
+  document.getElementById('drillProgress').textContent = '第 2 步：算出答案';
+  const area = document.getElementById('drillStepArea');
+  area.innerHTML = `<div class="choices" id="drillChoices"></div>`;
+  const el = document.getElementById('drillChoices');
+  q.choices.forEach(num=>{
+    const b = document.createElement('button');
+    b.className = 'choice-btn';
+    b.textContent = num;
+    b.onclick = ()=>onDrillSolve(num, b);
+    el.appendChild(b);
+  });
+  enqueueSpeech(plainSentence(q.sentence));
+}
+
+function onDrillSolve(num, btn){
+  const q = currentDrillQ;
+  if(num === q.answer){
+    document.querySelectorAll('#drillChoices .choice-btn').forEach(b=>b.disabled=true);
+    btn.classList.add('correct');
+    document.getElementById('drillFeedback').textContent = '🎉 答對了！';
+    document.getElementById('drillFeedback').style.color = '#2c9450';
+    enqueueSpeech(`答對了！${q.kw.word}，${q.kw.meaning}`);
+    drillSessionCount++;
+    addStar();
+    document.getElementById('drillProgress').textContent = `這次已經練習 ${drillSessionCount} 題`;
+    document.getElementById('drillStepArea').insertAdjacentHTML('beforeend',
+      `<div class="again-btn-wrap"><button class="big-btn green small" id="nextDrillBtn">下一題 ➡️</button></div>`);
+    document.getElementById('nextDrillBtn').onclick = nextDrillQuestion;
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('drillFeedback').textContent = '再算算看喔！';
+    document.getElementById('drillFeedback').style.color = '#c0503a';
+    enqueueSpeech('再算算看喔！');
+    setTimeout(()=>btn.classList.remove('wrong'), 700);
+  }
+}
+</script>
+</body>
+</html>
