@@ -245,7 +245,18 @@
             try {
                 window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+                // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
                 if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
                 window.speechSynthesis.speak(msg);
             } catch(e) { if (onEnd) onEnd(); }
@@ -369,7 +380,7 @@
             for (let i = 0; i < currentCount; i++) visualHTML += `<div class="item-icon">${randomItem.emoji}</div>`;
             document.getElementById('visualArea').innerHTML = visualHTML;
 
-            speak(`算一算，有幾個${randomItem.name}呢？泡泡飄上來囉！`);
+            speak(`算一算，有幾個${randomItem.name}？泡泡飄上來了！`);
 
             currentOptionsList = [];
             for (let n = 1; n <= 10; n++) currentOptionsList.push(n);
@@ -394,7 +405,7 @@
             if (isPaused || isProcessing || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
-                speak(`用手指一個一個指著算算看，總共有幾個呢？`);
+                speak(`用手指一個一個指著算算看，總共有幾個？`);
             } else {
                 speak(`答案是 ${currentCount}，找找看畫面上的這個數字！`);
                 hintActiveValue = currentCount;
@@ -467,7 +478,7 @@
 
                 } else {
                     isHandled = true;
-                    speak("再算算看喔！");
+                    speak("再算算看！");
                     el.style.transition = "opacity 0.3s";
                     el.style.opacity = "0";
                     setTimeout(() => el.remove(), 300);

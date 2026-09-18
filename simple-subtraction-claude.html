@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>10以內的減法遊戲(小飛機版)</title>
+    <title>減法冒險遊戲(魚兒游泳池版)</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
@@ -47,8 +47,6 @@
             font-size: 13px; font-weight: bold; color: #1e293b;
             border-bottom: 2px solid #e0f2fe; padding-bottom: 4px; flex-shrink: 0;
         }
-        .status-left { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
-
         .btn-group { display: flex; gap: 4px; flex-wrap: wrap; row-gap: 4px; }
         .control-btn {
             padding: 5px 10px; font-size: 12px; background: #0ea5e9; color: white; border: none;
@@ -68,7 +66,7 @@
         .speed-btn:active { transform: scale(0.95); }
 
         #visual-area {
-            min-height: 70px; max-height: 110px; width: 100%; display: flex; align-items: center; justify-content: center;
+            min-height: 70px; max-height: 130px; width: 100%; display: flex; align-items: center; justify-content: center;
             gap: 10px; flex-wrap: wrap; overflow-y: auto; flex-shrink: 0;
             background: #f0f9ff; border: 2px dashed #7dd3fc; border-radius: 10px; padding: 8px;
         }
@@ -81,63 +79,74 @@
         #question { font-size: 34px; font-weight: bold; color: #1e293b; margin: 2px 0; flex-shrink: 0; }
         #feedback { font-size: 15px; color: #0369a1; font-weight: bold; min-height: 22px; flex-shrink: 0; }
 
+        /* 魚兒游泳池：水藍色漸層 + 波光效果 */
         #drop-game-container {
-            position: relative; width: 100%; height: 150px; min-height: 150px; flex-grow: 1; max-height: 250px;
-            background: linear-gradient(180deg, #e0f2fe, #f1f5f9);
-            border: 3px solid #7dd3fc; border-radius: 14px;
-            overflow: hidden; box-sizing: border-box;
+            position: relative; width: 100%; height: 160px; min-height: 160px; flex-grow: 1; max-height: 260px;
+            background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 45%, #0284c7 100%);
+            border: 3px solid #0369a1; border-radius: 14px;
+            overflow: hidden; touch-action: manipulation;
         }
+        #drop-game-container::before, #drop-game-container::after {
+            content: ''; position: absolute; width: 100%; height: 8px;
+            background: rgba(255,255,255,0.25); border-radius: 50%;
+        }
+        #drop-game-container::before { top: 20%; }
+        #drop-game-container::after { top: 60%; }
 
-        /* 小飛機造型：呼應減法「拿走、飛走變少」的概念，取代原本的按鈕 */
+        /* 魚兒造型：呼應水中游泳的主題，取代原本的靜態按鈕 */
         .falling-option {
-            position: absolute; width: 78px; height: 50px; cursor: pointer;
-            animation: floatUp linear forwards;
+            position: absolute; width: 72px; height: 44px; cursor: pointer;
+            animation: swimAcross linear forwards, bobUpDown 1.4s ease-in-out infinite;
             z-index: 999;
         }
-        .plane-wing {
-            position: absolute; top: 6px; left: 20px; width: 36px; height: 14px;
-            background: var(--plane-color, #0ea5e9); border-radius: 4px;
-            transform: skewX(-18deg); opacity: 0.85;
+        .fish-tail {
+            position: absolute; left: 0; top: 8px; width: 0; height: 0;
+            border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+            border-right: 15px solid var(--fish-dark, #0369a1);
         }
-        .plane-body {
-            position: absolute; top: 17px; left: 6px; width: 58px; height: 17px;
-            background: var(--plane-color, #0ea5e9); border-radius: 50% 50% 40% 40% / 65% 65% 35% 35%;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.28);
+        .fish-body {
+            position: absolute; left: 13px; top: 0; width: 50px; height: 32px;
+            background: radial-gradient(circle at 35% 30%, #ffffff, var(--fish-color, #38bdf8) 55%, var(--fish-dark, #0369a1) 100%);
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
         }
-        .plane-nose {
-            position: absolute; top: 19px; left: 60px; width: 0; height: 0;
-            border-top: 6.5px solid transparent; border-bottom: 6.5px solid transparent;
-            border-left: 14px solid var(--plane-color, #0ea5e9);
+        .fish-eye {
+            position: absolute; left: 50px; top: 10px; width: 7px; height: 7px;
+            background: #1e293b; border-radius: 50%; z-index: 2;
         }
-        .plane-tail {
-            position: absolute; top: 8px; left: 4px; width: 13px; height: 13px;
-            background: var(--plane-color, #0ea5e9); border-radius: 3px;
-            transform: skewX(18deg);
-        }
-        .plane-num {
-            position: absolute; top: 17px; left: 6px; width: 58px; height: 17px;
+        .fish-num {
+            position: absolute; left: 13px; top: 0; width: 50px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 15px; font-weight: bold; color: #ffffff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5); z-index: 3;
+            font-size: 15px; font-weight: bold; color: #ffffff; z-index: 3;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.55);
         }
+        /* 從右邊游過來的魚，整隻魚身鏡像翻轉朝左，但數字要反向再翻轉一次，
+           抵銷掉鏡像效果，這樣不管魚往哪個方向游，數字永遠正常、不會顛倒。 */
+        .falling-option.face-left { transform: scaleX(-1); }
+        .falling-option.face-left .fish-num { transform: scaleX(-1); }
         .falling-option:active { transform: scale(0.92); }
-        .falling-option.hint-glow .plane-body {
+        .falling-option.hint-glow .fish-body {
             box-shadow: 0 0 0 3px #fde047, 0 3px 6px rgba(0,0,0,0.3);
             animation: glowPulse 1s ease-in-out infinite;
         }
         .falling-option.popping { animation: popEffect 0.32s ease-out forwards !important; pointer-events: none; }
-        @keyframes glowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+        @keyframes glowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
         @keyframes popEffect {
             0% { transform: scale(1) rotate(0deg); opacity: 1; }
-            35% { transform: scale(1.35) rotate(-4deg); opacity: 1; }
+            35% { transform: scale(1.35) rotate(-6deg); opacity: 1; }
             100% { transform: scale(0.15) rotate(10deg); opacity: 0; }
         }
-        @keyframes floatUp {
-            0%   { top: 100%; transform: translateX(0); }
-            25%  { transform: translateX(10px); }
-            50%  { transform: translateX(-8px); }
-            75%  { transform: translateX(8px); }
-            100% { top: -60px; transform: translateX(-4px); }
+        @keyframes bobUpDown {
+            0%, 100% { margin-top: 0; }
+            50% { margin-top: 8px; }
+        }
+        @keyframes swimRight {
+            0% { left: -80px; }
+            100% { left: 100%; }
+        }
+        @keyframes swimLeft {
+            0% { left: 100%; }
+            100% { left: -80px; }
         }
 
         #completeOverlay {
@@ -152,8 +161,8 @@
 <body>
 
     <div id="home-screen">
-        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
-            <h1>➖ 10以內的減法遊戲</h1>
+        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <h1>🐟 減法冒險遊戲 🐟</h1>
             <p class="subtitle">快樂學習 10 以內減法，輕鬆闖關！</p>
 
             <div class="intro-card">
@@ -161,7 +170,7 @@
                 <ul>
                     <li><strong>觀察算式：</strong>看清楚畫面上的減法算式與圖案，數一數幫助思考。</li>
                     <li><strong>算出答案：</strong>動腦算出拿走之後還剩下多少。</li>
-                    <li><strong>抓飛機作答：</strong>畫面下方會飛來一架架小飛機，點對答案的飛機就能過關！</li>
+                    <li><strong>抓魚兒作答：</strong>游泳池裡會游來一條條魚，點對答案的魚就能過關！</li>
                     <li><strong>卡住了嗎：</strong>按「💡提示」會給你線索！</li>
                     <li>題目會先從簡單的減 1 開始，慢慢加深難度喔！</li>
                 </ul>
@@ -173,9 +182,7 @@
 
     <div id="game-ui">
         <div id="status-bar">
-            <div class="status-left">
-                <span id="score">闖關: 0</span>
-            </div>
+            <span id="score">闖關: 0</span>
             <div class="btn-group">
                 <button class="control-btn hint-btn" onclick="useHint()">💡提示</button>
                 <button class="control-btn pause-btn-el" id="pause-btn" onclick="togglePause()">暫停</button>
@@ -238,19 +245,34 @@
         let speedMode = 'normal';
 
         const SPEED_SETTINGS = {
-            slow:   { fallDuration: 8,   spawnInterval: 2600 },
-            normal: { fallDuration: 5.5, spawnInterval: 2000 },
-            fast:   { fallDuration: 3.5, spawnInterval: 1300 }
+            slow:   { fallDuration: 9,   spawnInterval: 2600 },
+            normal: { fallDuration: 6.5, spawnInterval: 2000 },
+            fast:   { fallDuration: 4.5, spawnInterval: 1300 }
         };
 
         function speak(text, onEnd) {
             if (!('speechSynthesis' in window)) { if (onEnd) onEnd(); return; }
             try {
                 window.speechSynthesis.cancel();
+                let finished = false;
+                const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
-                if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+                // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
+                msg.onend = trigger;
+                msg.onerror = trigger;
                 window.speechSynthesis.speak(msg);
+                setTimeout(trigger, Math.max(1500, text.length * 300 / 0.85));
             } catch(e) { if (onEnd) onEnd(); }
         }
 
@@ -357,7 +379,7 @@
             hintActiveValue = null;
             hideCompletionScreen();
 
-            document.getElementById('feedback').innerText = "小飛機飛過來囉！";
+            document.getElementById('feedback').innerText = "魚兒游過來囉！";
             activeOptions.forEach(el => el.remove());
             activeOptions = [];
             if (gameInterval) clearInterval(gameInterval);
@@ -371,7 +393,7 @@
             document.getElementById('question').innerText = `${n1} - ${n2} = ?`;
             renderDots(n1, n2);
 
-            speak(`${n1} 減 ${n2} 等於多少呢？`);
+            speak(`${n1} 減 ${n2} 等於多少？`);
 
             let options = new Set([currentAns]);
             let attempts = 0;
@@ -402,9 +424,9 @@
             if (isPaused || isAnswered || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
-                speak(`用手指指著上面的圖案數一數，${n1} 個裡面拿走 ${n2} 個，還剩下多少呢？`);
+                speak(`用手指指著上面的圖案數一數，${n1} 個裡面拿走 ${n2} 個，還剩下多少？`);
             } else {
-                speak(`答案是 ${currentAns}，找找看畫面上這個數字的小飛機！`);
+                speak(`答案是 ${currentAns}，找找看游泳池裡這個數字的魚！`);
                 hintActiveValue = currentAns;
                 activeOptions.forEach(opt => { if (opt.dataset.val === String(currentAns)) opt.classList.add('hint-glow'); });
             }
@@ -418,6 +440,11 @@
             document.getElementById('completeOverlay').style.display = 'none';
         }
 
+        const FISH_COLORS = [
+            ['#38bdf8', '#0369a1'], ['#fb923c', '#c2410c'], ['#4ade80', '#166534'],
+            ['#f472b6', '#9d174d'], ['#a78bfa', '#5b21b6'], ['#facc15', '#a16207']
+        ];
+
         function spawnFallingOption(val) {
             if (isAnswered || isPaused) return;
             const container = document.getElementById('drop-game-container');
@@ -426,20 +453,25 @@
             el.dataset.val = String(val);
             if (hintActiveValue !== null && val === hintActiveValue) el.classList.add('hint-glow');
 
-            const colors = ['#0ea5e9', '#0284c7', '#0891b2', '#16a34a', '#7c3aed', '#db2777', '#ca8a04'];
-            const dark = colors[Math.floor(Math.random() * colors.length)];
-            el.style.setProperty('--plane-color', dark);
+            const [light, dark] = FISH_COLORS[Math.floor(Math.random() * FISH_COLORS.length)];
+            el.style.setProperty('--fish-color', light);
+            el.style.setProperty('--fish-dark', dark);
             el.innerHTML = `
-                <div class="plane-wing"></div>
-                <div class="plane-tail"></div>
-                <div class="plane-body"></div>
-                <div class="plane-nose"></div>
-                <div class="plane-num">${val}</div>
+                <div class="fish-tail"></div>
+                <div class="fish-body"></div>
+                <div class="fish-eye"></div>
+                <div class="fish-num">${val}</div>
             `;
 
-            const randomX = Math.random() * (container.clientWidth - 78);
-            el.style.left = randomX + 'px';
-            el.style.animationDuration = SPEED_SETTINGS[speedMode].fallDuration + 's';
+            // 隨機決定從左游到右，或從右游到左，並讓身體上下擺動一下更生動。
+            const swimFromLeft = Math.random() < 0.5;
+            const randomY = Math.random() * (container.clientHeight - 44);
+            el.style.top = randomY + 'px';
+            el.style.animationName = swimFromLeft ? 'swimRight, bobUpDown' : 'swimLeft, bobUpDown';
+            if (!swimFromLeft) el.classList.add('face-left');
+            el.style.animationDuration = `${SPEED_SETTINGS[speedMode].fallDuration}s, 1.4s`;
+            el.style.animationIterationCount = '1, infinite';
+            el.style.animationTimingFunction = 'linear, ease-in-out';
             if (isPaused) el.style.animationPlayState = 'paused';
 
             let isHandled = false;
@@ -484,7 +516,7 @@
 
                 } else {
                     isHandled = true;
-                    speak("再算算看喔！");
+                    speak("再算算看！");
                     document.getElementById('feedback').innerText = "❌ 再試一次！";
                     el.style.transition = "opacity 0.3s";
                     el.style.opacity = "0";
@@ -493,17 +525,17 @@
             };
 
             el.addEventListener('pointerdown', handleSelect);
-            el.addEventListener('animationend', () => {
-                el.remove();
-                activeOptions = activeOptions.filter(item => item !== el);
+            el.addEventListener('animationend', (ev) => {
+                if (ev.animationName === 'swimRight' || ev.animationName === 'swimLeft') {
+                    el.remove();
+                    activeOptions = activeOptions.filter(item => item !== el);
+                }
             });
 
             container.appendChild(el);
             activeOptions.push(el);
         }
 
-        // 題目圖像：num1 個亮圓圈，扣掉的 num2 個顯示成變灰的圓圈，
-        // 讓孩子直接看到「拿走」的概念，而不只是抽象的減號。
         function renderDots(num1, num2) {
             let area = document.getElementById('visual-area');
             let html = '<div class="dot-group">';

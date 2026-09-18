@@ -249,7 +249,18 @@
             let finished = false;
             const trigger = () => { if (finished) return; finished = true; if (callback) callback(); };
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-TW';
+            // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+            // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+            const voices = window.speechSynthesis.getVoices();
+            const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+            if (hasLang('zh-tw')) {
+                utterance.lang = 'zh-TW';
+            } else if (hasLang('zh-cn')) {
+                utterance.lang = 'zh-CN';
+            } else {
+                const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                utterance.lang = anyZh ? anyZh.lang : 'zh-TW';
+            }
             utterance.rate = 0.8;
             utterance.onend = trigger;
             utterance.onerror = trigger;
@@ -505,7 +516,7 @@
         hintLevel++;
         if (hintLevel === 1) {
             const dirText = currentActionSign === '+' ? '再多算一點' : '要算少一點';
-            speakText(`用手指點著車廂數一數，${dirText}喔！`);
+            speakText(`用手指點著車廂數一數，${dirText}！`);
         } else {
             speakText(`答案是 ${currentAns}，找找看天空中這個數字的降落傘！`);
             hintActiveValue = currentAns;
@@ -579,7 +590,7 @@
 
             } else {
                 isHandled = true;
-                speakText("再算算看喔！");
+                speakText("再算算看！");
                 document.getElementById('feedback').innerText = "❌ 數字不對喔，再試一次！";
                 el.style.transition = "opacity 0.3s";
                 el.style.opacity = "0";
