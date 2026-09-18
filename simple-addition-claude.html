@@ -248,7 +248,20 @@
             try {
                 window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，
+                // 如果這台裝置沒有安裝 zh-TW（新款小米等機型常見），
+                // 改用 zh-CN，還是沒有的話用任何偵測到的中文語音，
+                // 避免因為指定了裝置根本沒有的語言而整個語音失敗、完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
                 if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
                 window.speechSynthesis.speak(msg);
             } catch(e) { if (onEnd) onEnd(); }
@@ -492,7 +505,7 @@
 
                 } else {
                     isHandled = true;
-                    speak("再算算看喔！");
+                    speak("再算算看！");
                     document.getElementById('feedback').innerText = "❌ 再試一次！";
                     el.style.transition = "opacity 0.3s";
                     el.style.opacity = "0";
