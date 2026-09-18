@@ -312,7 +312,19 @@
             try {
                 window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，
+                // 沒有的話改用 zh-CN，還是沒有就用任何偵測到的中文語音，
+                // 避免指定了裝置根本沒有的語言，導致整個語音失敗、完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
                 if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
                 window.speechSynthesis.speak(msg);
             } catch(e) { if (onEnd) onEnd(); }
@@ -449,7 +461,7 @@
             document.getElementById('shapeDisplayArea').innerHTML = displayHTML;
             document.getElementById('questionText').innerText = `數一數，有幾個${targetShapeName}呢？`;
 
-            speak(`算一算，畫面上有幾個${targetShapeName}呢？氣球飄上來囉！`);
+            speak(`算一算，畫面上有幾個${targetShapeName}？氣球飄上來了！`);
 
             let opts = new Set([targetCount]);
             let attempts = 0;
@@ -553,7 +565,7 @@
 
                 } else {
                     isHandled = true;
-                    speak("再算算看喔！");
+                    speak("再算算看！");
                     el.style.transition = "opacity 0.3s";
                     el.style.opacity = "0";
                     setTimeout(() => el.remove(), 300);
