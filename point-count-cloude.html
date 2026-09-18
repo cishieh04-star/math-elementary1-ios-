@@ -116,22 +116,21 @@
   <div class="screen active" id="screen-start">
     <div class="mascot">🐟</div>
     <h1>點點看：湊數字配對大冒險</h1>
-    <div class="subtitle">10以內・數字配數字・數量配數字</div>
-    <div class="card">
-      <p style="font-size:1.08rem; line-height:1.8; margin:0;">
-        小魚準備了好多配對關卡！<br>
-        找一找左邊和右邊，哪兩個可以配成一對，<b style="color:#d1451f">用手指點一點</b>就可以了！
-      </p>
-      <div class="full-panel" id="howToPanel">
-        <p>🔢 有時候：兩邊都是數字，找出<b>合起來等於目標數</b>的兩個數字。</p>
-        <p>🐟 有時候：一邊是<b>一堆物品</b>（例如魚、蘋果、氣球），一邊是數字，看看數量對不對，或是合起來是不是目標數。</p>
-        <p>👉 點一下左邊，再點一下右邊，配對正確就會變成綠色；配錯了會抖一下，再試一次就好。</p>
-        <p>🔊 點每一張卡片，都會唸出上面的數字或數量給你聽。</p>
-      </div>
-      <button class="big-btn small" id="howToBtn" style="margin-top:10px;">🔊 再聽一次說明</button>
-    </div>
-    <button class="big-btn" id="startBtn" style="margin-top:14px;">🚀 開始挑戰！</button>
+    <div class="subtitle">10以內・找一找，配成一對！</div>
+    <button class="big-btn" id="startBtn">🚀 開始挑戰！</button>
     <div class="star-badge" id="totalStarBadge">🏆 累積星星：0</div>
+    <div class="card" style="margin-top:14px;">
+      <p style="font-size:1.05rem; line-height:1.7; margin:0;">
+        用<b style="color:#d1451f">手指點一點</b>，找出可以配成一對的兩個！
+      </p>
+      <button class="big-btn small" id="howToBtn" style="margin-top:10px;">🔊 說明怎麼玩</button>
+      <div class="full-panel" id="howToPanel" hidden>
+        <p>🔢 有時候：兩邊都是數字，找出<b>合起來等於目標數</b>的兩個數字。</p>
+        <p>🐟 有時候：一邊是<b>一堆物品</b>，一邊是數字，看看數量對不對，或是合起來是不是目標數。</p>
+        <p>👉 配對正確會變綠色；配錯了再試一次就好。</p>
+        <p>🔊 點每一張卡片，都會唸出內容給你聽。</p>
+      </div>
+    </div>
   </div>
 
   <!-- GAME -->
@@ -205,8 +204,7 @@ function processSpeechQueue(){
   u.onend = finish;
   u.onerror = finish;
   setTimeout(finish, Math.max(2600, item.text.length*450));
-  try{ speechSynthesis.cancel(); }catch(e){}
-  setTimeout(()=>speechSynthesis.speak(u), 60);
+  speechSynthesis.speak(u);
 }
 function stopAllSpeech(){
   speechQueue = [];
@@ -232,9 +230,9 @@ function buildReasonText(kind, pairData){
   const a = nodeVal(pairData.left), b = nodeVal(pairData.right);
   if(kind==='quantity'){
     const name = OBJECT_NAMES[pairData.left.emoji] || '東西';
-    return { speech: `${a}個${name}，就是數字${b}！`, display: `🎉 ${a} 個${name}就是數字 ${b}！` };
+    return { speech: `${a}個${name}，就是數字${b}`, display: `🎉 ${a} 個${name}就是數字 ${b}！` };
   }
-  return { speech: `${a}加${b}等於${a+b}！`, display: `🎉 ${a} + ${b} = ${a+b}！` };
+  return { speech: `${a}加${b}等於${a+b}`, display: `🎉 ${a} + ${b} = ${a+b}！` };
 }
 
 /* ================= Round generators (all within 10, for first-grade level) ================= */
@@ -276,7 +274,7 @@ function makeSumObjectRound(){
   return {
     kind:'sumObject', unit:'物品湊對・目標 ' + target,
     sentence: `數一數左邊有幾個，配上右邊的數字，兩個合起來要是 <b>${target}</b>！點點看！`,
-    speech: `數一數左邊有幾個，配上右邊的數字，兩個合起來要是${target}！點點看！`,
+    speech: `數一數左邊有幾個，配上右邊的數字，兩個合起來要是${target}，點點看！`,
     pairs
   };
 }
@@ -288,7 +286,7 @@ function makeQuantityRound(){
   return {
     kind:'quantity', unit:'數一數配數字',
     sentence: `數一數，把物品和正確的<b>數字</b>配成一對！點點看！`,
-    speech: `數一數，把物品和正確的數字配成一對！點點看！`,
+    speech: `數一數，把物品和正確的數字配成一對，點點看！`,
     pairs
   };
 }
@@ -392,11 +390,11 @@ function onConnectPick(side, id, el){
           document.getElementById('stageFeedback').innerHTML = `${reason.display}<br>這一關全部配對完成！`;
           document.getElementById('stageFeedback').style.color = '#2c9450';
           addStar();
-          enqueueSpeech(`配對成功！${reason.speech}這一關全部完成了！`, ()=> setTimeout(goNextRound, 600));
+          enqueueSpeech(`配對成功，${reason.speech}，這一關全部完成了！`, ()=> setTimeout(goNextRound, 600));
         } else {
           document.getElementById('stageFeedback').textContent = reason.display;
           document.getElementById('stageFeedback').style.color = '#2c9450';
-          enqueueSpeech(`配對成功！${reason.speech}`);
+          enqueueSpeech(`配對成功，${reason.speech}！`);
         }
       }, 400);
     } else {
@@ -455,8 +453,12 @@ function showScreen(id){
 
 const HOWTO_SPEECH = '有時候兩邊都是數字，找出合起來等於目標數的兩個數字。有時候一邊是一堆物品，一邊是數字，看看數量對不對，或是合起來是不是目標數。點一下左邊，再點一下右邊，配對正確就會變成綠色，配錯了再試一次就好。點每一張卡片，都會唸出上面的數字或數量給你聽。';
 document.getElementById('howToBtn').onclick = ()=>{
-  stopAllSpeech();
-  enqueueSpeech(HOWTO_SPEECH);
+  const p = document.getElementById('howToPanel');
+  p.hidden = !p.hidden;
+  if(!p.hidden){
+    stopAllSpeech();
+    enqueueSpeech(HOWTO_SPEECH);
+  }
 };
 document.getElementById('startBtn').onclick = ()=>{
   buildRounds();
