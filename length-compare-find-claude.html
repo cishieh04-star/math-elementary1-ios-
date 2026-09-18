@@ -370,7 +370,7 @@
             document.getElementById('progress-text').innerText = `已找到: ${caughtCount} / ${TARGET_CATCHES}`;
             document.getElementById('feedback').innerText = '';
 
-            speak(askForLonger ? '找找看，比它長的是哪些呢？' : '找找看，比它短的是哪些呢？');
+            speak(askForLonger ? '找找看，長度比它大的是哪些呢？' : '找找看，長度比它小的是哪些呢？');
 
             startFallingLoop();
         }
@@ -404,7 +404,7 @@
             if (isPaused || isRoundDone || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
-                speak(`比比看，跟參考物比起來，要找${askForLonger ? '更長' : '更短'}的！`);
+                speak(`比比看，跟參考物比起來，要找長度${askForLonger ? '比較大' : '比較小'}的！`);
             } else {
                 // 在畫面上現有的物品裡，找一個真的符合條件的，標示發光。
                 const match = activeOptions.find(el => el.dataset.matches === 'true');
@@ -412,7 +412,7 @@
                     match.classList.add('hint-glow');
                     speak('找找看發亮的這一個！');
                 } else {
-                    speak(`繼續看，比它${askForLonger ? '長' : '短'}的等一下就會出現！`);
+                    speak(`繼續看，長度比它${askForLonger ? '大' : '小'}的等一下就會出現！`);
                 }
             }
         }
