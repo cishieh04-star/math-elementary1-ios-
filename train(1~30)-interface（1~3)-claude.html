@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>30以內數字接力遊戲(挑戰版)</title>
+    <title>數學冒險：火車過山洞（魚兒游泳池版．30以內綜合挑戰．由簡入難）</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
@@ -179,7 +179,7 @@
 
 <div class="main-wrapper">
     <div id="home-screen">
-        <h1>🚂 30以內數字接力遊戲(挑戰版）</h1>
+        <h1>🚂 火車過山洞（30以內．方向不定）</h1>
         <p class="subtitle">🐠 找魚作答 × 語音互動 × 數字序列推理！</p>
 
         <div class="intro-card">
@@ -284,7 +284,18 @@
         try {
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'zh-TW';
+            // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+            // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+            const voices = window.speechSynthesis.getVoices();
+            const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+            if (hasLang('zh-tw')) {
+                msg.lang = 'zh-TW';
+            } else if (hasLang('zh-cn')) {
+                msg.lang = 'zh-CN';
+            } else {
+                const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+            }
             if (onEnd) { msg.onend = onEnd; msg.onerror = onEnd; }
             window.speechSynthesis.speak(msg);
         } catch(e) { if (onEnd) onEnd(); }
@@ -452,7 +463,7 @@
         currentAns = trainSequence[blankIndex];
 
         renderTrain(trainSequence, blankIndex);
-        speak(`看看火車車廂，空格的數字是多少呢？`);
+        speak(`看看火車車廂，空格的數字是多少？`);
 
         const visibleValues = new Set(trainSequence.filter((v, idx) => idx !== blankIndex));
         let options = new Set([currentAns]);
@@ -630,7 +641,7 @@
 
             } else {
                 playErrorSound();
-                speak("再算算看喔！");
+                speak("再算算看！");
                 document.getElementById('feedback').innerText = "❌ 數字不對喔，再試一次！";
                 el.style.transition = "opacity 0.3s";
                 el.style.opacity = "0";
