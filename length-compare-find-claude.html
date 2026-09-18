@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>長度比較遊戲(找一找)</title>
+    <title>長度比較樂：找一找</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
@@ -118,8 +118,8 @@
 <body>
 
     <div id="home-screen">
-        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
-            <h1>🔍 長度比較遊戲(找一找)🔍</h1>
+        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <h1>🔍 長度比較樂：找一找 🔍</h1>
             <p class="subtitle">找出比參考物更長或更短的物品！</p>
 
             <div class="intro-card">
@@ -220,7 +220,18 @@
                 let finished = false;
                 const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+                // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
                 msg.onend = trigger;
                 msg.onerror = trigger;
                 window.speechSynthesis.speak(msg);
@@ -393,7 +404,7 @@
             if (isPaused || isRoundDone || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
-                speak(`比比看，跟參考物比起來，要找${askForLonger ? '更長' : '更短'}的喔！`);
+                speak(`比比看，跟參考物比起來，要找${askForLonger ? '更長' : '更短'}的！`);
             } else {
                 // 在畫面上現有的物品裡，找一個真的符合條件的，標示發光。
                 const match = activeOptions.find(el => el.dataset.matches === 'true');
@@ -401,7 +412,7 @@
                     match.classList.add('hint-glow');
                     speak('找找看發亮的這一個！');
                 } else {
-                    speak(`繼續看，比它${askForLonger ? '長' : '短'}的等一下就會出現囉！`);
+                    speak(`繼續看，比它${askForLonger ? '長' : '短'}的等一下就會出現！`);
                 }
             }
         }

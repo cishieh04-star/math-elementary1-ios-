@@ -3,128 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>數學關鍵字大冒險－完整版</title>
+<title>數學關鍵字五題挑戰＋拼字遊戲</title>
 <style>
   :root{
-    --combine:#ff9f43;
-    --split:#4aa3df;
-    --take:#42b06c;
     --ink:#3a3a3a;
-    --cream:#fff8ec;
-    --c1-bg:#efe9fe; --c1-fg:#6b3fd6;
-    --c2-bg:#dcf6f2; --c2-fg:#0d7f72;
-    --c3-bg:#fef1da; --c3-fg:#b8730a;
-    --c4-bg:#ffe6d8; --c4-fg:#c2500f;
-    --c5-bg:#dff7e6; --c5-fg:#16803c;
-    --c6-bg:#fde2ea; --c6-fg:#c23b6a;
+    --cream:#fbf6ec;
+    --c-count:#8b5cf6;
+    --c-count-bg:#efe9fe; --c-count-fg:#6b3fd6;
+    --c-compare:#14b8a6;
+    --c-compare-bg:#dcf6f2; --c-compare-fg:#0d7f72;
+    --c-total:#f59e0b;
+    --c-total-bg:#fef1da; --c-total-fg:#b8730a;
+    --c-combine:#fb7a3c;
+    --c-combine-bg:#ffe6d8; --c-combine-fg:#c2500f;
+    --c-take:#22c55e;
+    --c-take-bg:#dff7e6; --c-take-fg:#16803c;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
   html,body{
     margin:0; padding:0; min-height:100%;
-    font-family:"Microsoft JhengHei","PingFang TC","Heiti TC","Arial Rounded MT Bold",sans-serif;
-    background:linear-gradient(160deg,#fff3d6 0%,#ffe3ec 45%,#dff3ff 100%);
+    font-family:"Microsoft JhengHei","PingFang TC","Heiti TC",sans-serif;
+    background:linear-gradient(180deg,#fdf6ec 0%,#eef7f6 100%);
     color:var(--ink);
-    overflow-x:hidden;
   }
   #app{ min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:16px 16px 40px; }
   .screen{ width:100%; max-width:720px; display:none; flex-direction:column; align-items:center; }
-  .screen.active{ display:flex; animation:fadeIn .4s ease; }
-  @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .screen.active{ display:flex; animation:fadeIn .35s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 
-  h1{ font-size:1.5rem; text-align:center; margin:8px 0 4px; }
-  .subtitle{ font-size:1.02rem; color:#666; text-align:center; margin-bottom:10px;}
-
-  .topbar{ width:100%; max-width:720px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .topbar{ width:100%; max-width:720px; display:flex; justify-content:space-between; margin-bottom:6px; }
   .icon-btn{
-    width:52px; height:52px; border-radius:16px; border:3px solid #fff;
-    background:rgba(255,255,255,.9); box-shadow:0 3px 0 rgba(0,0,0,.12);
-    font-size:1.6rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    width:50px; height:50px; border-radius:15px; border:3px solid #fff;
+    background:rgba(255,255,255,.95); box-shadow:0 3px 0 rgba(0,0,0,.10);
+    font-size:1.5rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
-  .icon-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.12); }
+  .icon-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.10); }
 
-  .mascot{ font-size:4.8rem; margin:6px 0; animation:bob 2.4s ease-in-out infinite; }
-  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-10px) rotate(2deg);} }
+  h1{ font-size:1.5rem; text-align:center; margin:6px 0 2px; }
+  .subtitle{ font-size:1rem; color:#666; text-align:center; margin-bottom:8px;}
+  .mascot{ font-size:4.6rem; margin:4px 0; animation:bob 2.6s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-8px) rotate(2deg);} }
+
+  .card{ background:#fff; border-radius:26px; padding:22px 20px; width:100%; box-shadow:0 8px 0 rgba(0,0,0,.06); text-align:center; }
 
   .big-btn{
-    font-size:1.3rem; font-weight:bold; padding:16px 32px; border-radius:28px;
+    font-size:1.3rem; font-weight:bold; padding:16px 34px; border-radius:28px;
     border:none; color:#fff; background:linear-gradient(180deg,#ffb454,#ff8c2b);
-    box-shadow:0 6px 0 #d9691a; cursor:pointer; margin:10px 4px;
+    box-shadow:0 6px 0 #d9691a; cursor:pointer; margin:12px 4px;
   }
   .big-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #d9691a; }
   .big-btn.blue{ background:linear-gradient(180deg,#6ec3f4,#3a9be0); box-shadow:0 6px 0 #2679b3; }
   .big-btn.blue:active{ box-shadow:0 2px 0 #2679b3; }
   .big-btn.green{ background:linear-gradient(180deg,#7bdc9c,#3fbf6a); box-shadow:0 6px 0 #2c9450; }
   .big-btn.green:active{ box-shadow:0 2px 0 #2c9450; }
-  .big-btn.purple{ background:linear-gradient(180deg,#c39cf4,#8a5be0); box-shadow:0 6px 0 #6a3fb8; }
-  .big-btn.purple:active{ box-shadow:0 2px 0 #6a3fb8; }
-  .big-btn.small{ font-size:1.08rem; padding:12px 24px; }
-  .big-btn[disabled]{ opacity:.4; cursor:default; }
-  .nav-row{ display:flex; justify-content:center; gap:14px; margin-top:6px; flex-wrap:wrap; }
-
-  .dots{ display:flex; gap:8px; margin:10px 0; }
-  .dot{ width:12px; height:12px; border-radius:50%; background:#ddd; }
-  .dot.on{ background:#ff8c2b; }
+  .big-btn.small{ font-size:1.05rem; padding:12px 24px; }
+  .nav-row{ display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:6px; }
 
   .star-badge{
     display:inline-flex; align-items:center; gap:6px; background:#fff;
-    border-radius:20px; padding:8px 18px; font-size:1.1rem; font-weight:800;
-    color:#a85b00; box-shadow:0 4px 0 rgba(0,0,0,.08); margin:8px 0;
+    border-radius:20px; padding:7px 16px; font-size:1.05rem; font-weight:800;
+    color:#b8730a; box-shadow:0 4px 0 rgba(0,0,0,.08); margin:8px 0;
   }
+  .progress-track{ display:flex; gap:8px; margin:8px 0 12px; }
+  .progress-seg{ width:32px; height:8px; border-radius:5px; background:#eee; }
+  .progress-seg.done{ background:#3fbf6a; }
+  .progress-seg.current{ background:#ffcf8a; }
 
-  /* ---- Shared panel style ---- */
-  .card, .learn-card, .q-card{
-    background:#fff; border-radius:26px; padding:20px 18px; width:100%;
-    box-shadow:0 8px 0 rgba(0,0,0,.06); text-align:center; position:relative;
-  }
-
-  .kw-badge{
-    display:inline-block; font-size:1.6rem; font-weight:900; color:#fff;
-    padding:8px 26px; border-radius:20px; margin-bottom:14px;
-  }
-  .anim-stage{ min-height:110px; display:flex; align-items:center; justify-content:center; position:relative; margin-bottom:10px; padding:8px 0;}
-  .sentence-box{
-    background:var(--cream); border-radius:18px; padding:16px; font-size:1.3rem;
-    line-height:1.9; margin:10px 0;
-  }
-  .blank{ color:#d1451f; font-weight:900; border-bottom:4px solid #d1451f; padding:0 6px;}
+  .source-tag{ font-size:.9rem; color:#999; margin-bottom:6px; }
   .kw-hl{ font-weight:900; padding:1px 6px; border-radius:8px; }
-  .meaning{ font-size:1.02rem; color:#555; margin-top:4px; }
-
-  /* ---- Cluster illustration system (item count always matches the real numbers) ---- */
-  .cluster-stage{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:nowrap; }
-  .cluster-stage-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .cluster-row{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
-  .op-symbol.down{ font-size:1.3rem; margin:0; }
-  .cluster-box{ display:flex; flex-direction:column; align-items:center; gap:4px; min-width:56px; }
-  .cluster-items{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px; max-width:168px; }
-  .cluster-items .cluster-item{ font-size:1.9rem; line-height:1; display:inline-block; animation:clusterPulse 2.4s ease-in-out infinite; }
-  .cluster-items.dense .cluster-item{ font-size:1.3rem; }
-  @keyframes clusterPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.1); } }
-  .cluster-item.item-faded{ opacity:.32; filter:grayscale(70%); animation:none; }
-  .op-symbol{ font-size:1.8rem; font-weight:900; color:var(--combine); }
-  .cluster-tag{ font-size:.8rem; font-weight:800; color:#777; background:#f4f0ea; padding:2px 10px; border-radius:10px; white-space:nowrap; }
-  .unknown-box{
-    width:52px; height:52px; border-radius:14px; border:3px dashed #e0a1a1;
-    display:flex; align-items:center; justify-content:center; font-size:1.7rem;
-    color:#c0503a; background:#fff8ec; font-weight:900; animation:clusterPulse 2.4s ease-in-out infinite;
-  }
-
-  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
-
-  /* ---- Keyword matching game (Level 1) ---- */
-  .board{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:100%; margin:10px 0; }
-  .match-card{
-    aspect-ratio:1/1; border-radius:20px; background:linear-gradient(180deg,#ffe6a8,#ffd27a);
-    box-shadow:0 5px 0 #e0ab3f; display:flex; align-items:center; justify-content:center;
-    font-size:1.15rem; font-weight:800; text-align:center; padding:8px; cursor:pointer; color:#8a5a10;
-  }
-  .match-card.flipped{ background:#fff; box-shadow:0 5px 0 #ddd; color:var(--ink); }
-  .match-card.matched{ background:#eafcef; box-shadow:0 5px 0 #bfe9cc; color:#2c9450; cursor:default; }
-  .match-card.shake{ animation:shake .4s; }
-  .match-card .icon-symbol{ font-size:2.2rem; }
-  .status-line{ font-size:1.12rem; margin:6px 0 2px; font-weight:700; }
-
-  /* ---- Choices / progress (shared by apply + quiz stages + drill) ---- */
+  .q-sentence{ background:var(--cream); border-radius:18px; padding:16px; font-size:1.3rem; line-height:1.8; margin:10px 0; }
+  .q-visual{ font-size:2.3rem; margin:6px 0; letter-spacing:2px; }
   .choices{ display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
   .choice-btn{
     width:74px; height:74px; border-radius:20px; border:4px solid #ffd27a; font-size:1.6rem; font-weight:900;
@@ -133,160 +81,89 @@
   .choice-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #e0ab3f; }
   .choice-btn.correct{ background:#eafcef; border-color:#3fbf6a; color:#2c9450; }
   .choice-btn.wrong{ background:#fff0ef; border-color:#e0785a; color:#c0503a; }
-  .feedback{ min-height:32px; font-size:1.1rem; font-weight:700; margin-top:10px; }
-  .progress-track{ display:flex; gap:6px; margin:8px 0 14px; flex-wrap:wrap; justify-content:center; }
-  .progress-seg{ width:26px; height:8px; border-radius:5px; background:#eee; }
-  .progress-seg.done{ background:#3fbf6a; }
-  .progress-seg.current{ background:#ffcf8a; }
-
-  .confetti{ font-size:2.8rem; text-align:center; }
-
-  /* ---- Quiz stages (Level 2 / Level 3) ---- */
-  .source-tag{ font-size:.88rem; color:#999; margin-bottom:6px; }
-  .q-sentence{ background:var(--cream); border-radius:18px; padding:16px; font-size:1.28rem; line-height:1.8; margin:10px 0; }
-  .q-visual{ font-size:2.1rem; margin:8px 0; letter-spacing:2px; }
 
   .pick-row{ display:flex; gap:16px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
-  .pick-card{ flex:1 1 190px; max-width:250px; background:#fff8ef; border:4px solid #ffe1b0; border-radius:22px;
-    padding:16px 10px; cursor:pointer; box-shadow:0 5px 0 #f0c988; }
+  .pick-card{
+    flex:1 1 200px; max-width:260px; background:#fff8ef; border:4px solid #ffe1b0; border-radius:22px;
+    padding:18px 10px; cursor:pointer; box-shadow:0 5px 0 #f0c988;
+  }
   .pick-card:active{ transform:translateY(3px); box-shadow:0 2px 0 #f0c988; }
   .pick-card.correct{ background:#eafcef; border-color:#3fbf6a; box-shadow:0 5px 0 #bfe9cc; }
   .pick-card.wrong{ background:#fff0ef; border-color:#e0785a; box-shadow:0 5px 0 #f3c9c0; }
-  .pick-visual{ display:flex; align-items:flex-end; justify-content:center; height:110px; margin-bottom:8px; gap:4px; }
-  .pick-label{ font-size:1.3rem; }
-  .bar{ height:26px; border-radius:14px; background:linear-gradient(180deg,#8fd6c8,#4fb9a6); margin:0 auto; }
+  .bar{ height:26px; border-radius:14px; background:linear-gradient(180deg,#8fd6c8,#4fb9a6); margin:0 auto 8px; }
+  .pick-label{ font-size:1.4rem; }
 
-  .lineup-row{ display:flex; justify-content:center; align-items:center; gap:6px; font-size:2.4rem; margin:14px 0; flex-wrap:wrap; }
-  .lineup-target{ position:relative; display:inline-block; padding:4px 6px; border-radius:14px; border:3px solid #ff8c2b; background:#fff3e0; }
-  .desk-label{ font-size:.95rem; color:#888; margin-left:6px; }
+  .feedback{ min-height:32px; font-size:1.1rem; font-weight:700; margin-top:10px; }
 
-  /* connect board */
-  .connect-board{ display:flex; justify-content:center; gap:34px; margin:14px 0; }
-  .connect-col{ display:flex; flex-direction:column; gap:12px; }
-  .connect-card{ min-width:78px; padding:14px 16px; border-radius:18px; background:#fff; border:4px solid #eee;
-    font-size:1.3rem; font-weight:800; cursor:pointer; box-shadow:0 5px 0 #ddd; text-align:center; }
-  .connect-card.selected{ border-color:#3a9be0; background:#eaf6ff; }
-  .connect-card.matched{ background:#eafcef; border-color:#3fbf6a; color:#2c9450; cursor:default; box-shadow:0 5px 0 #bfe9cc; }
-  .connect-card.shake{ animation:shake .35s; }
-  .connect-status{ font-size:1.05rem; font-weight:700; color:#777; margin-top:4px; }
-
-  /* ---- Spelling game ---- */
+  /* spelling game */
   .slot-row{ display:flex; justify-content:center; gap:10px; margin:16px 0; flex-wrap:wrap; }
-  .slot{ width:60px; height:60px; border-radius:16px; border:3px dashed #d8b98a; background:#fffaf1;
-    display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:900; color:#8a5a10; }
+  .slot{
+    width:64px; height:64px; border-radius:16px; border:3px dashed #d8b98a; background:#fffaf1;
+    display:flex; align-items:center; justify-content:center; font-size:1.9rem; font-weight:900; color:#8a5a10;
+  }
   .slot.filled{ border-style:solid; border-color:#3fbf6a; background:#eafcef; color:#237a45; }
   .tile-row{ display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
-  .tile{ width:60px; height:60px; border-radius:16px; border:none; font-size:1.8rem; font-weight:900;
-    background:#fff; box-shadow:0 5px 0 #ddd; cursor:pointer; color:var(--ink); }
+  .tile{
+    width:64px; height:64px; border-radius:16px; border:none; font-size:1.9rem; font-weight:900;
+    background:#fff; box-shadow:0 5px 0 #ddd; cursor:pointer; color:var(--ink);
+  }
   .tile:active{ transform:translateY(3px); box-shadow:0 2px 0 #ddd; }
   .tile.used{ visibility:hidden; }
   .tile.shake{ animation:shake .35s; }
-  .kw-meaning-line{ font-size:1.02rem; color:#666; margin-top:10px; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .kw-meaning-line{ font-size:1.05rem; color:#666; margin-top:10px; }
 
-  /* ---- Daily drill ---- */
-  .drill-sentence{
-    background:var(--cream); border-radius:20px; padding:20px; font-size:1.4rem;
-    line-height:1.9; margin:14px 0; min-height:70px; display:flex; align-items:center; justify-content:center; text-align:center;
-  }
-  .guess-row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
-  .kwguess-btn{
-    flex:1 1 150px; max-width:200px; padding:16px 10px; border-radius:20px; border:4px solid #eee;
-    background:#fff; font-size:1.15rem; font-weight:800; cursor:pointer; box-shadow:0 5px 0 #ddd;
-    display:flex; flex-direction:column; align-items:center; gap:6px;
-  }
-  .kwguess-btn .sym{ font-size:1.8rem; }
-  .kwguess-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #ddd; }
-  .kwguess-btn.correct{ border-color:#3fbf6a; background:#eafcef; }
-  .kwguess-btn.wrong{ border-color:#e0785a; background:#fff0ef; }
-  .drill-progress{ font-size:1.02rem; color:#777; margin-top:4px; }
-
-  @media (max-width:420px){
-    .connect-board{ gap:14px; }
-    .connect-card{ min-width:52px; padding:10px 10px; font-size:1.1rem; }
-    .q-visual{ font-size:1.6rem; letter-spacing:1px; }
-    .lineup-row{ font-size:1.8rem; gap:4px; }
-    .q-sentence, .sentence-box{ font-size:1.1rem; padding:12px; }
-    h1{ font-size:1.2rem; }
-    .kw-badge{ font-size:1.35rem; padding:7px 18px; }
-    .cluster-items .cluster-item{ font-size:1.6rem; }
-    .cluster-items.dense .cluster-item{ font-size:1.15rem; }
-  }
+  .confetti{ font-size:2.8rem; text-align:center; }
 </style>
 </head>
 <body>
 <div id="app">
 
   <div class="topbar">
-    <button class="icon-btn" id="homeBtn" title="回選單">🏠</button>
+    <button class="icon-btn" id="homeBtn" title="回首頁">🏠</button>
     <button class="icon-btn" id="muteBtn" title="靜音">🔊</button>
   </div>
 
-  <!-- START / MENU -->
+  <!-- START -->
   <div class="screen active" id="screen-start">
     <div class="mascot">🐻</div>
-    <h1>數學關鍵字大冒險</h1>
-    <div class="subtitle">10以內的數・比長短・排順序比多少・分與合</div>
-    <div class="card" style="margin-top:6px;">
-      <p style="font-size:1.08rem; line-height:1.8;">
-        小熊把三個練習準備好了，一關接著一關玩！<br>
-        答對了就會<b style="color:var(--combine)">自動出下一題</b>，不用一直按按鈕喔！
+    <h1>數學關鍵字五題挑戰</h1>
+    <div class="subtitle">從練習單精選 5 題 ＋ 關鍵字拼字遊戲</div>
+    <div class="card">
+      <p style="font-size:1.1rem; line-height:1.8;">
+        小熊幫你從練習單裡，挑出 <b>5 題</b> 最重要的題目，<br>
+        先練習「看到關鍵字、知道怎麼算」，<br>
+        再玩「拼字遊戲」把關鍵字牢牢記住！
       </p>
     </div>
-    <div class="nav-row">
-      <button class="big-btn" id="menuLevel1Btn">🌱 關卡1：關鍵字五題挑戰</button>
-      <button class="big-btn blue" id="menuLevel2Btn">🎯 關卡2：進階關卡大挑戰</button>
-      <button class="big-btn purple" id="menuLevel3Btn">🚀 關卡3：認識關鍵字朋友</button>
-      <button class="big-btn green" id="menuDrillBtn">🔥 天天練習</button>
-    </div>
+    <button class="big-btn" id="startBtn">▶️ 開始挑戰</button>
     <div class="star-badge" id="totalStarBadge">🏆 累積星星：0</div>
   </div>
 
-  <!-- LEARN (Level 1a) -->
-  <div class="screen" id="screen-learn">
-    <h1 style="font-size:1.3rem;">認識關鍵字朋友</h1>
-    <div class="dots" id="learnDots"></div>
-    <div class="learn-card" id="learnCard"></div>
-    <div class="nav-row">
-      <button class="big-btn small blue" id="listenBtn">🔊 再聽一次</button>
-    </div>
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <h1 style="font-size:1.25rem;">五題挑戰</h1>
+    <div class="progress-track" id="quizProgress"></div>
+    <div class="card" id="quizCard"></div>
   </div>
 
-  <!-- MATCH (Level 1b) -->
-  <div class="screen" id="screen-match">
-    <h1 style="font-size:1.3rem;">關鍵字配對遊戲</h1>
-    <div class="subtitle">找出關鍵字和它的意思，把它們配成一對！</div>
-    <div class="status-line" id="matchStatus">已配對：0 / 3</div>
-    <div class="board" id="board"></div>
-  </div>
-
-  <!-- APPLY (Level 1c) -->
-  <div class="screen" id="screen-apply">
-    <h1 style="font-size:1.3rem;">實戰練習</h1>
-    <div class="progress-track" id="progressTrack"></div>
-    <div class="q-card" id="qCard"></div>
-  </div>
-
-  <!-- QUIZ STAGES (Level 2 / Level 3 share this screen) -->
-  <div class="screen" id="screen-challenge">
-    <h1 style="font-size:1.25rem;" id="challengeTitle">關卡挑戰</h1>
-    <div class="progress-track" id="challengeProgress"></div>
-    <div class="card" id="challengeCard"></div>
-  </div>
-
-  <!-- TRANSITION (quiz stages complete -> spelling, auto-continues) -->
+  <!-- TRANSITION -->
   <div class="screen" id="screen-transition">
     <div class="mascot">🎉</div>
-    <h1>全部關卡都過關了！</h1>
-    <div class="card"><p style="font-size:1.1rem;">接下來玩拼字遊戲，把這些關鍵字拼出來，記得更牢固！</p></div>
+    <h1>五題都答對了！</h1>
+    <div class="card">
+      <p style="font-size:1.15rem;">接下來，我們用拼字遊戲，把剛剛學到的關鍵字拼出來，記得更牢固！</p>
+    </div>
+    <button class="big-btn green" id="toSpellBtn">🔤 開始拼字遊戲</button>
   </div>
 
-  <!-- SPELLING (Level 2 / Level 3 share this screen) -->
+  <!-- SPELLING GAME -->
   <div class="screen" id="screen-spell">
-    <h1 style="font-size:1.2rem;">關鍵字拼字遊戲</h1>
+    <h1 style="font-size:1.25rem;">關鍵字拼字遊戲</h1>
     <div class="progress-track" id="spellProgress"></div>
     <div class="card">
       <div class="source-tag" id="spellUnitTag"></div>
-      <div id="spellPrompt" style="font-size:1.1rem; font-weight:700;"></div>
+      <div id="spellPrompt" style="font-size:1.15rem; font-weight:700;"></div>
       <div class="slot-row" id="slotRow"></div>
       <div class="tile-row" id="tileRow"></div>
       <div class="feedback" id="spellFeedback"></div>
@@ -294,46 +171,41 @@
     </div>
   </div>
 
-  <!-- DRILL (daily practice, standalone) -->
-  <div class="screen" id="screen-drill">
-    <h1 style="font-size:1.3rem;">🔥 天天練習</h1>
-    <div class="star-badge" id="drillStarBadge">⭐ 這次練習：0　🏆 累積星星：0</div>
-    <div class="q-card" style="width:100%;">
-      <div class="drill-sentence" id="drillSentence"></div>
-      <div id="drillStepArea"></div>
-      <div class="feedback" id="drillFeedback"></div>
-      <div class="drill-progress" id="drillProgress"></div>
-    </div>
-  </div>
-
-  <!-- LEVEL COMPLETE -->
-  <div class="screen" id="screen-done">
-    <div class="confetti" id="doneEmoji">🎉🐻🎉</div>
-    <h1 id="doneTitle">太棒了！</h1>
+  <!-- END -->
+  <div class="screen" id="screen-end">
+    <div class="confetti">🎉🐻🎉</div>
+    <h1>太棒了！挑戰完成！</h1>
     <div class="card">
-      <p style="font-size:1.05rem; line-height:2;" id="doneBody"></p>
+      <p style="font-size:1.05rem; line-height:2;">
+        你認識了這些數學關鍵字朋友：<br>
+        <span class="kw-hl" style="background:var(--c-count-bg);color:var(--c-count-fg);">數數看</span>
+        <span class="kw-hl" style="background:var(--c-compare-bg);color:var(--c-compare-fg);">比較長</span>
+        <span class="kw-hl" style="background:var(--c-total-bg);color:var(--c-total-fg);">全部有</span>
+        <span class="kw-hl" style="background:var(--c-combine-bg);color:var(--c-combine-fg);">合起來</span>
+        <span class="kw-hl" style="background:var(--c-take-bg);color:var(--c-take-fg);">拿走⋯還剩下</span>
+      </p>
     </div>
-    <div class="star-badge" id="doneStarBadge">🏆 累積星星：0</div>
+    <div class="star-badge" id="endStarBadge">🏆 累積星星：0</div>
     <div class="nav-row">
-      <button class="big-btn green" id="nextLevelBtn">➡️ 下一關</button>
-      <button class="big-btn" id="replayLevelBtn">🔁 再玩一次</button>
-      <button class="big-btn blue" id="homeBtn3">🏠 回選單</button>
+      <button class="big-btn" id="replayBtn">🔁 再玩一次</button>
+      <button class="big-btn blue" id="homeBtn2">🏠 回首頁</button>
     </div>
   </div>
 
 </div>
 
 <script>
-/* ================= Speech ================= */
+/* ---------------- Speech ---------------- */
 let muted = false;
-let zhVoice = null;
-function pickVoice(){
+// 動態偵測裝置實際有的中文語音，回傳最合適的語言代碼：
+// 優先用 zh-TW，沒有的話改用 zh-CN，還是沒有就用任何偵測到的中文語音，
+// 避免指定裝置根本沒有的語言、或直接指定聲音物件（在某些手機上會讓語音完全失敗）。
+function pickBestZhLang(){
   const voices = speechSynthesis.getVoices();
-  zhVoice = voices.find(v=>/zh[-_]?TW/i.test(v.lang)) || voices.find(v=>/zh/i.test(v.lang)) || null;
-}
-if('speechSynthesis' in window){
-  pickVoice();
-  speechSynthesis.onvoiceschanged = pickVoice;
+  if (voices.some(v => v.lang && v.lang.toLowerCase() === 'zh-tw')) return 'zh-TW';
+  if (voices.some(v => v.lang && v.lang.toLowerCase() === 'zh-cn')) return 'zh-CN';
+  const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+  return anyZh ? anyZh.lang : 'zh-TW';
 }
 let speechQueue = [];
 let speaking = false;
@@ -347,22 +219,17 @@ function processSpeechQueue(){
   speaking = true;
   const item = speechQueue.shift();
   const u = new SpeechSynthesisUtterance(item.text.replace(/[（(].*?[）)]/g,''));
-  if(zhVoice) u.voice = zhVoice;
-  u.lang = 'zh-TW';
-  u.rate = 0.95;
+  u.lang = pickBestZhLang();
   let done = false;
   const finish = ()=>{
-    if(done) return; done = true; speaking = false;
-    setTimeout(processSpeechQueue, 60);
+    if(done) return; done=true; speaking=false;
+    processSpeechQueue();
     if(item.onDone) item.onDone();
   };
   u.onend = finish;
   u.onerror = finish;
-  // Safety-net only (fires if the browser's onend event never arrives). Deliberately generous
-  // so a real device's narration is never cut off mid-sentence before advancing the screen.
-  setTimeout(finish, Math.max(2600, item.text.length*450));
-  try{ speechSynthesis.cancel(); }catch(e){}
-  setTimeout(()=>speechSynthesis.speak(u), 60);
+  setTimeout(finish, Math.max(1800, item.text.length*260));
+  speechSynthesis.speak(u);
 }
 function stopAllSpeech(){
   speechQueue = [];
@@ -370,698 +237,222 @@ function stopAllSpeech(){
   try{ speechSynthesis.cancel(); }catch(e){}
 }
 
-/* ================= Cluster illustration helpers =================
-   These build example pictures so the number of items shown
-   ALWAYS matches the numbers stated in the sentence. */
-function clusterHTML(emoji, count, opts){
-  opts = Object.assign({ faded:false, tag:'' }, opts||{});
-  const n = Math.max(0, count|0);
-  const itemClass = 'cluster-item' + (opts.faded ? ' item-faded' : '');
-  const items = Array.from({length:n}).map(()=>`<span class="${itemClass}">${emoji}</span>`).join('');
-  const denseClass = n>6 ? ' dense' : '';
-  return `<div class="cluster-box">
-      <div class="cluster-items${denseClass}">${items}</div>
-      ${opts.tag ? `<div class="cluster-tag">${opts.tag}</div>` : ''}
-    </div>`;
-}
-function unknownClusterHTML(tag){
-  return `<div class="cluster-box">
-      <div class="unknown-box">❓</div>
-      ${tag ? `<div class="cluster-tag">${tag}</div>` : ''}
-    </div>`;
-}
-function twoClusterAnim(leftHTML, opSymbol, rightHTML){
-  return `<div class="anim-stage cluster-stage">
-      ${leftHTML}
-      <div class="op-symbol">${opSymbol}</div>
-      ${rightHTML}
-    </div>`;
-}
-/* Shows both addends AND the combined total, e.g. 4個玉米 ＋ 4個玉米 ＝ 8個玉米 */
-function combineTotalAnim(emoji, a, b){
-  const total = a + b;
-  return `<div class="anim-stage cluster-stage-col">
-      <div class="cluster-row">
-        ${clusterHTML(emoji, a, {tag:`${a}個`})}
-        <div class="op-symbol">＋</div>
-        ${clusterHTML(emoji, b, {tag:`${b}個`})}
-      </div>
-      <div class="op-symbol down">＝</div>
-      ${clusterHTML(emoji, total, {tag:`合起來共${total}個`})}
-    </div>`;
-}
-
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function shuffleArr(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-
-/* ================= LEVEL 1 data (Learn / Match / Apply) ================= */
-const KEYWORDS = [
-  {
-    id:'combine', word:'合起來', color:'var(--combine)',
-    badgeBg:'#ffe3c2', badgeFg:'#a85b00',
-    animHTML: combineTotalAnim('🌽', 4, 4),
-    sentenceHTML:'4個玉米和4個玉米<span class="kw-hl" style="background:#ffe3c2;color:#a85b00;">合起來</span>是<span class="blank">8</span>個玉米',
-    meaning:'「合起來」就是把兩堆東西放在一起，變成一堆更多的－要用「加」的！',
-    narration:'合起來，就是把兩堆東西加在一起，變成一堆更多的！比如說：四個玉米和四個玉米合起來，是八個玉米。',
-    iconSymbol:'➕', iconLabel:'兩堆併一堆'
-  },
-  {
-    id:'split', word:'分成', color:'var(--split)',
-    badgeBg:'#d9edfb', badgeFg:'#1b6fa8',
-    animHTML: twoClusterAnim(
-      clusterHTML('🐟', 5, {tag:'5條'}),
-      '｜',
-      clusterHTML('🐟', 2, {tag:'2條'})
-    ),
-    sentenceHTML:'7條魚可以<span class="kw-hl" style="background:#d9edfb;color:#1b6fa8;">分成</span>5條魚和<span class="blank">2</span>條魚',
-    meaning:'「分成」就是把一堆東西，分開變成兩堆小的！',
-    narration:'分成，就是把一堆東西分開，變成兩堆小的。比如說：七條魚可以分成五條魚和兩條魚。',
-    iconSymbol:'✂️', iconLabel:'一堆分兩堆'
-  },
-  {
-    id:'takeaway', word:'拿走…還剩下', color:'var(--take)',
-    badgeBg:'#dff3e6', badgeFg:'#237a45',
-    animHTML: twoClusterAnim(
-      clusterHTML('🍎', 5, {faded:true, tag:'拿走 5個'}),
-      '→',
-      clusterHTML('🍎', 5, {tag:'還剩下 5個'})
-    ),
-    sentenceHTML:'10個蘋果<span class="kw-hl" style="background:#dff3e6;color:#237a45;">拿走</span>5個，<span class="kw-hl" style="background:#dff3e6;color:#237a45;">還剩下</span><span class="blank">5</span>個',
-    meaning:'「拿走…還剩下」就是從一堆東西裡面拿走一些，剩下的就是答案－要用「減」的！',
-    narration:'拿走、還剩下，就是從一堆東西裡面拿走一些，剩下的就是答案。比如說：十個蘋果拿走五個，還剩下五個。',
-    iconSymbol:'➖', iconLabel:'拿走剩下的'
-  }
-];
-
-const QUESTIONS = [
-  { kwId:'combine', text:'4個玉米和4個玉米合起來是幾個玉米？', hlWord:'合起來', emoji:'🌽',
-    visualHTML: twoClusterAnim(clusterHTML('🌽',4), '＋', clusterHTML('🌽',4)),
-    answer:8, choices:[6,7,8,9] },
-  { kwId:'split', text:'6片西瓜可以分成2片和幾片西瓜？', hlWord:'分成', emoji:'🍉',
-    visualHTML: twoClusterAnim(clusterHTML('🍉',2,{tag:'2片'}), '｜', unknownClusterHTML('幾片？')),
-    answer:4, choices:[3,4,5,6] },
-  { kwId:'takeaway', text:'10個蘋果拿走3個，還剩下幾個？', hlWord:'拿走…還剩下', emoji:'🍎',
-    visualHTML: twoClusterAnim(clusterHTML('🍎',3,{faded:true, tag:'拿走 3個'}), '→', unknownClusterHTML('還剩下幾個？')),
-    answer:7, choices:[6,7,8,9] }
-];
-
-/* ================= 關卡1 data (原檔案 1-1「數學關鍵字五題挑戰」，完整 5 題＋拼字) ================= */
-const QUIZ_C = [
-  { kind:'countChoice', unit:'第一單元・10以內的數（練習單1）', kw:'數數看', bg:'var(--c1-bg)', fg:'var(--c1-fg)',
-    sentenceTpl:(hl)=>`${hl}，有多少頂帽子？`,
-    visual:'🎩🎩🎩', answer:3, choices:[2,3,4,5] },
-
-  { kind:'pick', unit:'第二單元・比長短（練習單3）', kw:'比較長', bg:'var(--c2-bg)', fg:'var(--c2-fg)',
-    sentenceTpl:(hl)=>`哪一條線${hl}？`,
-    wrongMsg:'再看看，哪一條比較長？',
-    options:[ {label:'A', width:230}, {label:'B', width:100} ], answerIdx:0 },
-
-  { kind:'countChoice', unit:'第三單元・排順序、比多少（練習單4）', kw:'全部有', bg:'var(--c3-bg)', fg:'var(--c3-fg)',
-    sentenceTpl:(hl)=>`${hl}幾個小朋友？`,
-    visual:'🧒🧒👧🧒👧', answer:5, choices:[4,5,6,7] },
-
-  { kind:'clusterQuestion', unit:'第四單元・分與合（練習單5）', kw:'合起來', bg:'var(--c4-bg)', fg:'var(--c4-fg)',
-    sentenceTpl:(hl)=>`4個玉米和4個玉米${hl}是幾個？`,
-    visualHTML: twoClusterAnim(clusterHTML('🌽',4), '＋', clusterHTML('🌽',4)),
-    answer:8, choices:[6,7,8,9] },
-
-  { kind:'clusterQuestion', unit:'第四單元・分與合（練習單5）', kw:'拿走⋯還剩下', bg:'var(--c5-bg)', fg:'var(--c5-fg)',
-    sentenceTpl:(hl)=>`10個蘋果${hl}5個，還剩下幾個？`,
-    visualHTML: twoClusterAnim(clusterHTML('🍎',5,{faded:true, tag:'拿走 5個'}), '→', unknownClusterHTML('還剩下幾個？')),
-    answer:5, choices:[3,4,5,6] }
-];
-const SPELL_C = [
-  { phrase:'數數看', unit:QUIZ_C[0].unit, bg:QUIZ_C[0].bg, fg:QUIZ_C[0].fg, meaning:'「數數看」就是要你一個一個數出來，看有多少個！' },
-  { phrase:'比較長', unit:QUIZ_C[1].unit, bg:QUIZ_C[1].bg, fg:QUIZ_C[1].fg, meaning:'「比較長」就是要你看一看，哪一個比較長！' },
-  { phrase:'全部有', unit:QUIZ_C[2].unit, bg:QUIZ_C[2].bg, fg:QUIZ_C[2].fg, meaning:'「全部有」就是問你，全部加起來一共有幾個！' },
-  { phrase:'合起來', unit:QUIZ_C[3].unit, bg:QUIZ_C[3].bg, fg:QUIZ_C[3].fg, meaning:'「合起來」就是把兩堆東西加在一起！' },
-  { phrase:'拿走還剩下', unit:QUIZ_C[4].unit, bg:QUIZ_C[4].bg, fg:QUIZ_C[4].fg, meaning:'「拿走、還剩下」就是從一堆裡面拿走一些，剩下的就是答案！' }
-];
-
-/* ================= 關卡2 data (原檔案 1-2「數學關鍵字大挑戰－進階版」，完整 10 關＋拼字) ================= */
-const STAGES_B = [
-  { kind:'imagePick', unit:'第一單元・10以內的數（練習單2）', kw:'圈圈看', bg:'var(--c1-bg)', fg:'var(--c1-fg)',
-    sentenceTpl:(hl)=>`數字是 <b>6</b>，哪一堆是 6 個？請${hl}！`,
-    targetNum:6,
-    groups:[ {emoji:'🍎', count:5}, {emoji:'🍎', count:6}, {emoji:'🍎', count:7} ], answerIdx:1 },
-
-  { kind:'connect', unit:'第一單元・10以內的數（練習單2）', kw:'連連看', bg:'var(--c1-bg)', fg:'var(--c1-fg)',
-    sentenceTpl:(hl)=>`把數量和正確的數字${hl}！`,
-    pairs:[ {left:{type:'emoji', emoji:'🐟', count:2}, right:{type:'num', val:2}},
-            {left:{type:'emoji', emoji:'🐟', count:3}, right:{type:'num', val:3}},
-            {left:{type:'emoji', emoji:'🐟', count:4}, right:{type:'num', val:4}},
-            {left:{type:'emoji', emoji:'🐟', count:5}, right:{type:'num', val:5}} ] },
-
-  { kind:'pick', unit:'第二單元・比長短（練習單3）', kw:'比較高', bg:'var(--c2-bg)', fg:'var(--c2-fg)',
-    sentenceTpl:(hl)=>`哪一棵樹${hl}？`,
-    wrongMsg:'再看看，哪一棵比較高？',
-    options:[ {label:'A', height:130, emoji:'🌳'}, {label:'B', height:60, emoji:'🌳'} ], answerIdx:0 },
-
-  { kind:'pick', unit:'第二單元・比長短（練習單3）', kw:'比較厚', bg:'var(--c2-bg)', fg:'var(--c2-fg)',
-    sentenceTpl:(hl)=>`哪一疊書${hl}？`,
-    wrongMsg:'再看看，哪一疊比較厚？',
-    options:[ {label:'A', stack:2, emoji:'📚'}, {label:'B', stack:5, emoji:'📚'} ], answerIdx:1 },
-
-  { kind:'sequence', unit:'第三單元・排順序、比多少（練習單4）', kw:'按照順序', bg:'var(--c3-bg)', fg:'var(--c3-fg)',
-    sentenceTpl:(hl)=>`${hl}填填看，中間少了哪個數字？`,
-    seq:[5,6,7,null,9,10], answer:8, choices:[6,7,8,9] },
-
-  { kind:'lineup', unit:'第三單元・排順序、比多少（練習單4）', kw:'前面', bg:'var(--c3-bg)', fg:'var(--c3-fg)',
-    animals:['🐶','🐱','🐭','🐰','🐵'], targetIdx:3,
-    sentenceTpl:(hl)=>`🐰的${hl}（靠近報到處那邊）有幾隻動物？`,
-    answer:1, choices:[0,1,2,3] },
-
-  { kind:'lineup', unit:'第三單元・排順序、比多少（練習單4）', kw:'後面', bg:'var(--c3-bg)', fg:'var(--c3-fg)',
-    animals:['🐶','🐱','🐭','🐰','🐵'], targetIdx:3,
-    sentenceTpl:(hl)=>`🐰的${hl}（遠離報到處那邊）有幾隻動物？`,
-    answer:3, choices:[1,2,3,4] },
-
-  { kind:'lineup', unit:'第三單元・排順序、比多少（練習單4）', kw:'全部有', bg:'var(--c3-bg)', fg:'var(--c3-fg)',
-    animals:['🐶','🐱','🐭','🐰','🐵'], targetIdx:3,
-    sentenceTpl:(hl)=>`排隊的動物，${hl}幾隻？`,
-    answer:5, choices:[3,4,5,6] },
-
-  { kind:'connect', unit:'第四單元・分與合（練習單5）', kw:'分成', bg:'var(--c4-bg)', fg:'var(--c4-fg)',
-    sentenceTpl:(hl)=>`8隻海馬可以${hl}多少和多少？把加起來是 8 的配成一對！`,
-    pairs:[ {left:{type:'num', val:1}, right:{type:'num', val:7}},
-            {left:{type:'num', val:2}, right:{type:'num', val:6}},
-            {left:{type:'num', val:3}, right:{type:'num', val:5}},
-            {left:{type:'num', val:4}, right:{type:'num', val:4}} ] },
-
-  { kind:'connect', unit:'第四單元・分與合（練習單6）', kw:'合起來', bg:'var(--c5-bg)', fg:'var(--c5-fg)',
-    sentenceTpl:(hl)=>`多少和多少${hl}是 10？連連看！`,
-    pairs:[ {left:{type:'num', val:3}, right:{type:'num', val:7}},
-            {left:{type:'num', val:10}, right:{type:'num', val:0}},
-            {left:{type:'num', val:8}, right:{type:'num', val:2}},
-            {left:{type:'num', val:1}, right:{type:'num', val:9}} ] }
-];
-const SPELL_B = [
-  { phrase:'圈圈看', unit:STAGES_B[0].unit, bg:STAGES_B[0].bg, fg:STAGES_B[0].fg, meaning:'「圈圈看」就是請你把符合條件的東西圈出來！' },
-  { phrase:'連連看', unit:STAGES_B[1].unit, bg:STAGES_B[1].bg, fg:STAGES_B[1].fg, meaning:'「連連看」就是把相配的兩個東西用線連起來！' },
-  { phrase:'比較高', unit:STAGES_B[2].unit, bg:STAGES_B[2].bg, fg:STAGES_B[2].fg, meaning:'「比較高」就是看一看哪一個比較高！' },
-  { phrase:'比較厚', unit:STAGES_B[3].unit, bg:STAGES_B[3].bg, fg:STAGES_B[3].fg, meaning:'「比較厚」就是看一看哪一疊比較厚！' },
-  { phrase:'按照順序', unit:STAGES_B[4].unit, bg:STAGES_B[4].bg, fg:STAGES_B[4].fg, meaning:'「按照順序」就是要一個接著一個，不能跳過去！' },
-  { phrase:'前面', unit:STAGES_B[5].unit, bg:STAGES_B[5].bg, fg:STAGES_B[5].fg, meaning:'「前面」就是在目標的前方，比較靠近終點的那一邊！' },
-  { phrase:'後面', unit:STAGES_B[6].unit, bg:STAGES_B[6].bg, fg:STAGES_B[6].fg, meaning:'「後面」就是在目標的後方，比較遠離終點的那一邊！' },
-  { phrase:'全部有', unit:STAGES_B[7].unit, bg:STAGES_B[7].bg, fg:STAGES_B[7].fg, meaning:'「全部有」就是問你，全部加起來一共有幾個！' },
-  { phrase:'分成', unit:STAGES_B[8].unit, bg:STAGES_B[8].bg, fg:STAGES_B[8].fg, meaning:'「分成」就是把一堆東西，分開變成兩堆！' },
-  { phrase:'合起來', unit:STAGES_B[9].unit, bg:STAGES_B[9].bg, fg:STAGES_B[9].fg, meaning:'「合起來」就是把兩堆東西加在一起！' }
-];
-
-/* ================= Stars (persisted, migrated from the earlier 3 separate files) ================= */
+/* ---------------- Stars ---------------- */
 let totalStars = 0;
-try{
-  const existing = localStorage.getItem('mathkw_all_stars');
-  if(existing !== null){
-    totalStars = parseInt(existing, 10) || 0;
-  } else {
-    const a = parseInt(localStorage.getItem('fenyuhe_stars')||'0',10) || 0;
-    const b = parseInt(localStorage.getItem('kwplus_stars')||'0',10) || 0;
-    const c = parseInt(localStorage.getItem('kw5_stars')||'0',10) || 0;
-    totalStars = a + b + c;
-    localStorage.setItem('mathkw_all_stars', String(totalStars));
-  }
-}catch(e){ totalStars = 0; }
-function saveStars(){ try{ localStorage.setItem('mathkw_all_stars', String(totalStars)); }catch(e){} }
-let drillSessionCount = 0;
+try{ totalStars = parseInt(localStorage.getItem('kw5_stars')||'0',10)||0; }catch(e){ totalStars=0; }
+function saveStars(){ try{ localStorage.setItem('kw5_stars', String(totalStars)); }catch(e){} }
 function addStar(){ totalStars++; saveStars(); updateStarBadges(); }
 function updateStarBadges(){
   const t = `🏆 累積星星：${totalStars}`;
-  const b1 = document.getElementById('totalStarBadge'); if(b1) b1.textContent = t;
-  const b2 = document.getElementById('drillStarBadge'); if(b2) b2.textContent = `⭐ 這次練習：${drillSessionCount}　🏆 累積星星：${totalStars}`;
-  const b3 = document.getElementById('doneStarBadge'); if(b3) b3.textContent = t;
+  const b1=document.getElementById('totalStarBadge'); if(b1) b1.textContent=t;
+  const b2=document.getElementById('endStarBadge'); if(b2) b2.textContent=t;
 }
 
-/* ================= Navigation ================= */
-const screens = ['start','learn','match','apply','challenge','transition','spell','drill','done'];
-function showScreen(name){
-  screens.forEach(s=>{ document.getElementById('screen-'+s).classList.toggle('active', s===name); });
-}
-document.getElementById('homeBtn').onclick = ()=>{ stopAllSpeech(); showScreen('start'); };
-document.getElementById('homeBtn3').onclick = ()=>{ stopAllSpeech(); showScreen('start'); };
-document.getElementById('muteBtn').onclick = (e)=>{
-  muted = !muted;
-  e.target.textContent = muted ? '🔇' : '🔊';
-  if(muted) stopAllSpeech();
-};
+/* ---------------- Navigation ---------------- */
+const screens=['start','quiz','transition','spell','end'];
+function showScreen(name){ screens.forEach(s=>document.getElementById('screen-'+s).classList.toggle('active', s===name)); }
+document.getElementById('homeBtn').onclick=()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('homeBtn2').onclick=()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('muteBtn').onclick=(e)=>{ muted=!muted; e.target.textContent = muted?'🔇':'🔊'; if(muted) stopAllSpeech(); };
 updateStarBadges();
 
-/* ---- Level dispatch ---- */
-let activeLevel = 1;
-let activeStages = null;
-let activeSpellWords = null;
-let activeChallengeTitle = '';
-
-function startLevel(n){
-  stopAllSpeech();
-  activeLevel = n;
-  if(n===1){
-    activeStages = QUIZ_C;
-    activeSpellWords = SPELL_C;
-    activeChallengeTitle = '關卡1：五題挑戰';
-    challengeIndex = 0;
-    renderChallengeStage();
-    showScreen('challenge');
-  } else if(n===2){
-    activeStages = STAGES_B;
-    activeSpellWords = SPELL_B;
-    activeChallengeTitle = '關卡2：進階大挑戰';
-    challengeIndex = 0;
-    renderChallengeStage();
-    showScreen('challenge');
-  } else if(n===3){
-    learnIndex = 0;
-    renderLearn();
-    showScreen('learn');
+/* ---------------- Quiz data (real questions drawn from the uploaded worksheets) ---------------- */
+const QUIZ = [
+  {
+    id:'count', unit:'第一單元・10以內的數（練習單1）',
+    kw:'數數看', bg:'var(--c-count-bg)', fg:'var(--c-count-fg)',
+    sentenceTpl:(hl)=>`${hl}，有多少頂帽子？`,
+    visual:'🎩🎩🎩', answer:3, choices:[2,3,4,5]
+  },
+  {
+    id:'compare', unit:'第二單元・比長短（練習單3）',
+    kw:'比較長', bg:'var(--c-compare-bg)', fg:'var(--c-compare-fg)',
+    sentenceTpl:(hl)=>`哪一條線${hl}？`,
+    type:'pick',
+    options:[ {label:'A', width:230}, {label:'B', width:100} ],
+    answerIdx:0
+  },
+  {
+    id:'total', unit:'第三單元・排順序、比多少（練習單4）',
+    kw:'全部有', bg:'var(--c-total-bg)', fg:'var(--c-total-fg)',
+    sentenceTpl:(hl)=>`${hl}幾個小朋友？`,
+    visual:'🧒🧒👧🧒👧', answer:5, choices:[4,5,6,7]
+  },
+  {
+    id:'combine', unit:'第四單元・分與合（練習單5）',
+    kw:'合起來', bg:'var(--c-combine-bg)', fg:'var(--c-combine-fg)',
+    sentenceTpl:(hl)=>`4個玉米和4個玉米${hl}是幾個？`,
+    visual:'🌽🌽🌽🌽　🌽🌽🌽🌽', answer:8, choices:[6,7,8,9]
+  },
+  {
+    id:'takeaway', unit:'第四單元・分與合（練習單5）',
+    kw:'拿走⋯還剩下', bg:'var(--c-take-bg)', fg:'var(--c-take-fg)',
+    sentenceTpl:(hl)=>`10個蘋果${hl}5個，還剩下幾個？`,
+    visual:'🍎 × 10', answer:5, choices:[3,4,5,6]
   }
-}
-function showLevelComplete(levelNum, titleText, bodyHTML, narration){
-  document.getElementById('doneEmoji').textContent = '🎉';
-  document.getElementById('doneTitle').textContent = titleText;
-  document.getElementById('doneBody').innerHTML = bodyHTML;
-  updateStarBadges();
-  const nextBtn = document.getElementById('nextLevelBtn');
-  const replayBtn = document.getElementById('replayLevelBtn');
-  if(levelNum < 3){
-    nextBtn.style.display = 'inline-block';
-    nextBtn.textContent = '➡️ 下一關';
-    nextBtn.onclick = ()=> startLevel(levelNum+1);
-  } else {
-    nextBtn.style.display = 'none';
-  }
-  replayBtn.onclick = ()=> startLevel(levelNum);
-  showScreen('done');
-  if(narration) enqueueSpeech(narration);
-}
+];
 
-document.getElementById('menuLevel1Btn').onclick = ()=> startLevel(1);
-document.getElementById('menuLevel2Btn').onclick = ()=> startLevel(2);
-document.getElementById('menuLevel3Btn').onclick = ()=> startLevel(3);
-document.getElementById('menuDrillBtn').onclick = ()=>{ drillSessionCount = 0; updateStarBadges(); nextDrillQuestion(); showScreen('drill'); };
-
-/* ================= LEVEL 1a: Learn phase (auto-advances, no click required) ================= */
-let learnIndex = 0;
-let learnGen = 0;
-function renderLearn(){
-  learnGen++;
-  const myGen = learnGen;
-  const kw = KEYWORDS[learnIndex];
-  const dotsEl = document.getElementById('learnDots');
-  dotsEl.innerHTML = KEYWORDS.map((_,i)=>`<div class="dot ${i===learnIndex?'on':''}"></div>`).join('');
-  const card = document.getElementById('learnCard');
-  card.innerHTML = `
-    <div class="kw-badge" style="background:${kw.color}">${kw.word}</div>
-    ${kw.animHTML}
-    <div class="sentence-box">${kw.sentenceHTML}</div>
-    <div class="meaning">${kw.meaning}</div>
-  `;
-  enqueueSpeech(kw.narration, ()=>{
-    setTimeout(()=>{
-      if(learnGen===myGen && document.getElementById('screen-learn').classList.contains('active')){
-        advanceLearn();
-      }
-    }, 2000);
-  });
-}
-function advanceLearn(){
-  if(learnIndex < KEYWORDS.length-1){
-    learnIndex++;
-    renderLearn();
-  } else {
-    applyIndex = 0;
-    renderApply();
-    showScreen('apply');
-  }
-}
-document.getElementById('listenBtn').onclick = ()=> enqueueSpeech(KEYWORDS[learnIndex].narration);
-
-/* ================= LEVEL 1b: Match phase ================= */
-let matchState = { cards:[], flipped:[], matchedCount:0, lock:false };
-function setupMatch(){
-  const cards = [];
-  KEYWORDS.forEach(kw=>{
-    cards.push({ pairId:kw.id, type:'word', label:kw.word, kw });
-    cards.push({ pairId:kw.id, type:'icon', label:kw.iconSymbol+'\n'+kw.iconLabel, kw });
-  });
-  matchState = { cards: shuffleArr(cards), flipped:[], matchedCount:0, lock:false };
-  renderBoard();
-  document.getElementById('matchStatus').textContent = '已配對：0 / 3';
-  enqueueSpeech('請找出關鍵字，和它代表的意思，把它們配成一對！');
-}
-function renderBoard(){
-  const board = document.getElementById('board');
-  board.innerHTML = '';
-  matchState.cards.forEach((c, idx)=>{
-    const div = document.createElement('div');
-    div.className = 'match-card';
-    div.dataset.idx = idx;
-    div.innerHTML = '❓';
-    div.onclick = ()=>onCardClick(idx);
-    board.appendChild(div);
-  });
-}
-function onCardClick(idx){
-  if(matchState.lock) return;
-  const c = matchState.cards[idx];
-  if(c.matched || matchState.flipped.includes(idx)) return;
-  const el = document.querySelectorAll('.match-card')[idx];
-  el.classList.add('flipped');
-  if(c.type==='word'){
-    el.innerHTML = c.label;
-    enqueueSpeech(c.kw.word);
-  } else {
-    el.innerHTML = `<div><div class="icon-symbol">${c.kw.iconSymbol}</div>${c.kw.iconLabel}</div>`;
-  }
-  matchState.flipped.push(idx);
-  if(matchState.flipped.length===2){
-    matchState.lock = true;
-    const [i1,i2] = matchState.flipped;
-    const c1 = matchState.cards[i1], c2 = matchState.cards[i2];
-    if(c1.pairId === c2.pairId){
-      setTimeout(()=>{
-        c1.matched = c2.matched = true;
-        document.querySelectorAll('.match-card')[i1].classList.add('matched');
-        document.querySelectorAll('.match-card')[i2].classList.add('matched');
-        matchState.matchedCount++;
-        document.getElementById('matchStatus').textContent = `已配對：${matchState.matchedCount} / 3`;
-        if(matchState.matchedCount===3){
-          enqueueSpeech(`配對成功！${c1.kw.word}，${c1.kw.meaning}`, ()=>{
-            setTimeout(()=>{
-              const listHTML = KEYWORDS.map(k=>`<span class="kw-hl" style="background:${k.badgeBg};color:${k.badgeFg};">${k.word}</span>`).join(' ');
-              showLevelComplete(3, '恭喜！三個關卡全部完成！',
-                `${listHTML}<br><br>合起來 → 兩堆變一堆，用加的<br>分成 → 一堆變兩堆，用分的<br>拿走…還剩下 → 拿走一些，用減的`,
-                '太棒了！你把三個關卡都完成了，你是數學關鍵字小達人！');
-            }, 900);
-          });
-        } else {
-          enqueueSpeech(`配對成功！${c1.kw.word}，${c1.kw.meaning}`);
-        }
-        matchState.flipped = [];
-        matchState.lock = false;
-      }, 500);
-    } else {
-      const els=[document.querySelectorAll('.match-card')[i1],document.querySelectorAll('.match-card')[i2]];
-      els.forEach(e=>e.classList.add('shake'));
-      setTimeout(()=>{
-        els.forEach(e=>{ e.classList.remove('flipped','shake'); e.innerHTML='❓'; });
-        matchState.flipped = [];
-        matchState.lock = false;
-      }, 900);
-    }
-  }
-}
-
-/* ================= LEVEL 1c: Apply phase ================= */
-let applyIndex = 0;
-function renderApply(){
-  const track = document.getElementById('progressTrack');
-  track.innerHTML = QUESTIONS.map((_,i)=>`<div class="progress-seg ${i<applyIndex?'done':(i===applyIndex?'current':'')}"></div>`).join('');
-  const q = QUESTIONS[applyIndex];
-  const kw = KEYWORDS.find(k=>k.id===q.kwId);
-  const highlighted = q.text.replace(q.hlWord, `<span class="kw-hl" style="background:${kw.badgeBg};color:${kw.badgeFg};">${q.hlWord}</span>`);
-  const card = document.getElementById('qCard');
-  card.innerHTML = `
-    ${q.visualHTML}
-    <div class="sentence-box" style="font-size:1.3rem;">${highlighted}</div>
-    <div class="choices" id="choices"></div>
-    <div class="feedback" id="feedback"></div>
-  `;
-  const choicesEl = document.getElementById('choices');
-  q.choices.forEach(num=>{
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.textContent = num;
-    btn.onclick = ()=>onChoose(num, btn, q, kw);
-    choicesEl.appendChild(btn);
-  });
-  enqueueSpeech(q.text);
-}
-function onChoose(num, btn, q, kw){
-  const allBtns = document.querySelectorAll('#choices .choice-btn');
-  if(num === q.answer){
-    allBtns.forEach(b=>b.disabled=true);
-    btn.classList.add('correct');
-    document.getElementById('feedback').textContent = '✅ 答對了！';
-    document.getElementById('feedback').style.color = '#2c9450';
-    addStar();
-    enqueueSpeech(`答對了！${kw.word}，${kw.meaning}`, ()=>{
-      setTimeout(()=>{
-        if(applyIndex < QUESTIONS.length-1){
-          applyIndex++;
-          renderApply();
-        } else {
-          setupMatch();
-          showScreen('match');
-        }
-      }, 700);
-    });
-  } else {
-    btn.classList.add('wrong');
-    document.getElementById('feedback').textContent = '再想想看喔！';
-    document.getElementById('feedback').style.color = '#c0503a';
-    enqueueSpeech('再想想看喔！');
-    setTimeout(()=>btn.classList.remove('wrong'), 700);
-  }
-}
-
-/* ================= LEVEL 2 / LEVEL 3: Quiz stages (shared engine) ================= */
-let challengeIndex = 0;
-function renderChallengeProgress(){
-  document.getElementById('challengeTitle').textContent = activeChallengeTitle;
-  const track = document.getElementById('challengeProgress');
-  track.innerHTML = activeStages.map((_,i)=>{
-    const cls = i<challengeIndex ? 'done' : (i===challengeIndex ? 'current' : '');
+let quizIndex = 0;
+function renderQuizProgress(){
+  const track = document.getElementById('quizProgress');
+  track.innerHTML = QUIZ.map((_,i)=>{
+    const cls = i<quizIndex ? 'done' : (i===quizIndex ? 'current' : '');
     return `<div class="progress-seg ${cls}"></div>`;
   }).join('');
 }
-function goNextChallengeStage(){
-  if(challengeIndex < activeStages.length-1){
-    challengeIndex++;
-    renderChallengeStage();
+
+document.getElementById('startBtn').onclick=()=>{
+  quizIndex = 0;
+  renderQuiz();
+  showScreen('quiz');
+};
+
+function renderQuiz(){
+  renderQuizProgress();
+  const q = QUIZ[quizIndex];
+  const hl = `<span class="kw-hl" style="background:${q.bg};color:${q.fg};">${q.kw}</span>`;
+  const card = document.getElementById('quizCard');
+
+  if(q.type==='pick'){
+    card.innerHTML = `
+      <div class="source-tag">來自：${q.unit}</div>
+      <div class="q-sentence">${q.sentenceTpl(hl)}</div>
+      <div class="pick-row" id="pickRow"></div>
+      <div class="feedback" id="quizFeedback"></div>
+    `;
+    const row = document.getElementById('pickRow');
+    q.options.forEach((opt, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'pick-card';
+      div.innerHTML = `<div class="bar" style="width:${opt.width}px;"></div><div class="pick-label">🐛 ${opt.label}</div>`;
+      div.onclick = ()=>onQuizPick(idx, div, q);
+      row.appendChild(div);
+    });
+    enqueueSpeech(q.sentenceTpl(q.kw));
+  } else {
+    card.innerHTML = `
+      <div class="source-tag">來自：${q.unit}</div>
+      <div class="q-sentence">${q.sentenceTpl(hl)}</div>
+      <div class="q-visual">${q.visual}</div>
+      <div class="choices" id="quizChoices"></div>
+      <div class="feedback" id="quizFeedback"></div>
+    `;
+    const el = document.getElementById('quizChoices');
+    q.choices.forEach(num=>{
+      const b = document.createElement('button');
+      b.className='choice-btn'; b.textContent=num;
+      b.onclick=()=>onQuizNumber(num, b, q);
+      el.appendChild(b);
+    });
+    enqueueSpeech(q.sentenceTpl(q.kw));
+  }
+}
+
+function goNextQuiz(){
+  if(quizIndex < QUIZ.length-1){
+    quizIndex++;
+    renderQuiz();
   } else {
     showScreen('transition');
-    enqueueSpeech('全部關卡都過關了！接下來我們玩拼字遊戲，把關鍵字記得更牢！', ()=>{
-      setTimeout(()=>{ spellIndex = 0; renderSpell(); showScreen('spell'); }, 700);
-    });
+    enqueueSpeech('五題都答對了！接下來我們玩拼字遊戲！');
   }
 }
-function renderChallengeStage(){
-  renderChallengeProgress();
-  const st = activeStages[challengeIndex];
-  const hl = `<span class="kw-hl" style="background:${st.bg};color:${st.fg};">${st.kw}</span>`;
-  const card = document.getElementById('challengeCard');
-  card.innerHTML = `<div class="source-tag">來自：${st.unit}</div><div class="q-sentence">${st.sentenceTpl(hl)}</div><div id="stageBody"></div><div class="feedback" id="stageFeedback"></div>`;
-  const body = document.getElementById('stageBody');
 
-  if(st.kind==='countChoice' || st.kind==='clusterQuestion'){
-    const visualHTML = st.kind==='clusterQuestion' ? st.visualHTML : `<div class="q-visual">${st.visual}</div>`;
-    body.innerHTML = `${visualHTML}<div class="choices" id="stageChoices"></div>`;
-    const el = document.getElementById('stageChoices');
-    st.choices.forEach(num=>{
-      const b=document.createElement('button'); b.className='choice-btn'; b.textContent=num;
-      b.onclick=()=>onNumberAnswer(num===st.answer, num, b, st);
-      el.appendChild(b);
-    });
-    enqueueSpeech(st.sentenceTpl(st.kw));
-  }
-  else if(st.kind==='imagePick'){
-    body.innerHTML = `<div class="pick-row" id="pickRow"></div>`;
-    const row = document.getElementById('pickRow');
-    st.groups.forEach((g, idx)=>{
-      const div=document.createElement('div'); div.className='pick-card';
-      div.innerHTML = `<div class="q-visual">${g.emoji.repeat(g.count)}</div>`;
-      div.onclick=()=>onPickAnswer(idx===st.answerIdx, div, st, `這一堆有${g.count}個，不是${st.targetNum}個喔！`);
-      row.appendChild(div);
-    });
-    enqueueSpeech(st.sentenceTpl(st.kw));
-  }
-  else if(st.kind==='pick'){
-    body.innerHTML = `<div class="pick-row" id="pickRow"></div>`;
-    const row = document.getElementById('pickRow');
-    st.options.forEach((opt, idx)=>{
-      const div=document.createElement('div'); div.className='pick-card';
-      let visualHTML;
-      if(opt.width!==undefined){
-        visualHTML = `<div class="pick-visual"><div class="bar" style="width:${opt.width}px;"></div></div>`;
-      } else if(opt.height!==undefined){
-        visualHTML = `<div class="pick-visual"><div style="font-size:${20+opt.height/3}px;">${opt.emoji}</div></div>`;
-      } else {
-        const stackColors = ['#e76f51','#f4a261','#2a9d8f','#e9c46a','#adc178','#f28482'];
-        const layers = Array.from({length: opt.stack}).map((_,i)=>
-          `<div style="width:84px;height:15px;border-radius:4px;background:${stackColors[i%stackColors.length]};box-shadow:0 1px 2px rgba(0,0,0,.18);"></div>`
-        ).join('');
-        visualHTML = `<div class="pick-visual" style="flex-direction:column; justify-content:flex-end; gap:3px;">${layers}</div>`;
-      }
-      div.innerHTML = visualHTML + `<div class="pick-label">${opt.label}</div>`;
-      div.onclick=()=>onPickAnswer(idx===st.answerIdx, div, st, st.wrongMsg || '再看看，哪一個比較多/比較大呢？');
-      row.appendChild(div);
-    });
-    enqueueSpeech(st.sentenceTpl(st.kw));
-  }
-  else if(st.kind==='sequence'){
-    const seqHTML = st.seq.map(n=> n===null ? `<span class="kw-hl" style="background:#fff3d6;color:#a85b00;">＿</span>` : n).join('　－　');
-    body.innerHTML = `<div class="q-sentence" style="font-size:1.6rem;">${seqHTML}</div><div class="choices" id="stageChoices"></div>`;
-    const el = document.getElementById('stageChoices');
-    st.choices.forEach(num=>{
-      const b=document.createElement('button'); b.className='choice-btn'; b.textContent=num;
-      b.onclick=()=>onNumberAnswer(num===st.answer, num, b, st);
-      el.appendChild(b);
-    });
-    enqueueSpeech(st.sentenceTpl(st.kw));
-  }
-  else if(st.kind==='lineup'){
-    const row = st.animals.map((a,i)=> i===st.targetIdx ? `<span class="lineup-target">${a}</span>` : a).join(' ');
-    body.innerHTML = `<div class="lineup-row">${row}<span class="desk-label">報到處→</span></div><div class="choices" id="stageChoices"></div>`;
-    const el = document.getElementById('stageChoices');
-    st.choices.forEach(num=>{
-      const b=document.createElement('button'); b.className='choice-btn'; b.textContent=num;
-      b.onclick=()=>onNumberAnswer(num===st.answer, num, b, st);
-      el.appendChild(b);
-    });
-    enqueueSpeech(st.sentenceTpl(st.kw));
-  }
-  else if(st.kind==='connect'){
-    renderConnectBoard(st);
-    enqueueSpeech(st.sentenceTpl(st.kw));
-  }
-}
-function onPickAnswer(isCorrect, el, st, wrongMsg){
+function onQuizPick(idx, el, q){
   const cards = document.querySelectorAll('.pick-card');
-  if(isCorrect){
+  if(idx === q.answerIdx){
     cards.forEach(c=>c.style.pointerEvents='none');
     el.classList.add('correct');
-    document.getElementById('stageFeedback').textContent='✅ 答對了！';
-    document.getElementById('stageFeedback').style.color='#2c9450';
+    document.getElementById('quizFeedback').textContent='✅ 答對了！';
+    document.getElementById('quizFeedback').style.color='#2c9450';
     addStar();
-    enqueueSpeech('答對了！', ()=> setTimeout(goNextChallengeStage, 600));
+    enqueueSpeech(`答對了！${q.kw}的意思是比較長的那一條！`, ()=> setTimeout(goNextQuiz, 500));
   } else {
     el.classList.add('wrong');
-    document.getElementById('stageFeedback').textContent=wrongMsg;
-    document.getElementById('stageFeedback').style.color='#c0503a';
-    enqueueSpeech(wrongMsg);
+    document.getElementById('quizFeedback').textContent='再看看，哪一條比較長？';
+    document.getElementById('quizFeedback').style.color='#c0503a';
+    enqueueSpeech('再看看，哪一條比較長？');
     setTimeout(()=>el.classList.remove('wrong'), 700);
   }
 }
-function onNumberAnswer(isCorrect, num, btn, st){
-  if(isCorrect){
-    document.querySelectorAll('#stageChoices .choice-btn').forEach(b=>b.disabled=true);
+
+function onQuizNumber(num, btn, q){
+  if(num === q.answer){
+    document.querySelectorAll('#quizChoices .choice-btn').forEach(b=>b.disabled=true);
     btn.classList.add('correct');
-    document.getElementById('stageFeedback').textContent='✅ 答對了！';
-    document.getElementById('stageFeedback').style.color='#2c9450';
+    document.getElementById('quizFeedback').textContent='✅ 答對了！';
+    document.getElementById('quizFeedback').style.color='#2c9450';
     addStar();
-    enqueueSpeech(`答對了！答案是${num}！`, ()=> setTimeout(goNextChallengeStage, 600));
+    enqueueSpeech(`答對了！答案是${num}！`, ()=> setTimeout(goNextQuiz, 500));
   } else {
     btn.classList.add('wrong');
-    document.getElementById('stageFeedback').textContent='再算算看喔！';
-    document.getElementById('stageFeedback').style.color='#c0503a';
-    enqueueSpeech('再算算看喔！');
+    document.getElementById('quizFeedback').textContent='再算算看！';
+    document.getElementById('quizFeedback').style.color='#c0503a';
+    enqueueSpeech('再算算看！');
     setTimeout(()=>btn.classList.remove('wrong'), 700);
   }
 }
 
-/* ---- generic connect (matching pairs) board ---- */
-let connectState = { pairs:[], leftOrder:[], rightOrder:[], selL:null, selR:null, matched:0, lock:false };
-function labelOf(node){ return node.type==='num' ? String(node.val) : node.emoji.repeat(node.count); }
-function renderConnectBoard(st){
-  const pairs = st.pairs.map((p,i)=>({ id:i, left:p.left, right:p.right }));
-  connectState = { pairs, leftOrder:shuffleArr(pairs.map(p=>p.id)), rightOrder:shuffleArr(pairs.map(p=>p.id)), selL:null, selR:null, matched:0, lock:false };
-  const body = document.getElementById('stageBody');
-  body.innerHTML = `
-    <div class="connect-board">
-      <div class="connect-col" id="colLeft"></div>
-      <div class="connect-col" id="colRight"></div>
-    </div>
-    <div class="connect-status" id="connectStatus">已配對：0 / ${pairs.length}</div>
-  `;
-  const colL = document.getElementById('colLeft'), colR = document.getElementById('colRight');
-  connectState.leftOrder.forEach(id=>{
-    const p = pairs.find(x=>x.id===id);
-    const el = document.createElement('div');
-    el.className='connect-card'; el.textContent = labelOf(p.left); el.dataset.id=id;
-    el.onclick=()=>onConnectPick('L', id, el);
-    colL.appendChild(el);
-  });
-  connectState.rightOrder.forEach(id=>{
-    const p = pairs.find(x=>x.id===id);
-    const el = document.createElement('div');
-    el.className='connect-card'; el.textContent = labelOf(p.right); el.dataset.id=id;
-    el.onclick=()=>onConnectPick('R', id, el);
-    colR.appendChild(el);
-  });
-}
-function onConnectPick(side, id, el){
-  if(connectState.lock || el.classList.contains('matched')) return;
-  if(side==='L'){
-    if(connectState.selL) connectState.selL.el.classList.remove('selected');
-    connectState.selL = {id, el}; el.classList.add('selected');
-  } else {
-    if(connectState.selR) connectState.selR.el.classList.remove('selected');
-    connectState.selR = {id, el}; el.classList.add('selected');
-  }
-  if(connectState.selL && connectState.selR){
-    connectState.lock = true;
-    const ok = connectState.selL.id === connectState.selR.id;
-    const lEl = connectState.selL.el, rEl = connectState.selR.el;
-    if(ok){
-      setTimeout(()=>{
-        lEl.classList.remove('selected'); rEl.classList.remove('selected');
-        lEl.classList.add('matched'); rEl.classList.add('matched');
-        connectState.matched++;
-        document.getElementById('connectStatus').textContent = `已配對：${connectState.matched} / ${connectState.pairs.length}`;
-        connectState.selL=null; connectState.selR=null; connectState.lock=false;
-        if(connectState.matched === connectState.pairs.length){
-          document.getElementById('stageFeedback').textContent = '🎉 全部配對完成！';
-          document.getElementById('stageFeedback').style.color = '#2c9450';
-          addStar();
-          enqueueSpeech('配對成功！全部配對完成了！', ()=> setTimeout(goNextChallengeStage, 600));
-        } else {
-          enqueueSpeech('配對成功！');
-        }
-      }, 400);
-    } else {
-      lEl.classList.add('shake'); rEl.classList.add('shake');
-      setTimeout(()=>{
-        lEl.classList.remove('selected','shake'); rEl.classList.remove('selected','shake');
-        connectState.selL=null; connectState.selR=null; connectState.lock=false;
-      }, 500);
-    }
-  }
-}
+document.getElementById('toSpellBtn').onclick=()=>{
+  spellIndex = 0;
+  renderSpell();
+  showScreen('spell');
+};
 
-/* ================= Spelling game (shared by Level 2 / Level 3) ================= */
+/* ---------------- Spelling game ---------------- */
+const SPELL_WORDS = [
+  { phrase:'數數看', unit:QUIZ[0].unit, bg:QUIZ[0].bg, fg:QUIZ[0].fg, meaning:'「數數看」就是要你一個一個數出來，看有多少個！' },
+  { phrase:'比較長', unit:QUIZ[1].unit, bg:QUIZ[1].bg, fg:QUIZ[1].fg, meaning:'「比較長」就是要你看一看，哪一個比較長！' },
+  { phrase:'全部有', unit:QUIZ[2].unit, bg:QUIZ[2].bg, fg:QUIZ[2].fg, meaning:'「全部有」就是問你，全部加起來一共有幾個！' },
+  { phrase:'合起來', unit:QUIZ[3].unit, bg:QUIZ[3].bg, fg:QUIZ[3].fg, meaning:'「合起來」就是把兩堆東西加在一起！' },
+  { phrase:'拿走還剩下', unit:QUIZ[4].unit, bg:QUIZ[4].bg, fg:QUIZ[4].fg, meaning:'「拿走、還剩下」就是從一堆裡面拿走一些，剩下的就是答案！' }
+];
+
 let spellIndex = 0;
-let spellState = { chars:[], next:0 };
+let spellState = { chars:[], next:0, tileEls:[] };
+
 function renderSpellProgress(){
   const track = document.getElementById('spellProgress');
-  track.innerHTML = activeSpellWords.map((_,i)=>{
+  track.innerHTML = SPELL_WORDS.map((_,i)=>{
     const cls = i<spellIndex ? 'done' : (i===spellIndex ? 'current' : '');
     return `<div class="progress-seg ${cls}"></div>`;
   }).join('');
 }
+
 function renderSpell(){
   renderSpellProgress();
-  const w = activeSpellWords[spellIndex];
+  const w = SPELL_WORDS[spellIndex];
   document.getElementById('spellUnitTag').textContent = '來自：' + w.unit;
   document.getElementById('spellPrompt').innerHTML = `請依照順序，把關鍵字拼出來：<span class="kw-hl" style="background:${w.bg};color:${w.fg};">${w.phrase}</span>`;
   document.getElementById('spellFeedback').textContent = '';
   document.getElementById('spellMeaning').textContent = '';
+
   const chars = w.phrase.split('');
-  spellState = { chars, next:0 };
-  document.getElementById('slotRow').innerHTML = chars.map(()=>`<div class="slot"></div>`).join('');
-  const shuffled = shuffleArr(chars.map((c,i)=>({c,i})));
+  spellState = { chars, next:0, tileEls:[] };
+
+  const slotRow = document.getElementById('slotRow');
+  slotRow.innerHTML = chars.map(()=>`<div class="slot"></div>`).join('');
+
+  const shuffled = chars.map((c,i)=>({c,i}));
+  for(let i=shuffled.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; }
+
   const tileRow = document.getElementById('tileRow');
   tileRow.innerHTML = '';
   shuffled.forEach(item=>{
     const btn = document.createElement('button');
-    btn.className = 'tile'; btn.textContent = item.c;
+    btn.className = 'tile';
+    btn.textContent = item.c;
     btn.dataset.sourceIndex = item.i;
     btn.onclick = ()=>onTileTap(item.i, btn);
     tileRow.appendChild(btn);
+    spellState.tileEls[item.i] = btn;
   });
+
   enqueueSpeech('請把關鍵字拼出來：' + w.phrase);
 }
+
 function onTileTap(sourceIndex, btn){
-  const w = activeSpellWords[spellIndex];
+  const w = SPELL_WORDS[spellIndex];
   if(sourceIndex === spellState.next){
     const slots = document.querySelectorAll('#slotRow .slot');
     const slot = slots[spellState.next];
@@ -1076,7 +467,7 @@ function onTileTap(sourceIndex, btn){
       document.getElementById('spellMeaning').textContent = w.meaning;
       addStar();
       setTimeout(()=>{
-        enqueueSpeech(w.phrase + '。' + w.meaning, ()=> setTimeout(goNextSpell, 700));
+        enqueueSpeech(w.phrase + '。' + w.meaning, ()=> setTimeout(goNextSpell, 500));
       }, 300);
     }
   } else {
@@ -1086,169 +477,19 @@ function onTileTap(sourceIndex, btn){
     setTimeout(()=>btn.classList.remove('shake'), 400);
   }
 }
+
 function goNextSpell(){
-  if(spellIndex < activeSpellWords.length-1){
+  if(spellIndex < SPELL_WORDS.length-1){
     spellIndex++;
     renderSpell();
   } else {
-    const listHTML = activeSpellWords.map(w=>`<span class="kw-hl" style="background:${w.bg};color:${w.fg};">${w.phrase}</span>`).join(' ');
-    if(activeLevel < 3){
-      showLevelComplete(activeLevel, `關卡${activeLevel}完成！`, `你認識了這些數學關鍵字朋友：<br>${listHTML}`,
-        '太棒了！這一關的關鍵字你都學會了！');
-    } else {
-      showLevelComplete(3, '恭喜！三個關卡全部完成！', `你認識了這些數學關鍵字朋友：<br>${listHTML}`,
-        '太棒了！你把全部的數學關鍵字都學會了，你是數學關鍵字小達人！');
-    }
+    showScreen('end');
+    updateStarBadges();
+    enqueueSpeech('太棒了！你把所有的關鍵字都拼出來了！');
   }
 }
 
-/* ================= Daily drill (random, repeatable practice, standalone) ================= */
-const ITEM_BANK = [
-  {emoji:'🌽', name:'玉米', counter:'個'},
-  {emoji:'🍎', name:'蘋果', counter:'個'},
-  {emoji:'🍉', name:'西瓜', counter:'片'},
-  {emoji:'🐟', name:'魚',   counter:'條'},
-  {emoji:'🐰', name:'兔子', counter:'隻'},
-  {emoji:'🎈', name:'氣球', counter:'顆'},
-  {emoji:'⚽', name:'球',   counter:'顆'},
-  {emoji:'🍬', name:'糖果', counter:'顆'}
-];
-const TEMPLATES = {
-  combine:[
-    (a,b,total,it)=>`${a}${it.counter}${it.name}和${b}${it.counter}${it.name}<KW>合起來</KW>是幾${it.counter}${it.name}？`,
-    (a,b,total,it)=>`這邊有${a}${it.counter}${it.name}，那邊有${b}${it.counter}${it.name}，<KW>合起來</KW>是幾${it.counter}${it.name}？`
-  ],
-  split:[
-    (total,a,b,it)=>`${total}${it.counter}${it.name}<KW>可以分成</KW>${a}${it.counter}和幾${it.counter}${it.name}？`,
-    (total,a,b,it)=>`${total}${it.counter}${it.name}${it.emoji}，<KW>分成</KW>兩堆，一堆${a}${it.counter}，另一堆是幾${it.counter}？`
-  ],
-  takeaway:[
-    (total,take,left,it)=>`${total}${it.counter}${it.name}<KW>拿走</KW>${take}${it.counter}，<KW>還剩下</KW>幾${it.counter}？`,
-    (total,take,left,it)=>`原本有${total}${it.counter}${it.name}，<KW>拿走</KW>${take}${it.counter}後，<KW>還剩下</KW>幾${it.counter}？`
-  ]
-};
-function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
-
-function generateDrillQuestion(){
-  const kwId = pick(['combine','split','takeaway']);
-  const kw = KEYWORDS.find(k=>k.id===kwId);
-  const item = pick(ITEM_BANK);
-  let sentence, answer, a, b, total, take, left;
-  if(kwId==='combine'){
-    a = randInt(1,8); b = randInt(1, Math.max(1,10-a));
-    total = a+b;
-    sentence = pick(TEMPLATES.combine)(a,b,total,item);
-    answer = total;
-  } else if(kwId==='split'){
-    total = randInt(3,10); a = randInt(1,total-1); b = total-a;
-    sentence = pick(TEMPLATES.split)(total,a,b,item);
-    answer = b;
-  } else {
-    total = randInt(2,10); take = randInt(1,total); left = total-take;
-    sentence = pick(TEMPLATES.takeaway)(total,take,left,item);
-    answer = left;
-  }
-  const choiceSet = new Set([answer]);
-  const deltas = [-2,-1,1,2,3,-3,4,-4,5,-5];
-  for(const delta of deltas){
-    if(choiceSet.size>=4) break;
-    const val = answer + delta;
-    if(val>=0 && val<=10) choiceSet.add(val);
-  }
-  let filler = 0;
-  while(choiceSet.size<4 && filler<=10){ choiceSet.add(filler); filler++; }
-  const choices = shuffleArr(Array.from(choiceSet).slice(0,4));
-  return { kwId, kw, item, sentence, answer, choices };
-}
-
-let currentDrillQ = null;
-let drillGuessAttempts = 0;
-
-function plainSentence(sentence){ return sentence.replace(/<\/?KW>/g,''); }
-function highlightedSentence(sentence, kw){
-  return sentence.replace(/<KW>(.*?)<\/KW>/g, (m,p1)=>`<span class="kw-hl" style="background:${kw.badgeBg};color:${kw.badgeFg};">${p1}</span>`);
-}
-
-function nextDrillQuestion(){
-  currentDrillQ = generateDrillQuestion();
-  drillGuessAttempts = 0;
-  document.getElementById('drillProgress').textContent = '';
-  document.getElementById('drillFeedback').textContent = '';
-  renderDrillGuessStep();
-}
-function renderDrillGuessStep(){
-  const q = currentDrillQ;
-  document.getElementById('drillSentence').innerHTML = plainSentence(q.sentence);
-  document.getElementById('drillProgress').textContent = '第 1 步：找出關鍵字朋友';
-  const area = document.getElementById('drillStepArea');
-  const order = shuffleArr(KEYWORDS);
-  area.innerHTML = `<div class="guess-row" id="guessRow"></div>`;
-  const row = document.getElementById('guessRow');
-  order.forEach(kw=>{
-    const btn = document.createElement('button');
-    btn.className = 'kwguess-btn';
-    btn.innerHTML = `<span class="sym">${kw.iconSymbol}</span>${kw.word}`;
-    btn.onclick = ()=>onDrillGuess(kw, btn);
-    row.appendChild(btn);
-  });
-  enqueueSpeech('這一題的關鍵字朋友是誰？');
-}
-function onDrillGuess(kw, btn){
-  if(kw.id === currentDrillQ.kwId){
-    btn.classList.add('correct');
-    document.querySelectorAll('.kwguess-btn').forEach(b=>b.disabled=true);
-    document.getElementById('drillSentence').innerHTML = highlightedSentence(currentDrillQ.sentence, currentDrillQ.kw);
-    document.getElementById('drillFeedback').textContent = '✅ 找對了！';
-    document.getElementById('drillFeedback').style.color = '#2c9450';
-    enqueueSpeech(`找對了！這一題是「${kw.word}」！`, ()=> setTimeout(renderDrillSolveStep, 500));
-  } else {
-    drillGuessAttempts++;
-    btn.classList.add('wrong');
-    document.getElementById('drillFeedback').textContent = '再看看句子裡的字喔！';
-    document.getElementById('drillFeedback').style.color = '#c0503a';
-    enqueueSpeech('再看看句子裡的字喔！');
-    setTimeout(()=>btn.classList.remove('wrong'), 600);
-    if(drillGuessAttempts>=2){
-      document.getElementById('drillSentence').innerHTML = highlightedSentence(currentDrillQ.sentence, currentDrillQ.kw);
-    }
-  }
-}
-function renderDrillSolveStep(){
-  const q = currentDrillQ;
-  document.getElementById('drillFeedback').textContent = '';
-  document.getElementById('drillProgress').textContent = '第 2 步：算出答案';
-  const area = document.getElementById('drillStepArea');
-  area.innerHTML = `<div class="choices" id="drillChoices"></div>`;
-  const el = document.getElementById('drillChoices');
-  q.choices.forEach(num=>{
-    const b = document.createElement('button');
-    b.className = 'choice-btn'; b.textContent = num;
-    b.onclick = ()=>onDrillSolve(num, b);
-    el.appendChild(b);
-  });
-  enqueueSpeech(plainSentence(q.sentence));
-}
-function onDrillSolve(num, btn){
-  const q = currentDrillQ;
-  if(num === q.answer){
-    document.querySelectorAll('#drillChoices .choice-btn').forEach(b=>b.disabled=true);
-    btn.classList.add('correct');
-    document.getElementById('drillFeedback').textContent = '🎉 答對了！';
-    document.getElementById('drillFeedback').style.color = '#2c9450';
-    drillSessionCount++;
-    addStar();
-    document.getElementById('drillProgress').textContent = `這次已經練習 ${drillSessionCount} 題，下一題馬上出現囉！`;
-    enqueueSpeech(`答對了！${q.kw.word}，${q.kw.meaning}`, ()=>{
-      setTimeout(nextDrillQuestion, 900);
-    });
-  } else {
-    btn.classList.add('wrong');
-    document.getElementById('drillFeedback').textContent = '再算算看喔！';
-    document.getElementById('drillFeedback').style.color = '#c0503a';
-    enqueueSpeech('再算算看喔！');
-    setTimeout(()=>btn.classList.remove('wrong'), 700);
-  }
-}
+document.getElementById('replayBtn').onclick=()=>{ showScreen('start'); };
 </script>
 </body>
 </html>

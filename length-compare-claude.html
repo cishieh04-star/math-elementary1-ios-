@@ -120,7 +120,7 @@
 <body>
 
     <div id="home-screen">
-        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
+        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center;">
             <h1>📏 長度比較樂：對齊比一比 📏</h1>
             <p class="subtitle">先對齊，再比較，學會正確的比較方法！</p>
 
@@ -217,7 +217,18 @@
                 let finished = false;
                 const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+                // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
                 msg.onend = trigger;
                 msg.onerror = trigger;
                 window.speechSynthesis.speak(msg);

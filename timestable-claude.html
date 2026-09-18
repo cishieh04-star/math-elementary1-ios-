@@ -143,7 +143,7 @@
 <body>
 
     <div id="home-screen">
-        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto;">
+        <div style="max-width: 460px; width: 100%; display: flex; flex-direction: column; align-items: center;">
             <h1>💎 九九乘法尋寶樂 💎</h1>
             <p class="subtitle">快樂學習九九乘法，輕鬆闖關！</p>
 
@@ -237,7 +237,18 @@
                 let finished = false;
                 const trigger = () => { if (finished) return; finished = true; if (onEnd) onEnd(); };
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'zh-TW';
+                // 動態偵測裝置實際有的中文語音：優先用 zh-TW，沒有的話改用 zh-CN，
+                // 還是沒有就用任何偵測到的中文語音，避免指定裝置根本沒有的語言導致完全沒聲音。
+                const voices = window.speechSynthesis.getVoices();
+                const hasLang = (code) => voices.some(v => v.lang && v.lang.toLowerCase() === code);
+                if (hasLang('zh-tw')) {
+                    msg.lang = 'zh-TW';
+                } else if (hasLang('zh-cn')) {
+                    msg.lang = 'zh-CN';
+                } else {
+                    const anyZh = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('zh'));
+                    msg.lang = anyZh ? anyZh.lang : 'zh-TW';
+                }
                 msg.onend = trigger;
                 msg.onerror = trigger;
                 window.speechSynthesis.speak(msg);
@@ -364,7 +375,7 @@
             document.getElementById('conceptText').innerText = `（ ${numB} 個 ${numA} ）`;
             renderVisualGroups(numA, numB);
 
-            speak(`${numA} 乘以 ${numB}，等於多少呢？`);
+            speak(`${numA} 乘以 ${numB}，等於多少？`);
 
             let options = new Set([currentAns]);
             let attempts = 0;
@@ -407,7 +418,7 @@
             if (isPaused || isAnswered || !gameStarted) return;
             hintLevel++;
             if (hintLevel === 1) {
-                speak(`${numB} 個 ${numA}，用手指一組一組數數看，加起來是多少呢？`);
+                speak(`${numB} 個 ${numA}，用手指一組一組數數看，加起來是多少？`);
             } else {
                 speak(`答案是 ${currentAns}，找找看畫面上這個數字的寶石！`);
                 hintActiveValue = currentAns;
@@ -488,7 +499,7 @@
 
                 } else {
                     isHandled = true;
-                    speak("再算算看喔！");
+                    speak("再算算看！");
                     document.getElementById('feedback').innerText = "❌ 再試一次！";
                     el.style.transition = "opacity 0.3s";
                     el.style.opacity = "0";
