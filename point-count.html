@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>點點看－湊數字配對大冒險</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  :root{
+    --ink:#3a3a3a;
+    --cream:#fff8ec;
+    --c1-bg:#efe9fe; --c1-fg:#6b3fd6;
+    --c2-bg:#dcf6f2; --c2-fg:#0d7f72;
+    --c3-bg:#fef1da; --c3-fg:#b8730a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    font-family:"Microsoft JhengHei","PingFang TC","Heiti TC","Arial Rounded MT Bold",sans-serif;
+    background:linear-gradient(160deg,#fff3d6 0%,#ffe3ec 45%,#dff3ff 100%);
+    color:var(--ink);
+    overflow-x:hidden;
+  }
+  #app{ min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:16px 16px 40px; }
+  .screen{ width:100%; max-width:720px; display:none; flex-direction:column; align-items:center; }
+  .screen.active{ display:flex; animation:fadeIn .4s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  h1{ font-size:1.5rem; text-align:center; margin:8px 0 4px; }
+  .subtitle{ font-size:1.02rem; color:#666; text-align:center; margin-bottom:10px;}
+
+  .topbar{ width:100%; max-width:720px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .icon-btn{
+    width:52px; height:52px; border-radius:16px; border:3px solid #fff;
+    background:rgba(255,255,255,.9); box-shadow:0 3px 0 rgba(0,0,0,.12);
+    font-size:1.6rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .icon-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.12); }
+
+  .mascot{ font-size:4.8rem; margin:6px 0; animation:bob 2.4s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-10px) rotate(2deg);} }
+
+  .big-btn{
+    font-size:1.3rem; font-weight:bold; padding:16px 32px; border-radius:28px;
+    border:none; color:#fff; background:linear-gradient(180deg,#ffb454,#ff8c2b);
+    box-shadow:0 6px 0 #d9691a; cursor:pointer; margin:10px 4px;
+  }
+  .big-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #d9691a; }
+  .big-btn.blue{ background:linear-gradient(180deg,#6ec3f4,#3a9be0); box-shadow:0 6px 0 #2679b3; }
+  .big-btn.blue:active{ box-shadow:0 2px 0 #2679b3; }
+  .big-btn.green{ background:linear-gradient(180deg,#7bdc9c,#3fbf6a); box-shadow:0 6px 0 #2c9450; }
+  .big-btn.green:active{ box-shadow:0 2px 0 #2c9450; }
+  .big-btn.small{ font-size:1.02rem; padding:10px 20px; }
+  .nav-row{ display:flex; justify-content:center; gap:14px; margin-top:6px; flex-wrap:wrap; }
+
+  .star-badge{
+    display:inline-flex; align-items:center; gap:6px; background:#fff;
+    border-radius:20px; padding:8px 18px; font-size:1.1rem; font-weight:800;
+    color:#a85b00; box-shadow:0 4px 0 rgba(0,0,0,.08); margin:8px 0;
+  }
+
+  .card{
+    background:#fff; border-radius:26px; padding:20px 18px; width:100%;
+    box-shadow:0 8px 0 rgba(0,0,0,.06); text-align:center; position:relative;
+  }
+
+  .full-panel{ margin-top:10px; width:100%; background:rgba(255,255,255,.6);
+    border:2px solid rgba(0,0,0,.08); border-radius:16px; padding:14px 16px; text-align:left; }
+  .full-panel p{ margin:4px 0; font-size:.98rem; line-height:1.7; color:#555; }
+
+  .source-tag{ font-size:.88rem; color:#999; margin-bottom:6px; }
+  .q-sentence{ background:var(--cream); border-radius:18px; padding:16px; font-size:1.28rem; line-height:1.8; margin:10px 0; }
+  .q-sentence b{ color:#d1451f; }
+
+  .progress-track{ display:flex; gap:6px; margin:8px 0 14px; flex-wrap:wrap; justify-content:center; }
+  .progress-seg{ width:26px; height:8px; border-radius:5px; background:#eee; }
+  .progress-seg.done{ background:#3fbf6a; }
+  .progress-seg.current{ background:#ffcf8a; }
+
+  .feedback{ min-height:32px; font-size:1.1rem; font-weight:700; margin-top:10px; }
+  .confetti{ font-size:2.8rem; text-align:center; }
+
+  /* connect board */
+  .connect-board{ display:flex; justify-content:center; gap:34px; margin:14px 0; }
+  .connect-col{ display:flex; flex-direction:column; gap:12px; }
+  .connect-card{ min-width:78px; padding:12px 14px; border-radius:18px; background:#fff; border:4px solid #eee;
+    font-size:1.5rem; font-weight:800; cursor:pointer; box-shadow:0 5px 0 #ddd; text-align:center; line-height:1.25; }
+  .connect-card.selected{ border-color:#3a9be0; background:#eaf6ff; }
+  .connect-card.matched{ background:#eafcef; border-color:#3fbf6a; color:#2c9450; cursor:default; box-shadow:0 5px 0 #bfe9cc; }
+  .connect-card.shake{ animation:shake .35s; }
+  .connect-status{ font-size:1.05rem; font-weight:700; color:#777; margin-top:4px; }
+  .obj-cluster{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:2px; max-width:150px; font-size:1.5rem; line-height:1.15; }
+  .obj-cluster.dense{ font-size:1.1rem; max-width:130px; }
+
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+
+  @media (max-width:420px){
+    .connect-board{ gap:16px; }
+    .connect-card{ min-width:56px; padding:9px 10px; font-size:1.2rem; }
+    .obj-cluster{ font-size:1.2rem; max-width:120px; }
+    .obj-cluster.dense{ font-size:.95rem; max-width:104px; }
+    .q-sentence{ font-size:1.1rem; padding:12px; }
+    h1{ font-size:1.2rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <button class="icon-btn" id="homeBtn" title="回首頁">🏠</button>
+    <button class="icon-btn" id="muteBtn" title="靜音">🔊</button>
+  </div>
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <div class="mascot">🐟</div>
+    <h1>點點看：湊數字配對大冒險</h1>
+    <div class="subtitle">10以內・數字配數字・數量配數字</div>
+    <div class="card">
+      <p style="font-size:1.08rem; line-height:1.8; margin:0;">
+        小魚準備了好多配對關卡！<br>
+        找一找左邊和右邊，哪兩個可以配成一對，<b style="color:#d1451f">用手指點一點</b>就可以了！
+      </p>
+      <div class="full-panel" id="howToPanel">
+        <p>🔢 有時候：兩邊都是數字，找出<b>合起來等於目標數</b>的兩個數字。</p>
+        <p>🐟 有時候：一邊是<b>一堆物品</b>（例如魚、蘋果、氣球），一邊是數字，看看數量對不對，或是合起來是不是目標數。</p>
+        <p>👉 點一下左邊，再點一下右邊，配對正確就會變成綠色；配錯了會抖一下，再試一次就好。</p>
+        <p>🔊 點每一張卡片，都會唸出上面的數字或數量給你聽。</p>
+      </div>
+      <button class="big-btn small" id="howToBtn" style="margin-top:10px;">🔊 再聽一次說明</button>
+    </div>
+    <button class="big-btn" id="startBtn" style="margin-top:14px;">🚀 開始挑戰！</button>
+    <div class="star-badge" id="totalStarBadge">🏆 累積星星：0</div>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="screen-game">
+    <h1 style="font-size:1.25rem;">湊數字配對挑戰</h1>
+    <div class="progress-track" id="gameProgress"></div>
+    <div class="card">
+      <div class="source-tag" id="roundTag"></div>
+      <div class="q-sentence" id="roundSentence"></div>
+      <div class="connect-board">
+        <div class="connect-col" id="colLeft"></div>
+        <div class="connect-col" id="colRight"></div>
+      </div>
+      <div class="connect-status" id="connectStatus">已配對：0 / 4</div>
+      <div class="feedback" id="stageFeedback"></div>
+    </div>
+  </div>
+
+  <!-- FINISH -->
+  <div class="screen" id="screen-finish">
+    <div class="confetti">🎉🐟🎉</div>
+    <h1>全部挑戰完成！</h1>
+    <div class="card">
+      <p style="font-size:1.08rem; line-height:2;" id="finishBody"></p>
+    </div>
+    <div class="star-badge" id="finishStarBadge">🏆 累積星星：0</div>
+    <div class="nav-row">
+      <button class="big-btn green" id="replayBtn">🔁 再玩一次（新題目）</button>
+      <button class="big-btn blue" id="homeBtn2">🏠 回首頁</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= Speech ================= */
+let muted = false;
+let zhVoice = null;
+function pickVoice(){
+  const voices = speechSynthesis.getVoices();
+  zhVoice = voices.find(v=>/zh[-_]?TW/i.test(v.lang)) || voices.find(v=>/zh/i.test(v.lang)) || null;
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+let speechQueue = [];
+let speaking = false;
+function enqueueSpeech(text, onDone){
+  if(muted || !('speechSynthesis' in window)){ if(onDone) onDone(); return; }
+  speechQueue.push({text, onDone});
+  processSpeechQueue();
+}
+function processSpeechQueue(){
+  if(speaking || speechQueue.length===0) return;
+  speaking = true;
+  const item = speechQueue.shift();
+  const u = new SpeechSynthesisUtterance(item.text.replace(/<[^>]*>/g,''));
+  if(zhVoice) u.voice = zhVoice;
+  u.lang = 'zh-TW';
+  u.rate = 0.95;
+  let done = false;
+  const finish = ()=>{
+    if(done) return; done = true; speaking = false;
+    setTimeout(processSpeechQueue, 60);
+    if(item.onDone) item.onDone();
+  };
+  u.onend = finish;
+  u.onerror = finish;
+  setTimeout(finish, Math.max(2600, item.text.length*450));
+  try{ speechSynthesis.cancel(); }catch(e){}
+  setTimeout(()=>speechSynthesis.speak(u), 60);
+}
+function stopAllSpeech(){
+  speechQueue = [];
+  speaking = false;
+  try{ speechSynthesis.cancel(); }catch(e){}
+}
+
+/* ================= Helpers ================= */
+function randInt(min,max){ return min + Math.floor(Math.random()*(max-min+1)); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffleArr(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+const OBJECTS = ['🐟','🍎','🎈','🍓','⭐','🦋','🍊','🐝','🍭','🐚','🍇','🌸'];
+const OBJECT_NAMES = { '🐟':'魚','🍎':'蘋果','🎈':'氣球','🍓':'草莓','⭐':'星星','🦋':'蝴蝶','🍊':'橘子','🐝':'蜜蜂','🍭':'棒棒糖','🐚':'貝殼','🍇':'葡萄','🌸':'花' };
+function speakLabel(node){
+  if(node.type==='num') return String(node.val);
+  const name = OBJECT_NAMES[node.emoji] || '東西';
+  return `${node.count}個${name}`;
+}
+function nodeVal(node){ return node.type==='num' ? node.val : node.count; }
+/* Explains WHY a matched pair is correct, spoken aloud and shown as text feedback */
+function buildReasonText(kind, pairData){
+  const a = nodeVal(pairData.left), b = nodeVal(pairData.right);
+  if(kind==='quantity'){
+    const name = OBJECT_NAMES[pairData.left.emoji] || '東西';
+    return { speech: `${a}個${name}，就是數字${b}！`, display: `🎉 ${a} 個${name}就是數字 ${b}！` };
+  }
+  return { speech: `${a}加${b}等於${a+b}！`, display: `🎉 ${a} + ${b} = ${a+b}！` };
+}
+
+/* ================= Round generators (all within 10, for first-grade level) ================= */
+/* Type A: digit + digit, sum to a random target between 5 and 10 */
+function makeSumDigitRound(){
+  const target = randInt(5,10);
+  let candidates = shuffleArr(Array.from({length:target-1}, (_,i)=>i+1));
+  const used = new Set();
+  const pairs = [];
+  for(const a of candidates){
+    if(pairs.length>=4) break;
+    const b = target - a;
+    if(used.has(a) || used.has(b)) continue;
+    used.add(a); used.add(b);
+    pairs.push({ left:{type:'num', val:a}, right:{type:'num', val:b} });
+  }
+  return {
+    kind:'sumDigit', unit:'數字湊對・目標 ' + target,
+    sentence: `哪兩個數字合起來是 <b>${target}</b>？點點看！`,
+    speech: `哪兩個數字合起來是${target}？點點看！`,
+    pairs
+  };
+}
+/* Type B: a cluster of objects on the left, a digit on the right that completes the sum to target */
+function makeSumObjectRound(){
+  const target = randInt(5,10);
+  const maxShow = Math.min(8, target-1);
+  let candidates = shuffleArr(Array.from({length:maxShow}, (_,i)=>i+1));
+  const used = new Set();
+  const pairs = [];
+  for(const a of candidates){
+    if(pairs.length>=4) break;
+    const b = target - a;
+    if(b<0 || b>10) continue;
+    if(used.has(a) || used.has(b)) continue;
+    used.add(a); used.add(b);
+    pairs.push({ left:{type:'emoji', emoji:pick(OBJECTS), count:a}, right:{type:'num', val:b} });
+  }
+  return {
+    kind:'sumObject', unit:'物品湊對・目標 ' + target,
+    sentence: `數一數左邊有幾個，配上右邊的數字，兩個合起來要是 <b>${target}</b>！點點看！`,
+    speech: `數一數左邊有幾個，配上右邊的數字，兩個合起來要是${target}！點點看！`,
+    pairs
+  };
+}
+/* Type C: object count matched to the same digit (no summing, pure quantity recognition), counts 1-10 */
+function makeQuantityRound(){
+  const pool = shuffleArr(Array.from({length:10}, (_,i)=>i+1)); // 1..10
+  const counts = pool.slice(0,4);
+  const pairs = counts.map(c=>({ left:{type:'emoji', emoji:pick(OBJECTS), count:c}, right:{type:'num', val:c} }));
+  return {
+    kind:'quantity', unit:'數一數配數字',
+    sentence: `數一數，把物品和正確的<b>數字</b>配成一對！點點看！`,
+    speech: `數一數，把物品和正確的數字配成一對！點點看！`,
+    pairs
+  };
+}
+function makeRound(){
+  const kind = pick(['sumDigit','sumDigit','sumObject','quantity']);
+  if(kind==='sumDigit') return makeSumDigitRound();
+  if(kind==='sumObject') return makeSumObjectRound();
+  return makeQuantityRound();
+}
+
+/* ================= Game state ================= */
+const TOTAL_ROUNDS = 8;
+let rounds = [];
+let roundIndex = 0;
+let connectState = { pairs:[], leftOrder:[], rightOrder:[], selL:null, selR:null, matched:0, lock:false };
+
+function labelOf(node){ return node.type==='num' ? String(node.val) : node.emoji.repeat(node.count); }
+
+function buildRounds(){
+  rounds = [];
+  for(let i=0;i<TOTAL_ROUNDS;i++) rounds.push(makeRound());
+}
+
+function renderProgress(){
+  const track = document.getElementById('gameProgress');
+  track.innerHTML = rounds.map((_,i)=>{
+    const cls = i<roundIndex ? 'done' : (i===roundIndex ? 'current' : '');
+    return `<div class="progress-seg ${cls}"></div>`;
+  }).join('');
+}
+
+function renderRound(){
+  renderProgress();
+  const r = rounds[roundIndex];
+  document.getElementById('roundTag').textContent = `第 ${roundIndex+1} 關／共 ${rounds.length} 關　・　${r.unit}`;
+  document.getElementById('roundSentence').innerHTML = r.sentence;
+  document.getElementById('stageFeedback').textContent = '';
+
+  const pairsWithId = r.pairs.map((p,i)=>({ id:i, left:p.left, right:p.right }));
+  connectState = { pairs:pairsWithId, leftOrder:shuffleArr(pairsWithId.map(p=>p.id)), rightOrder:shuffleArr(pairsWithId.map(p=>p.id)), selL:null, selR:null, matched:0, lock:false };
+
+  const colL = document.getElementById('colLeft'), colR = document.getElementById('colRight');
+  colL.innerHTML = ''; colR.innerHTML = '';
+
+  connectState.leftOrder.forEach(id=>{
+    const p = pairsWithId.find(x=>x.id===id);
+    const el = document.createElement('div');
+    el.className = 'connect-card';
+    el.innerHTML = renderNodeHTML(p.left);
+    el.dataset.id = id;
+    el.onclick = ()=>onConnectPick('L', id, el);
+    colL.appendChild(el);
+  });
+  connectState.rightOrder.forEach(id=>{
+    const p = pairsWithId.find(x=>x.id===id);
+    const el = document.createElement('div');
+    el.className = 'connect-card';
+    el.innerHTML = renderNodeHTML(p.right);
+    el.dataset.id = id;
+    el.onclick = ()=>onConnectPick('R', id, el);
+    colR.appendChild(el);
+  });
+
+  document.getElementById('connectStatus').textContent = `已配對：0 / ${pairsWithId.length}`;
+  enqueueSpeech(r.speech);
+}
+
+function renderNodeHTML(node){
+  if(node.type==='num') return String(node.val);
+  const denseClass = node.count>6 ? ' dense' : '';
+  const items = Array.from({length:node.count}).map(()=>`<span>${node.emoji}</span>`).join('');
+  return `<div class="obj-cluster${denseClass}">${items}</div>`;
+}
+
+function onConnectPick(side, id, el){
+  if(connectState.lock || el.classList.contains('matched')) return;
+  const pairData = connectState.pairs.find(p=>p.id===id);
+  if(side==='L'){
+    if(connectState.selL) connectState.selL.el.classList.remove('selected');
+    connectState.selL = {id, el}; el.classList.add('selected');
+    enqueueSpeech(speakLabel(pairData.left));
+  } else {
+    if(connectState.selR) connectState.selR.el.classList.remove('selected');
+    connectState.selR = {id, el}; el.classList.add('selected');
+    enqueueSpeech(speakLabel(pairData.right));
+  }
+  if(connectState.selL && connectState.selR){
+    connectState.lock = true;
+    const ok = connectState.selL.id === connectState.selR.id;
+    const lEl = connectState.selL.el, rEl = connectState.selR.el;
+    if(ok){
+      const matchedPair = connectState.pairs.find(p=>p.id===connectState.selL.id);
+      const reason = buildReasonText(rounds[roundIndex].kind, matchedPair);
+      setTimeout(()=>{
+        lEl.classList.remove('selected'); rEl.classList.remove('selected');
+        lEl.classList.add('matched'); rEl.classList.add('matched');
+        connectState.matched++;
+        document.getElementById('connectStatus').textContent = `已配對：${connectState.matched} / ${connectState.pairs.length}`;
+        connectState.selL=null; connectState.selR=null; connectState.lock=false;
+        if(connectState.matched === connectState.pairs.length){
+          document.getElementById('stageFeedback').innerHTML = `${reason.display}<br>這一關全部配對完成！`;
+          document.getElementById('stageFeedback').style.color = '#2c9450';
+          addStar();
+          enqueueSpeech(`配對成功！${reason.speech}這一關全部完成了！`, ()=> setTimeout(goNextRound, 600));
+        } else {
+          document.getElementById('stageFeedback').textContent = reason.display;
+          document.getElementById('stageFeedback').style.color = '#2c9450';
+          enqueueSpeech(`配對成功！${reason.speech}`);
+        }
+      }, 400);
+    } else {
+      lEl.classList.add('shake'); rEl.classList.add('shake');
+      document.getElementById('stageFeedback').textContent = '再看看，這兩個不是一對！';
+      document.getElementById('stageFeedback').style.color = '#c0503a';
+      setTimeout(()=>{
+        lEl.classList.remove('selected','shake'); rEl.classList.remove('selected','shake');
+        connectState.selL=null; connectState.selR=null; connectState.lock=false;
+        document.getElementById('stageFeedback').textContent = '';
+      }, 550);
+    }
+  }
+}
+
+function goNextRound(){
+  if(roundIndex < rounds.length-1){
+    roundIndex++;
+    renderRound();
+  } else {
+    finishGame();
+  }
+}
+
+function finishGame(){
+  stopAllSpeech();
+  showScreen('finish');
+  document.getElementById('finishBody').textContent = `你完成了全部 ${rounds.length} 關的配對挑戰，你是點點看小達人！`;
+  updateStarBadges();
+  if(window.confetti){
+    confetti({ particleCount:150, spread:90, origin:{y:0.55}, colors:['#ffb454','#3a9be0','#3fbf6a','#8a5be0'] });
+  }
+  enqueueSpeech('太棒了！全部關卡都配對完成了，你是點點看小達人！');
+}
+
+/* ================= Stars (shared across the 數學關鍵字 game family) ================= */
+let totalStars = 0;
+try{
+  totalStars = parseInt(localStorage.getItem('mathkw_all_stars')||'0', 10) || 0;
+}catch(e){ totalStars = 0; }
+function saveStars(){ try{ localStorage.setItem('mathkw_all_stars', String(totalStars)); }catch(e){} }
+function addStar(){ totalStars++; saveStars(); updateStarBadges(); }
+function updateStarBadges(){
+  const t = `🏆 累積星星：${totalStars}`;
+  const b1 = document.getElementById('totalStarBadge'); if(b1) b1.textContent = t;
+  const b2 = document.getElementById('finishStarBadge'); if(b2) b2.textContent = t;
+}
+updateStarBadges();
+setTimeout(()=>{ enqueueSpeech(HOWTO_SPEECH); }, 500);
+
+/* ================= Screen switching ================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+const HOWTO_SPEECH = '有時候兩邊都是數字，找出合起來等於目標數的兩個數字。有時候一邊是一堆物品，一邊是數字，看看數量對不對，或是合起來是不是目標數。點一下左邊，再點一下右邊，配對正確就會變成綠色，配錯了再試一次就好。點每一張卡片，都會唸出上面的數字或數量給你聽。';
+document.getElementById('howToBtn').onclick = ()=>{
+  stopAllSpeech();
+  enqueueSpeech(HOWTO_SPEECH);
+};
+document.getElementById('startBtn').onclick = ()=>{
+  buildRounds();
+  roundIndex = 0;
+  renderRound();
+  showScreen('game');
+};
+document.getElementById('replayBtn').onclick = ()=>{
+  stopAllSpeech();
+  buildRounds();
+  roundIndex = 0;
+  renderRound();
+  showScreen('game');
+};
+document.getElementById('homeBtn').onclick = ()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('homeBtn2').onclick = ()=>{ stopAllSpeech(); showScreen('start'); };
+document.getElementById('muteBtn').onclick = (e)=>{
+  muted = !muted;
+  e.target.textContent = muted ? '🔇' : '🔊';
+  if(muted) stopAllSpeech();
+};
+
+})();
+</script>
+</body>
+</html>
