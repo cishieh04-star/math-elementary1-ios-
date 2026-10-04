@@ -169,7 +169,7 @@ a.gate{display:block;text-decoration:none;color:inherit;width:min(92%,480px);fon
 "use strict";
 /* ---------- 注音 ---------- */
 const ZY={};
-("藍ㄌㄢˊ 橘ㄐㄩˊ 請ㄑㄧㄥˇ 先ㄒㄧㄢ 只ㄓˇ 同ㄊㄨㄥˊ 或ㄏㄨㄛˋ 摩ㄇㄛˊ 天ㄊㄧㄢ 輪ㄌㄨㄣˊ 拼ㄆㄧㄣ 夾ㄐㄧㄚˊ 注ㄓㄨˋ 音ㄧㄣ 題ㄊㄧˊ 目ㄇㄨˋ 中ㄓㄨㄥ 超ㄔㄠ 定ㄉㄧㄥˋ 數ㄕㄨˇ 一ㄧ 多ㄉㄨㄛ 的˙ㄉㄜ 畫ㄏㄨㄚˋ 掉ㄉㄧㄠˋ 不ㄅㄨˋ 夠ㄍㄡˋ 補ㄅㄨˇ 上ㄕㄤˋ 去ㄑㄩˋ 比ㄅㄧˇ 較ㄐㄧㄠˋ 長ㄔㄤˊ 短ㄉㄨㄢˇ 高ㄍㄠ 薄ㄅㄛˊ "+
+("現ㄒㄧㄢˋ 如ㄖㄨˊ 果ㄍㄨㄛˇ 藍ㄌㄢˊ 橘ㄐㄩˊ 請ㄑㄧㄥˇ 先ㄒㄧㄢ 只ㄓˇ 同ㄊㄨㄥˊ 或ㄏㄨㄛˋ 摩ㄇㄛˊ 天ㄊㄧㄢ 輪ㄌㄨㄣˊ 拼ㄆㄧㄣ 夾ㄐㄧㄚˊ 注ㄓㄨˋ 音ㄧㄣ 題ㄊㄧˊ 目ㄇㄨˋ 中ㄓㄨㄥ 超ㄔㄠ 定ㄉㄧㄥˋ 數ㄕㄨˇ 一ㄧ 多ㄉㄨㄛ 的˙ㄉㄜ 畫ㄏㄨㄚˋ 掉ㄉㄧㄠˋ 不ㄅㄨˋ 夠ㄍㄡˋ 補ㄅㄨˇ 上ㄕㄤˋ 去ㄑㄩˋ 比ㄅㄧˇ 較ㄐㄧㄠˋ 長ㄔㄤˊ 短ㄉㄨㄢˇ 高ㄍㄠ 薄ㄅㄛˊ "+
 "樣ㄧㄤˋ 連ㄌㄧㄢˊ 起ㄑㄧˇ 來ㄌㄞˊ 按ㄢˋ 照ㄓㄠˋ 順ㄕㄨㄣˋ 序ㄒㄩˋ 填ㄊㄧㄢˊ 看ㄎㄢˋ 彎ㄨㄢ 平ㄆㄧㄥˊ 面ㄇㄧㄢˋ 哪ㄋㄚˇ 個˙ㄍㄜ 東ㄉㄨㄥ 西˙ㄒㄧ 有ㄧㄡˇ "+
 "合ㄏㄜˊ 是ㄕˋ 和ㄏㄢˋ 可ㄎㄜˇ 以ㄧˇ 分ㄈㄣ 成ㄔㄥˊ 前ㄑㄧㄢˊ 後ㄏㄡˋ 排ㄆㄞˊ 在ㄗㄞˋ 第ㄉㄧˋ 幾ㄐㄧˇ 從ㄘㄨㄥˊ 開ㄎㄞ 始ㄕˇ 隻ㄓ 把ㄅㄚˇ 枝ㄓ 本ㄅㄣˇ "+
 "找ㄓㄠˇ 點ㄉㄧㄢˇ 圈ㄑㄩㄢ 少ㄕㄠˇ 了˙ㄌㄜ 著˙ㄓㄜ 邊ㄅㄧㄢ 手ㄕㄡˇ 指ㄓˇ 字ㄗˋ 好ㄏㄠˇ 選ㄒㄩㄢˇ 下ㄒㄧㄚˋ 全ㄑㄩㄢˊ 部ㄅㄨˋ 要ㄧㄠˋ 那ㄋㄚˋ "+
@@ -429,11 +429,14 @@ function qCross(){const t=R(2,5),h=t+R(1,3),e=pick(FRUIT);
     await new Promise(res=>{let left=h-t;a.slice(t).forEach(x=>{x.classList.add("nx");x.onclick=()=>{if(busy()||x.classList.contains("x"))return;x.classList.remove("nx");x.classList.add("x");lock(250);if(--left===0)res()}})});
     return true}}}
 function qAdd(){const h=R(1,5),t=h+R(1,4),e=pick(FRUIT);
-  return{kw:"補上去",chunks:["數一數","，","不夠的","畫圈","補上去","。"],done:"畫了"+(t-h)+"個圈圈補上去，現在有"+t+"個",say:"要"+t+"個。先數一數，跟著手指，一個一個點",play:async b=>{
-    b.appendChild(el("div","need",Z("要 ")+"<b>"+t+"</b>"+Z(" 個")));
+  return{kw:"補上去",chunks:["數一數","，","不夠的","畫圈","補上去","。"],done:"現在有"+h+"個，要"+t+"個，要畫"+(t-h)+"個圈圈",say:"數一數，現在有幾個？跟著手指，一個一個點",play:async b=>{
+    const need=el("div","need",Z("數一數，現在有幾個？"));b.appendChild(need);
     const tip=el("div","tip",Z(TIPC));b.appendChild(tip);const {w,a}=mkItems(b,e,h);
-    const sl=[];for(let i=h;i<t;i++){const s=el("button","slot","");w.appendChild(s);sl.push(s)}
-    await gcount(a);tip.innerHTML=Z("不夠的，點一下畫圈圈");tell("不夠的，點一下，畫一個圈圈，補上去");await gcount(sl,h,"o");return true}}}
+    const sl=[];for(let i=h;i<t;i++){const s=el("button","slot","");s.style.visibility="hidden";w.appendChild(s);sl.push(s)}
+    await gcount(a);
+    need.innerHTML=Z("現在有 ")+"<b>"+h+"</b>"+Z(" 個，如果要 ")+"<b>"+t+"</b>"+Z(" 個");
+    tip.innerHTML=Z("要畫幾個圈圈？點一下畫圈圈");sl.forEach(x=>{x.style.visibility=""});
+    tell("現在有"+h+"個。如果要"+t+"個，要畫幾個圈圈？點一下，畫圈圈");await gcount(sl,h,"o");return true}}}
 function qMore(kw){let a=R(2,6),c;do{c=R(2,6)}while(c===a);const es=shuf(FRUIT),ns=[a,c];
   const ok=(kw==="比較多")===(a>c)?0:1;
   return{kw,chunks:["哪一邊",kw,"？"],done:kw==="比較多"?Math.max(a,c)+"個比"+Math.min(a,c)+"個多":Math.min(a,c)+"個比"+Math.max(a,c)+"個少",say:"哪一邊"+kw+"？先數一數，跟著手指，一個一個點",play:async b=>{
