@@ -221,6 +221,7 @@ let save={stars:0,lv:0,cur:0};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&typeof s.stars==="number")save=s}catch(e){}
 const opt=k=>!(save.opt&&save.opt[k]===false);
 if(save.opt&&save.opt.voice===false)delete save.opt.voice;
+save.stars=0;   /* 每次打開遊戲，星星從 0 開始 */
 function store(){try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}}
 function showStars(){$("stars").textContent="星星："+save.stars+" 顆"}
 let gen=0,paused=false,lockUntil=0;
