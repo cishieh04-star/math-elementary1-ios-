@@ -6,7 +6,7 @@
 <title>數學關鍵字描描看－一上期中考A卷</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
 body{height:100dvh;display:flex;flex-direction:column;background:#fff8e7;color:#3a2a14;
   font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC",sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
@@ -145,6 +145,9 @@ button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulatio
 .grp.merged .g:first-child{border-right-color:transparent;border-radius:14px 0 0 14px;margin-right:-3px}
 .grp.merged .g:last-child{border-left-color:transparent;border-radius:0 14px 14px 0}
 .it.glow{animation:pul .6s infinite alternate;background:#d0ebff;border-color:#1971c2}
+a.gate{display:block;text-decoration:none;color:inherit;width:min(92%,480px);font-size:clamp(28px,8vmin,52px);line-height:2.2;background:#ffd43b;border-color:#e8590c;border-width:5px}
+.sub2{font-size:clamp(15px,3.8vmin,22px);color:#8a6020}
+.stay{font-size:clamp(14px,3.6vmin,20px);padding:6px 16px;border-radius:10px;border:2px solid #868e96;background:#e9ecef;color:#555;margin-top:10px}
 .yay{font-size:clamp(30px,9vmin,64px);font-weight:900;color:#2f9e44;line-height:1.8}
 </style>
 </head>
@@ -226,7 +229,7 @@ async function say(t,g){while(paused){await raw(150);chk(g)}sayBusy=true;idleAt=
 /* 小朋友停住不動 12 秒，就再說一次現在要做什麼 */
 document.addEventListener("pointerdown",()=>{idleAt=Date.now()},true);
 setInterval(()=>{if(paused||sayBusy||!last||Date.now()-idleAt<12000)return;if(SS&&SS.speaking)return;idleAt=Date.now();speak(last)},1000);
-const MEAN={"數一數":"用手指一個一個點著數","畫掉":"把題目中超過指定數字的部分畫線或打叉","補上去":"補上同樣的東西",
+const MEAN={"數一數":"用手指一個一個點著數","畫掉":"把題目中超過指定數字的部分畫線或打叉","補上去":"不夠的，畫圈圈補上去",
  "比較多":"選多的那一邊","比較少":"選少的那一邊","一樣多":"數起來一樣","連起來":"畫一條線接起來","按照順序":"一個接著一個數下去",
  "比較長":"選長的","比較短":"選短的","比較高":"選高的","比較薄":"選薄的",
  "彎彎的面":"圓圓的，會滾動","平平的面":"平平的，可以站好","合起來":"兩堆放在一起，全部數一數","分成":"一堆分成兩堆",
@@ -269,6 +272,7 @@ function traceChar(pad,c,S){return new Promise(res=>{
   pad.onpointerdown=e=>{if(busy()||done)return;e.preventDefault();down=true;[lx,ly]=pos(e);try{pad.setPointerCapture(e.pointerId)}catch(_){}seg(lx,ly,lx,ly)};
   pad.onpointermove=e=>{if(!down||done||paused)return;e.preventDefault();const [x,y]=pos(e);seg(lx,ly,x,y);lx=x;ly=y};
   pad.onpointerup=pad.onpointercancel=()=>{down=false};
+  pad.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});pad.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
   window.__tr={glyph,G,S,c}})}
 
 async function trace(K,g){
@@ -425,11 +429,11 @@ function qCross(){const t=R(2,5),h=t+R(1,3),e=pick(FRUIT);
     await new Promise(res=>{let left=h-t;a.slice(t).forEach(x=>{x.classList.add("nx");x.onclick=()=>{if(busy()||x.classList.contains("x"))return;x.classList.remove("nx");x.classList.add("x");lock(250);if(--left===0)res()}})});
     return true}}}
 function qAdd(){const h=R(1,5),t=h+R(1,4),e=pick(FRUIT);
-  return{kw:"補上去",chunks:["數一數","，","不夠的","補上去","。"],done:"補上去"+(t-h)+"個，現在有"+t+"個",say:"要"+t+"個。先數一數，跟著手指，一個一個點",play:async b=>{
+  return{kw:"補上去",chunks:["數一數","，","不夠的","畫圈","補上去","。"],done:"畫了"+(t-h)+"個圈圈補上去，現在有"+t+"個",say:"要"+t+"個。先數一數，跟著手指，一個一個點",play:async b=>{
     b.appendChild(el("div","need",Z("要 ")+"<b>"+t+"</b>"+Z(" 個")));
     const tip=el("div","tip",Z(TIPC));b.appendChild(tip);const {w,a}=mkItems(b,e,h);
-    const sl=[];for(let i=h;i<t;i++){const s=el("button","slot","");s.dataset.fill=e;w.appendChild(s);sl.push(s)}
-    await gcount(a);tip.innerHTML=Z("不夠的，點一下補上去");tell("不夠的，點一下，補上同樣的東西");await gcount(sl,h,"n");return true}}}
+    const sl=[];for(let i=h;i<t;i++){const s=el("button","slot","");w.appendChild(s);sl.push(s)}
+    await gcount(a);tip.innerHTML=Z("不夠的，點一下畫圈圈");tell("不夠的，點一下，畫一個圈圈，補上去");await gcount(sl,h,"o");return true}}}
 function qMore(kw){let a=R(2,6),c;do{c=R(2,6)}while(c===a);const es=shuf(FRUIT),ns=[a,c];
   const ok=(kw==="比較多")===(a>c)?0:1;
   return{kw,chunks:["哪一邊",kw,"？"],done:kw==="比較多"?Math.max(a,c)+"個比"+Math.min(a,c)+"個多":Math.min(a,c)+"個比"+Math.max(a,c)+"個少",say:"哪一邊"+kw+"？先數一數，跟著手指，一個一個點",play:async b=>{
@@ -537,7 +541,16 @@ async function runLevel(i,g){const L=LV[i];let n=0;const tot=L.ks.length*2;
 async function playFrom(i,g){for(;i<LV.length;i++){await runLevel(i,g);
     if(opt("one")&&i<LV.length-1){await say("今天玩到這裡。下次再玩下一關",g);home();return}}
   stage.innerHTML="";stage.appendChild(el("div","yay",Z("全部過關了！")));await say("全部過關了，你好棒！",g);await sleep(1200,g);home()}
-async function traceMode(i,g){const L=LV[i];$("prog").textContent="描描看　第 "+(i+1)+" 關："+L.name;
+const inLine=()=>!!window.__line||(/\bLine\//i.test(navigator.userAgent)&&/^https?:$/.test(location.protocol));
+let lineStay=false;
+function lineGate(g){return new Promise(res=>{
+  stage.innerHTML="";const u=new URL(location.href);u.searchParams.set("openExternalBrowser","1");
+  stage.appendChild(el("div","mean","在 LINE 裡描字，畫面會跟著手指動。<br>請用瀏覽器打開，比較好描。"));
+  const a=el("a","bigbtn gate","用瀏覽器打開");a.id="openExt";a.href=u.toString();stage.appendChild(a);
+  stage.appendChild(el("div","sub2","打開以後，再按一次「描描看」"));
+  const b=el("button","stay","留在這裡描");b.id="stayHere";b.onclick=()=>{lineStay=true;res()};stage.appendChild(b);
+  tell("在 LINE 裡面描字，畫面會跟著動。請按大按鈕，用瀏覽器打開")})}
+async function traceMode(i,g){const L=LV[i];if(inLine()&&!lineStay){$("prog").textContent="描描看";await lineGate(g);chk(g)}$("prog").textContent="描描看　第 "+(i+1)+" 關："+L.name;
   for(const K of L.ks)await trace(K,g);
   save.tcur=(i+1)%LV.length;store();
   stage.innerHTML="";stage.appendChild(el("div","yay",Z("描好了！")));chime();await say("這一關的字都描好了，你好棒！",g);await sleep(800,g);home()}
