@@ -16,6 +16,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulatio
 .tn{font-size:.36em;font-weight:400;color:#7a5a2a;align-self:flex-start;margin-top:.7em;width:.45em;line-height:1}
 #bar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;padding:5px;background:#ffe2a8;border-bottom:3px solid #e9b45a}
 #bar button{font-size:clamp(13px,3.4vmin,18px);padding:6px 9px;border-radius:10px;border:2px solid #b9853a;background:#fff;font-weight:700}
+#bar button.off{background:#e9ecef;border-color:#868e96;color:#666}
 #bar .info{font-size:clamp(13px,3.4vmin,18px);font-weight:700;padding:4px 6px;white-space:nowrap}
 #prog{text-align:center;font-size:clamp(13px,3.2vmin,18px);padding:3px;color:#8a6020;min-height:1.6em;font-weight:700}
 #stage{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(6px,1.8vmin,16px);padding:6px 10px 10px;text-align:center}
@@ -85,7 +86,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulatio
 .home h1{font-size:clamp(22px,6vmin,42px);margin:0;line-height:1.3;color:#d9480f}
 .home .sub{font-size:clamp(14px,3.6vmin,20px);color:#8a6020}
 .home .bigbtn{display:block;width:min(92%,460px);margin:0 auto}
-.home .bigbtn{line-height:1.5}.home.play{gap:5px;padding-bottom:0}.home .lvg button{padding:5px 4px}.home .setg button{padding:5px 2px}
+.home .bigbtn{line-height:1.4}.home.play{gap:4px;padding-bottom:0}.home .lvg button{padding:3px 4px}.home .lvg{gap:4px}.home .bigbtn{line-height:1.32}.home .setg button{padding:5px 2px}
 .home .bigbtn.b2{background:#d0ebff;border-color:#1971c2}
 .home .bigbtn.b3{background:#ffe8cc;border-color:#e8590c}
 .bigbtn{font-size:clamp(20px,5.2vmin,34px);font-weight:900;padding:.1em .9em;border-radius:16px;border:3px solid #2f9e44;background:#b2f2bb;line-height:2}
@@ -109,6 +110,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulatio
 .zcol{display:flex;flex-direction:column;gap:3px}
 .zs{display:block;width:1.5em;height:1.5em;line-height:1.4em;font-size:clamp(18px,5.6vmin,34px);border:2px dashed #b9853a;border-radius:8px;color:#cfc6b4;font-weight:700}
 .nohint .zs:not(.ok){color:transparent}
+.setg button[data-k="voice"]{grid-column:1/-1}
 .setg{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;width:min(96%,560px)}
 .setg button{font-size:clamp(12px,3.2vmin,17px);font-weight:700;padding:6px 2px;border-radius:10px;border:2px solid #1971c2;background:#d0ebff}
 .setg button.off{background:#e9ecef;border-color:#868e96;color:#666}
@@ -129,8 +131,9 @@ button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulatio
  #stage{gap:4px;padding:2px 8px 4px}
  .kwcard{font-size:9vmin}.sent{font-size:6vmin}.krow{font-size:6.5vmin}
  .lvg{grid-template-columns:repeat(5,1fr);width:98%}.lvg button{padding:4px 2px;font-size:12px}
+ .blk .shp{width:27vmin}.paper .shp{width:21vmin}.shp{width:15vmin}.opts.names .opt{min-width:22%;font-size:5vmin}
  .need{line-height:1.15}.need b{font-size:1.2em}.tip{line-height:1.25}
- .setg{grid-template-columns:repeat(4,1fr);width:98%}.setg button{padding:3px 2px;font-size:12px}.lvg button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.home.play{gap:3px;padding-bottom:0}
+ .setg{grid-template-columns:repeat(5,1fr);width:98%}.setg button[data-k="voice"]{grid-column:auto}.setg button{padding:3px 2px;font-size:12px}.lvg button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.home.play{gap:3px;padding-bottom:0}
  .home h1{font-size:20px}.home .bigbtn{display:inline-block;width:31%;font-size:15px;padding:0 2px}.home .sub{font-size:12px}
  .opts.cols .opt{height:26vmin}.it,.slot{font-size:6.6vmin}.grp .it{font-size:5.4vmin}
  .conn{gap:8vmin}.card{min-height:13vmin;font-size:4vmin}.cnt{row-gap:.7em}.play{padding-bottom:1em}
@@ -148,6 +151,26 @@ button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulatio
 a.gate{display:block;text-decoration:none;color:inherit;width:min(92%,480px);font-size:clamp(28px,8vmin,52px);line-height:2.2;background:#ffd43b;border-color:#e8590c;border-width:5px}
 .sub2{font-size:clamp(15px,3.8vmin,22px);color:#8a6020}
 .stay{font-size:clamp(14px,3.6vmin,20px);padding:6px 16px;border-radius:10px;border:2px solid #868e96;background:#e9ecef;color:#555;margin-top:10px}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:8}
+#fx i{position:absolute;font-style:normal;line-height:1}
+.cf{top:-24px;width:10px;height:16px;animation:cfall linear forwards}
+@keyframes cfall{to{top:105%;transform:rotate(720deg)}}
+.bz{width:10px;height:10px;border-radius:50%;opacity:0;animation:bz .9s ease-out forwards}
+@keyframes bz{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
+.em{top:-60px;animation:efall 1.6s ease-in forwards}
+@keyframes efall{to{top:105%}}
+.up{bottom:-70px;animation:erise 1.8s ease-out forwards}
+@keyframes erise{to{bottom:105%}}
+.shp{width:clamp(64px,20vmin,110px);display:block}
+.stamp{display:flex;align-items:center;gap:8px}.arw{font-size:clamp(22px,6vmin,40px)}
+.blk{position:relative;border:3px solid transparent;border-radius:14px;background:none;padding:2px;font-size:clamp(30px,9vmin,60px)}
+.blk .shp{width:clamp(110px,34vmin,190px)}
+.paper{border:3px dashed #b9853a;border-radius:10px;background:#fff;padding:2px 8px}
+.paper .shp{width:clamp(90px,27vmin,160px)}.shp.ghost{visibility:hidden}
+.opts.shps .opt{padding:4px 8px;line-height:1}
+.opts.names .opt{font-size:clamp(20px,5.4vmin,34px);min-width:42%;line-height:1.6}
+.card .nm{white-space:nowrap;font-size:clamp(13px,3.7vmin,26px);font-weight:700}
+.card .shp{width:100%;max-height:clamp(44px,13vmin,90px)}
 .yay{font-size:clamp(30px,9vmin,64px);font-weight:900;color:#2f9e44;line-height:1.8}
 </style>
 </head>
@@ -160,6 +183,7 @@ a.gate{display:block;text-decoration:none;color:inherit;width:min(92%,480px);fon
   <span class="info" id="spd">速度：慢</span>
   <button id="bAgain">再聽一次</button>
   <button id="bPause">暫停</button>
+  <button id="bVoice">不要語音說明</button>
 </div>
 <div id="prog"></div>
 <div id="stage"></div>
@@ -169,7 +193,7 @@ a.gate{display:block;text-decoration:none;color:inherit;width:min(92%,480px);fon
 "use strict";
 /* ---------- 注音 ---------- */
 const ZY={};
-("現ㄒㄧㄢˋ 如ㄖㄨˊ 果ㄍㄨㄛˇ 藍ㄌㄢˊ 橘ㄐㄩˊ 請ㄑㄧㄥˇ 先ㄒㄧㄢ 只ㄓˇ 同ㄊㄨㄥˊ 或ㄏㄨㄛˋ 摩ㄇㄛˊ 天ㄊㄧㄢ 輪ㄌㄨㄣˊ 拼ㄆㄧㄣ 夾ㄐㄧㄚˊ 注ㄓㄨˋ 音ㄧㄣ 題ㄊㄧˊ 目ㄇㄨˋ 中ㄓㄨㄥ 超ㄔㄠ 定ㄉㄧㄥˋ 數ㄕㄨˇ 一ㄧ 多ㄉㄨㄛ 的˙ㄉㄜ 畫ㄏㄨㄚˋ 掉ㄉㄧㄠˋ 不ㄅㄨˋ 夠ㄍㄡˋ 補ㄅㄨˇ 上ㄕㄤˋ 去ㄑㄩˋ 比ㄅㄧˇ 較ㄐㄧㄠˋ 長ㄔㄤˊ 短ㄉㄨㄢˇ 高ㄍㄠ 薄ㄅㄛˊ "+
+("積ㄐㄧ 木ㄇㄨˋ 紙ㄓˇ 形ㄒㄧㄥˊ 狀ㄓㄨㄤˋ 子˙ㄗ 像ㄒㄧㄤˋ 三ㄙㄢ 角ㄐㄧㄠˇ 正ㄓㄥˋ 方ㄈㄤ 出ㄔㄨ 什ㄕㄣˊ 麼˙ㄇㄜ 些ㄒㄧㄝ 現ㄒㄧㄢˋ 如ㄖㄨˊ 果ㄍㄨㄛˇ 藍ㄌㄢˊ 橘ㄐㄩˊ 請ㄑㄧㄥˇ 先ㄒㄧㄢ 只ㄓˇ 同ㄊㄨㄥˊ 或ㄏㄨㄛˋ 摩ㄇㄛˊ 天ㄊㄧㄢ 輪ㄌㄨㄣˊ 拼ㄆㄧㄣ 夾ㄐㄧㄚˊ 注ㄓㄨˋ 音ㄧㄣ 題ㄊㄧˊ 目ㄇㄨˋ 中ㄓㄨㄥ 超ㄔㄠ 定ㄉㄧㄥˋ 數ㄕㄨˇ 一ㄧ 多ㄉㄨㄛ 的˙ㄉㄜ 畫ㄏㄨㄚˋ 掉ㄉㄧㄠˋ 不ㄅㄨˋ 夠ㄍㄡˋ 補ㄅㄨˇ 上ㄕㄤˋ 去ㄑㄩˋ 比ㄅㄧˇ 較ㄐㄧㄠˋ 長ㄔㄤˊ 短ㄉㄨㄢˇ 高ㄍㄠ 薄ㄅㄛˊ "+
 "樣ㄧㄤˋ 連ㄌㄧㄢˊ 起ㄑㄧˇ 來ㄌㄞˊ 按ㄢˋ 照ㄓㄠˋ 順ㄕㄨㄣˋ 序ㄒㄩˋ 填ㄊㄧㄢˊ 看ㄎㄢˋ 彎ㄨㄢ 平ㄆㄧㄥˊ 面ㄇㄧㄢˋ 哪ㄋㄚˇ 個˙ㄍㄜ 東ㄉㄨㄥ 西˙ㄒㄧ 有ㄧㄡˇ "+
 "合ㄏㄜˊ 是ㄕˋ 和ㄏㄢˋ 可ㄎㄜˇ 以ㄧˇ 分ㄈㄣ 成ㄔㄥˊ 前ㄑㄧㄢˊ 後ㄏㄡˋ 排ㄆㄞˊ 在ㄗㄞˋ 第ㄉㄧˋ 幾ㄐㄧˇ 從ㄘㄨㄥˊ 開ㄎㄞ 始ㄕˇ 隻ㄓ 把ㄅㄚˇ 枝ㄓ 本ㄅㄣˇ "+
 "找ㄓㄠˇ 點ㄉㄧㄢˇ 圈ㄑㄩㄢ 少ㄕㄠˇ 了˙ㄌㄜ 著˙ㄓㄜ 邊ㄅㄧㄢ 手ㄕㄡˇ 指ㄓˇ 字ㄗˋ 好ㄏㄠˇ 選ㄒㄩㄢˇ 下ㄒㄧㄚˋ 全ㄑㄩㄢˊ 部ㄅㄨˋ 要ㄧㄠˋ 那ㄋㄚˋ "+
@@ -196,6 +220,7 @@ const KEY="mathkw_trace_1a_midA";
 let save={stars:0,lv:0,cur:0};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&typeof s.stars==="number")save=s}catch(e){}
 const opt=k=>!(save.opt&&save.opt[k]===false);
+if(save.opt&&save.opt.voice===false)delete save.opt.voice;
 function store(){try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}}
 function showStars(){$("stars").textContent="星星："+save.stars+" 顆"}
 let gen=0,paused=false,lockUntil=0;
@@ -221,22 +246,57 @@ function utter(t,cb,rate){const my=++spSeq;let d=false,to=0;const fin=()=>{if(!d
   return fin}
 document.addEventListener("pointerdown",ev=>{if(ev.target&&ev.target.closest&&ev.target.closest("#bar"))return;if(skipFn&&!paused&&Date.now()-sayAt>350){const f=skipFn;skipFn=null;spSeq++;if(SS)SS.cancel();f()}},true);
 function speak(t){if(!SS||paused)return;utter(t)}
-let last="";function tell(t){last=t;idleAt=Date.now();speak(t)}
+let last="",pendT="";function tell(t){if(!opt("voice")){last="";pendT=t;return}pendT="";last=t;idleAt=Date.now();speak(t)}
+const hint=t=>{if(opt("voice"))speak(t)};
+/* 同一種玩法：第一次說完整的說明，之後只說短的 */
+const heard=new Set();const BR=(k,full,short)=>{if(heard.has(k))return short;heard.add(k);return full};
+const TRIM=["跟著手指，一個一個點","先數一數，","先點上面，再點下面","空格是多少？選數字","先數藍色，一個一個點","點點看","請點點看"];
+const shortSay=t=>{TRIM.forEach(x=>{t=t.split(x).join("")});return t};
 let idleAt=Date.now(),sayBusy=false;
-async function say(t,g){while(paused){await raw(150);chk(g)}sayBusy=true;idleAt=Date.now();
+async function say(t,g,force){if(!force&&!opt("voice")){await sleep(350,g);return}
+  while(paused){await raw(150);chk(g)}sayBusy=true;idleAt=Date.now();
   await new Promise(r=>{sayAt=Date.now();skipFn=utter(t,r)});
   sayBusy=false;idleAt=Date.now();chk(g);while(paused){await raw(150);chk(g)}}
 /* 小朋友停住不動 12 秒，就再說一次現在要做什麼 */
 document.addEventListener("pointerdown",()=>{idleAt=Date.now()},true);
 setInterval(()=>{if(paused||sayBusy||!last||Date.now()-idleAt<12000)return;if(SS&&SS.speaking)return;idleAt=Date.now();speak(last)},1000);
-const MEAN={"數一數":"用手指一個一個點著數","畫掉":"把題目中超過指定數字的部分畫線或打叉","補上去":"不夠的，畫圈圈補上去",
+const MEAN={"數一數":"用手指，一個一個點，一個一個數","描出":"把積木放在紙上，把邊畫下來","形狀":"東西的樣子，像圓形、三角形、正方形、長方形",
+ "畫掉":"把題目中超過指定數字的部分畫線或打叉","補上去":"不夠的，畫圈圈補上去",
  "比較多":"選多的那一邊","比較少":"選少的那一邊","一樣多":"數起來一樣","連起來":"畫一條線接起來","按照順序":"一個接著一個數下去",
  "比較長":"選長的","比較短":"選短的","比較高":"選高的","比較薄":"選薄的",
  "彎彎的面":"圓圓的，會滾動","平平的面":"平平的，可以站好","合起來":"兩堆放在一起，全部數一數","分成":"一堆分成兩堆",
  "前面":"靠近前的那一邊","後面":"靠近後的那一邊"};
 function showSpd(){$("spd").textContent="速度："+RN[ri]}
 let AC=null;
-function chime(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();[660,880].forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();
+/* ---------- 鼓勵音效與動畫（每次隨機，不連續重複） ---------- */
+function ac(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();return AC}catch(e){return null}}
+function noiseBuf(a){if(!a._nb){const b=a.createBuffer(1,a.sampleRate*2,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;a._nb=b}return a._nb}
+function nz(a,t,dur,freq,q,vol,type){const s=a.createBufferSource();s.buffer=noiseBuf(a);s.loop=true;const f=a.createBiquadFilter();f.type=type||"bandpass";f.frequency.value=freq;f.Q.value=q||1;
+  const g=a.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.005);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);s.connect(f);f.connect(g);g.connect(a.destination);s.start(t,Math.random());s.stop(t+dur+0.02)}
+function tone(a,t,f,dur,vol,type,f2){const o=a.createOscillator(),g=a.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+0.02)}
+const SFX={
+ clap(a,t){for(let i=0;i<80;i++)nz(a,t+Math.random()*1.5*(0.25+0.75*Math.random()),0.035,900+Math.random()*1800,1.2,0.22)},
+ firework(a,t){for(let k=0;k<3;k++){const s=t+k*0.5;tone(a,s,500,0.35,0.06,"sine",1800);nz(a,s+0.36,0.5,180,0.7,0.5,"lowpass");for(let i=0;i<14;i++)nz(a,s+0.42+Math.random()*0.45,0.02,4000+Math.random()*3000,2,0.12,"highpass")}},
+ fanfare(a,t){[523,659,784,1047].forEach((f,i)=>tone(a,t+i*0.14,f,i===3?0.7:0.16,0.16,"triangle"));tone(a,t+0.42,784,0.7,0.08,"triangle")},
+ sparkle(a,t){[1047,1319,1568,2093,1568,2093,2637,3136].forEach((f,i)=>tone(a,t+i*0.09,f,0.22,0.12,"sine"))},
+ tada(a,t){[392,494,587].forEach(f=>tone(a,t,f,0.18,0.07,"sawtooth"));[523,659,784,1047].forEach(f=>tone(a,t+0.22,f,0.9,0.06,"sawtooth"));nz(a,t+0.22,0.9,6000,0.8,0.1,"highpass")}};
+const FXC=["#ff6b6b","#ffd43b","#51cf66","#339af0","#cc5de8","#ff922b"];
+function fxLayer(){let d=$("fx");if(!d){d=el("div");d.id="fx";document.body.appendChild(d)}return d}
+const VFX={
+ confetti(L){for(let i=0;i<44;i++){const x=el("i","cf");x.style.cssText="left:"+R(0,100)+"%;background:"+pick(FXC)+";animation-delay:"+(Math.random()*0.5)+"s;animation-duration:"+(1.2+Math.random())+"s";L.appendChild(x)}},
+ burst(L){for(let k=0;k<3;k++){const x=R(18,82),y=R(15,50),c=pick(FXC);for(let i=0;i<16;i++){const b=el("i","bz"),a=i/16*Math.PI*2,r=R(60,130);
+   b.style.cssText="left:"+x+"%;top:"+y+"%;background:"+c+";animation-delay:"+(k*0.5+0.36)+"s;--dx:"+(Math.cos(a)*r)+"px;--dy:"+(Math.sin(a)*r)+"px";L.appendChild(b)}}},
+ rain(L,e){for(let i=0;i<16;i++){const x=el("i","em",e);x.style.cssText="left:"+R(2,90)+"%;animation-delay:"+(Math.random()*0.6)+"s;font-size:"+R(26,48)+"px";L.appendChild(x)}},
+ rise(L,e){for(let i=0;i<14;i++){const x=el("i","up",e);x.style.cssText="left:"+R(2,90)+"%;animation-delay:"+(Math.random()*0.6)+"s;font-size:"+R(30,54)+"px";L.appendChild(x)}}};
+const CHEERS=[["clap",L=>VFX.rain(L,"👏")],["firework",L=>VFX.burst(L)],["fanfare",L=>VFX.confetti(L)],["sparkle",L=>VFX.rain(L,"⭐")],["tada",L=>VFX.rise(L,"🎈")]];
+let lastCheer=-1;window.__cheers=[];
+function cheer(big){let i;do{i=R(0,CHEERS.length-1)}while(i===lastCheer);lastCheer=i;const L=fxLayer();L.innerHTML="";const a=ac();
+  const run=j=>{window.__cheers.push(CHEERS[j][0]);if(a)try{SFX[CHEERS[j][0]](a,a.currentTime+0.02)}catch(e){}CHEERS[j][1](L)};run(i);
+  if(big){let j;do{j=R(0,CHEERS.length-1)}while(j===i);setTimeout(()=>run(j),FAST?1:700)}
+  const ms=big?2600:1500;setTimeout(()=>{L.innerHTML=""},ms+1000);return raw(FAST?5:ms)}
+const CHIMES=[[660,880],[523,784],[784,988,1175],[880,1109,1319]];
+function chime(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();pick(CHIMES).forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();
   o.frequency.value=f;o.type="sine";g.gain.setValueAtTime(.18,AC.currentTime+i*.13);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+i*.13+.25);
   o.connect(g);g.connect(AC.destination);o.start(AC.currentTime+i*.13);o.stop(AC.currentTime+i*.13+.26)})}catch(e){}}
 
@@ -287,15 +347,15 @@ async function trace(K,g){
   pad.style.width=pad.style.height=(S+8)+"px";
   let first=true;
   for(const i of K.tr){cells[i].classList.add("cur");
-    tell(first?"我們來學，"+K.kw+"。"+K.kw+"，就是，"+MEAN[K.kw]+"。現在描描看。用手指，把灰色的字，塗滿":"很好！再描下一個字。用手指，把灰色的字，塗滿");last="用手指，把灰色的字，塗滿";first=false;
+    tell(first?K.kw+"，就是，"+MEAN[K.kw]+"。"+BR("trace","現在描描看。用手指，把灰色的字，塗滿","描描看"):BR("trace2","很好！再描下一個字","下一個字"));if(opt("voice"))last="用手指，把灰色的字，塗滿";first=false;
     const snd=SND[chars[i]]||chars[i];let rn=0;
     const iv=setInterval(()=>{if(g!==gen||rn>=6){clearInterval(iv);return}if(paused||(SS&&(SS.speaking||SS.pending)))return;rn++;utter(snd,null,0.6)},2600);
     try{await traceChar(pad,chars[i],S)}finally{clearInterval(iv)}chk(g);cells[i].classList.remove("cur","todo");cells[i].classList.add("ok")}
   pad.onpointerdown=pad.onpointermove=null;
-  last="";await say("描好了，你好棒！"+K.kw+"，就是，"+MEAN[K.kw],g);await sleep(400,g)}
+  last="";await cheer(0);chk(g);await say(BR("traceEnd","描好了！"+K.kw+"，就是，"+MEAN[K.kw],"描好了！"+K.kw),g);await sleep(400,g)}
 
 /* ---------- 摩天輪拼字 ---------- */
-const CONF={"數":"樓敷","一":"二十","畫":"書晝","掉":"桌排","補":"捕輔","上":"下土","去":"丟云","比":"北此","較":"輪校","多":"夕名","少":"小沙","樣":"橡漾","連":"運蓮","起":"趕超","來":"末米",
+const CONF={"描":"瞄貓","出":"山击","形":"刑彬","狀":"壯妝","數":"樓敷","一":"二十","畫":"書晝","掉":"桌排","補":"捕輔","上":"下土","去":"丟云","比":"北此","較":"輪校","多":"夕名","少":"小沙","樣":"橡漾","連":"運蓮","起":"趕超","來":"末米",
  "按":"接安","照":"昭熙","順":"須項","序":"字庫","長":"表辰","短":"矩豆","高":"亮商","薄":"簿博","彎":"變灣","的":"白約","面":"而回","平":"半乎","合":"今含","分":"公兮","成":"戊城","前":"煎剪","後":"復從"};
 const CABC=["#ffe3e3","#fff3bf","#d3f9d8","#d0ebff","#e5dbff","#ffe8cc"];
 async function wheelGame(K,g){
@@ -316,14 +376,14 @@ async function wheelGame(K,g){
     cabs.forEach((b,i)=>{const a=ang+i*Math.PI*2/cabs.length;b.style.left=(D/2+rad*Math.cos(a)-gs/2)+"px";b.style.top=(D/2+rad*Math.sin(a)-gs/2)+"px"});
     requestAnimationFrame(frame)};frame(t0);
   const mark=()=>cabs.forEach(b=>{b.dataset.ok=""});
-  tell("摩天輪拼字。看上面黃色的字，在摩天輪上，一個一個點出來。拼出，"+K.kw);
+  tell(BR("wheel","摩天輪拼字。看上面黃色的字，在摩天輪上，一個一個點出來。拼出，"+K.kw,"拼出，"+K.kw));
   cells[0].classList.add("cur");
   await new Promise(res=>{const setOk=()=>cabs.forEach(b=>{b.dataset.ok=b.dataset.c===chars[idx]?"1":""});setOk();
     cabs.forEach(b=>{b.onclick=()=>{if(busy()||idx>=chars.length)return;
       if(b.dataset.c===chars[idx]){cells[idx].classList.remove("cur","todo");cells[idx].classList.add("ok");b.classList.add("hit");setTimeout(()=>b.classList.remove("hit"),600);chime();idx++;lock(500);
-        if(idx===chars.length){mark();res()}else{cells[idx].classList.add("cur");setOk();tell("很好！再點下一個黃色的字")}}
-      else{b.classList.add("dim");setTimeout(()=>b.classList.remove("dim"),1500);lock(1200);speak("再試試看")}}})});
-  chk(g);last="";await say("拼好了，你好棒！"+K.kw,g);await sleep(300,g)}
+        if(idx===chars.length){mark();res()}else{cells[idx].classList.add("cur");setOk();tell(BR("wheel2","很好！再點下一個黃色的字","下一個字"))}}
+      else{b.classList.add("dim");setTimeout(()=>b.classList.remove("dim"),1500);lock(1200);hint("再試試看")}}})});
+  chk(g);last="";await cheer(0);chk(g);await say("拼好了！"+K.kw,g);await sleep(300,g)}
 
 /* ---------- 夾娃娃機：夾注音 ---------- */
 const CZ={"ㄣ":"ㄥ","ㄥ":"ㄣ","ㄛ":"ㄜ","ㄜ":"ㄛ","ㄢ":"ㄤ","ㄤ":"ㄢ","ㄓ":"ㄗ","ㄗ":"ㄓ","ㄔ":"ㄘ","ㄘ":"ㄔ","ㄕ":"ㄙ","ㄙ":"ㄕ","ㄌ":"ㄋ","ㄋ":"ㄌ","ㄈ":"ㄏ","ㄏ":"ㄈ","ㄟ":"ㄝ","ㄝ":"ㄟ",
@@ -347,20 +407,20 @@ async function clawGame(K,g){const chars=[...K.kw];let firstChar=true;
     while(seq.length+pool.length<6){const y=pick(ALLZ);if(!seq.includes(y)&&!pool.includes(y))pool.push(y)}
     const balls=shuf(seq.concat(shuf(pool).slice(0,6-seq.length))).map(x=>{const b=el("button","ball",x);b.dataset.s=x;pit.appendChild(b);return b});
     const rope=claw.querySelector(".rope"),held=claw.querySelector(".head span");
-    tell(firstChar?(opt("hint")?"夾注音。看灰色的注音，把一樣的注音球，一個一個夾起來":"夾注音。這個字的注音是什麼？把注音球，一個一個夾起來"):"很好！再夾下一個字的注音");firstChar=false;
+    tell(firstChar?BR("claw",opt("hint")?"夾注音。看灰色的注音，把一樣的注音球，一個一個夾起來":"夾注音。這個字的注音是什麼？把注音球，一個一個夾起來","夾注音"):BR("claw2","很好！再夾下一個字的注音","下一個字"));firstChar=false;
     for(let k=0;k<seq.length;k++){slots[k].classList.add("cur");
       const b=await new Promise(res=>{balls.forEach(x=>{x.dataset.ok=(x.dataset.s===seq[k]&&!x.classList.contains("gone"))?"1":"";
         x.onclick=()=>{if(busy()||x.classList.contains("gone"))return;
           if(x.dataset.s===seq[k]){balls.forEach(y=>{y.onclick=null;y.dataset.ok=""});res(x)}
-          else{x.classList.add("dim");setTimeout(()=>x.classList.remove("dim"),1500);lock(1200);speak("再試試看")}}})});
+          else{x.classList.add("dim");setTimeout(()=>x.classList.remove("dim"),1500);lock(1200);hint("再試試看")}}})});
       chk(g);
       claw.style.left=(b.offsetLeft+b.offsetWidth/2)+"px";await sleep(550,g);
       rope.style.height=Math.max(20,Mh-pit.offsetHeight-44)+"px";await sleep(450,g);
       b.classList.add("gone");held.textContent=seq[k];
       rope.style.height="14px";await sleep(450,g);
       held.textContent="";slots[k].classList.remove("cur");slots[k].classList.add("ok");chime()}
-    await sleep(500,g);last="";await say(SND[c]||c,g);await sleep(500,g);await say(SND[c]||c,g);await sleep(400,g)}
-  last="";await say("夾好了，你好棒！"+K.kw,g);await sleep(300,g)}
+    await sleep(500,g);last="";await say(SND[c]||c,g,true);await sleep(500,g);await say(SND[c]||c,g,true);await sleep(400,g)}
+  last="";await cheer(0);chk(g);await say("夾好了！"+K.kw,g);await sleep(300,g)}
 
 /* ---------- 共用玩法 ---------- */
 function gcount(items,start,mark){start=start||0;mark=mark||"n";return new Promise(res=>{let k=0;
@@ -374,10 +434,10 @@ function choices(box,opts,ok,cls){return new Promise(res=>{let first=true,done=f
   opts.forEach((h,i)=>{const b=el("button","opt",h);if(i===ok)b.dataset.ok=1;
     b.onclick=()=>{if(busy()||done||b.disabled)return;
       if(i===ok){done=true;b.classList.add("right");res(first)}
-      else{first=false;b.disabled=true;b.classList.add("wrong");lock(1200);speak("再試試看")}};
+      else{first=false;b.disabled=true;b.classList.add("wrong");lock(1200);hint("再試試看")}};
     w.appendChild(b)});
   box.appendChild(w)})}
-function pickNum(box,ans,lo,ask){box.appendChild(el("div","tip",Z("選數字")));tell((ask||"一共是多少？")+"選數字");const o=numOpts(ans,lo==null?1:lo,10);return choices(box,o.map(String),o.indexOf(ans))}
+function pickNum(box,ans,lo,ask){box.appendChild(el("div","tip",Z("選數字")));tell((ask||"一共是多少？")+BR("pick","選數字",""));const o=numOpts(ans,lo==null?1:lo,10);return choices(box,o.map(String),o.indexOf(ans))}
 const TIPC="跟著手指，一個一個點";
 
 function connect(box,tops,bots){return new Promise(res=>{let first=true,sel=null,left=tops.length;const pairs=[];
@@ -394,7 +454,7 @@ function connect(box,tops,bots){return new Promise(res=>{let first=true,sel=null
   bots.forEach(t=>{const b=el("button","card",t.html);b.dataset.key=t.key;
     b.onclick=()=>{if(busy()||b.classList.contains("done")||!sel)return;
       if(sel.dataset.key===b.dataset.key){sel.classList.remove("sel");sel.classList.add("done");b.classList.add("done");pairs.push([sel,b]);sel=null;draw();lock(300);if(--left===0)res(first)}
-      else{first=false;sel.classList.remove("sel");sel=null;lock(1200);speak("再試試看")}};r2.appendChild(b)})})}
+      else{first=false;sel.classList.remove("sel");sel=null;lock(1200);hint("再試試看")}};r2.appendChild(b)})})}
 
 async function sequence(box,seq,blanks){let first=true;
   const row=el("div","seq");const cells=seq.map((v,i)=>{const b=blanks.includes(i);const c=el("span","cell"+(b?" blank":""),b?"":v);row.appendChild(c);return c});
@@ -406,6 +466,7 @@ async function sequence(box,seq,blanks){let first=true;
 
 /* ---------- 題目 ---------- */
 const FRUIT=["🍎","🍊","🍓","🍋","🍇","🐟","🌼","⭐","🎈","🍪"];
+const NAME={"🍎":"蘋果","🍊":"橘子","🍓":"草莓","🍋":"檸檬","🍇":"葡萄","🐟":"魚","🌼":"花","⭐":"星星","🎈":"氣球","🍪":"餅乾"};
 const ANI=[["🐯","老虎"],["🐰","兔子"],["🐲","龍"],["🐍","蛇"],["🐴","馬"],["🐵","猴子"],["🐑","羊"],["🐔","雞"],["🐶","狗"],["🐷","豬"]];
 const BALL=["⚽","🏀","🎾","🍊"],BOX=["📦","🎲","🧊","🎁"];
 const circ=n=>rep('<span class="circ"></span>',n);
@@ -415,10 +476,10 @@ const book=h=>'<span class="book" style="height:'+h+'%"></span>';
 
 function qCount(kw,v){const n=R(3,8),e=pick(FRUIT);
   if(v===1){const m=R(2,4),o=pick(FRUIT.filter(x=>x!==e)),mix=shuf(Array(n).fill(e).concat(Array(m).fill(o)));
-    return{kw:"數一數",chunks:["數一數","，",e+"有幾個","？"],done:"數一數，一共有"+n+"個",say:"數一數，這一種有幾個？跟著手指，一個一個點",play:async b=>{
+    return{kw:"數一數",kind:"mix",chunks:["數一數","，",e+"有幾個","？"],done:"數一數，一共有"+n+"個",say:"數一數，"+NAME[e]+"有幾個？跟著手指，一個一個點",play:async b=>{
       b.appendChild(el("div","need",Z("只數 ")+e));b.appendChild(el("div","tip",Z(TIPC)));
       const w=el("div","cnt");b.appendChild(w);const a=[];mix.forEach(x=>{const t=el("button","it",x);w.appendChild(t);if(x===e)a.push(t)});
-      await gcount(a);return pickNum(b,n,1,"一共有幾個？")}}}
+      await gcount(a);return pickNum(b,n,1,NAME[e]+"有幾個？")}}}
   return{kw:"數一數",chunks:["數一數","，","有幾個","？"],done:"數一數，一共有"+n+"個",say:"數一數，有幾個？跟著手指，一個一個點",play:async b=>{
     b.appendChild(el("div","tip",Z(TIPC)));const {a}=mkItems(b,e,n);await gcount(a);return pickNum(b,n,1,"一共有幾個？")}}}
 function qCross(){const t=R(2,5),h=t+R(1,3),e=pick(FRUIT);
@@ -436,7 +497,7 @@ function qAdd(){const h=R(1,5),t=h+R(1,4),e=pick(FRUIT);
     await gcount(a);
     need.innerHTML=Z("現在有 ")+"<b>"+h+"</b>"+Z(" 個，如果要 ")+"<b>"+t+"</b>"+Z(" 個");
     tip.innerHTML=Z("要畫幾個圈圈？點一下畫圈圈");sl.forEach(x=>{x.style.visibility=""});
-    tell("現在有"+h+"個。如果要"+t+"個，要畫幾個圈圈？點一下，畫圈圈");await gcount(sl,h,"o");return true}}}
+    tell("現在有"+h+"個。如果要"+t+"個，要畫幾個圈圈？"+BR("add2","點一下，畫圈圈",""));await gcount(sl,h,"o");return true}}}
 function qMore(kw){let a=R(2,6),c;do{c=R(2,6)}while(c===a);const es=shuf(FRUIT),ns=[a,c];
   const ok=(kw==="比較多")===(a>c)?0:1;
   return{kw,chunks:["哪一邊",kw,"？"],done:kw==="比較多"?Math.max(a,c)+"個比"+Math.min(a,c)+"個多":Math.min(a,c)+"個比"+Math.max(a,c)+"個少",say:"哪一邊"+kw+"？先數一數，跟著手指，一個一個點",play:async b=>{
@@ -446,10 +507,10 @@ function qMore(kw){let a=R(2,6),c;do{c=R(2,6)}while(c===a);const es=shuf(FRUIT),
     for(const o of rows){o.num.textContent=await gcount(o.its)}
     tip.innerHTML=Z("點"+kw+"的那一邊");tell("哪一邊"+kw+"？點點看");
     return new Promise(res=>{let first=true,done=false;rows.forEach((o,i)=>{o.r.classList.add("pk");if(i===ok)o.r.dataset.ok=1;
-      o.r.onclick=()=>{if(busy()||done)return;if(i===ok){done=true;o.r.classList.add("right");res(first)}else{first=false;o.r.classList.add("wrong");lock(1200);speak("再試試看")}}})})}}}
+      o.r.onclick=()=>{if(busy()||done)return;if(i===ok){done=true;o.r.classList.add("right");res(first)}else{first=false;o.r.classList.add("wrong");lock(1200);hint("再試試看")}}})})}}}
 function qSame(kw,v){const ns=shuf([2,3,4,5,6,7,8,9]).slice(0,3),es=shuf(FRUIT);
   if(kw==="一樣多"&&v===1){const n=R(2,7);let m;do{m=n+pick([-2,-1,1,2])}while(m<1);const o=shuf([n,m]);
-    return{kw,chunks:["哪一個","和上面","一樣多","？"],done:"上面"+n+"個，下面也是"+n+"個，一樣多",say:"哪一個和上面一樣多？點點看",play:b=>{
+    return{kw,kind:"pick",chunks:["哪一個","和上面","一樣多","？"],done:"上面"+n+"個，下面也是"+n+"個，一樣多",say:"哪一個和上面一樣多？點點看",play:b=>{
       b.appendChild(el("div","grp",'<div class="g">'+rep('<span class="it">'+es[0]+"</span>",n)+"</div>"));
       return choices(b,o.map(k=>circ(k)),o.indexOf(n),"rows")}}}
   return{kw,chunks:["把","一樣多","的","連起來","。"],done:"一樣多的，都連起來了",say:"把一樣多的連起來。先點上面，再點下面",play:b=>{b.appendChild(el("div","tip",Z("點上面，再點下面，連起來")));
@@ -473,14 +534,14 @@ function qPart(kw){
       const [A,B]=grp(b,[{n:a,e:"🔵",btn:1},{n:c,e:"🟠",btn:1,sep:"＋"}]);
       const lab=(its,n)=>its[0].parentNode.appendChild(el("span","gnum",n));
       await gcount(A);lab(A,a);
-      tip.innerHTML=Z("再數橘色");tell("再數橘色，一個一個點");await gcount(B);lab(B,c);
+      tip.innerHTML=Z("再數橘色");tell(BR("mergeB","再數橘色，一個一個點","再數橘色"));await gcount(B);lab(B,c);
       await raw(FAST?1:600);A[0].parentNode.parentNode.classList.add("merged");await raw(FAST?1:1000);A.concat(B).forEach(x=>{x.classList.remove("n");const d=x.querySelector(".bd");if(d)d.remove()});
-      tip.innerHTML=Z("藍色和橘色合起來，全部一個一個點");tell("藍色"+a+"個，和橘色"+c+"個，合起來。全部再數一次，一個一個點");
+      tip.innerHTML=Z("藍色和橘色合起來，全部一個一個點");tell("藍色"+a+"個，和橘色"+c+"個，合起來。"+BR("mergeC","全部再數一次，一個一個點","全部再數一次"));
       await gcount(A.concat(B));return pickNum(b,a+c,1,"藍色和橘色，合起來是多少？")}}}
   const t=R(4,9),a=R(1,t-1);
   return{kw,own:true,chunks:[t+"可以","分成",a+"和","多少","？"],done:t+"可以分成"+a+"和"+(t-a),say:"橘色有幾個？請點點看",play:async(b,intro)=>{
     const g0=gen,gone=()=>gen!==g0,hang=()=>new Promise(()=>{});
-    const sp=x=>new Promise(r=>{last=x;sayAt=Date.now();skipFn=utter(x,r)});
+    const sp=x=>opt("voice")?new Promise(r=>{last=x;sayAt=Date.now();skipFn=utter(x,r)}):raw(FAST?1:900);
     const need=el("div","need",Z("全部有 ")+"<b>"+t+"</b>"+Z(" 個"));b.appendChild(need);
     const [A,B]=grp(b,[{n:a,e:"🔵"},{n:t-a,e:"🟠",btn:1,sep:"｜"}]);const G=A[0].parentNode.parentNode;
     G.classList.add("merged");                                   /* 一開始是合在一起的 */
@@ -492,8 +553,37 @@ function qPart(kw){
     A.forEach(x=>x.classList.remove("glow"));
     G.classList.remove("merged");need.innerHTML="<b>"+t+"</b>"+Z(" 個，分成藍色和橘色");   /* 分開 */
     await raw(FAST?1:1000);if(gone())return hang();
-    tip.innerHTML=Z("藍色有 ")+a+Z(" 個，橘色有幾個？請點點看");tell("分開了。藍色有"+a+"個，橘色有幾個？請點點看");
+    tip.innerHTML=Z("藍色有 ")+a+Z(" 個，橘色有幾個？請點點看");tell("分開了。藍色有"+a+"個，橘色有幾個？"+BR("split","請點點看",""));
     await gcount(B);return pickNum(b,t-a,1,"橘色有幾個？")}}}
+/* ---------- 積木可以描出什麼形狀（B卷第3題） ---------- */
+const SHN=["正方形","圓形","三角形","長方形"];
+const SHP={"圓形":'<circle cx="50" cy="40" r="26"/>',"三角形":'<polygon points="50,12 82,66 18,66"/>',"正方形":'<rect x="24" y="14" width="52" height="52"/>',"長方形":'<rect x="12" y="24" width="76" height="32"/>'};
+const BLK={"正方形":'<polygon points="34,30 46,18 74,18 62,30" fill="#a5d8ff"/><polygon points="62,30 74,18 74,46 62,58" fill="#4dabf7"/><rect x="34" y="30" width="28" height="28" fill="#74c0fc"/>',
+ "長方形":'<polygon points="16,38 28,26 88,26 76,38" fill="#b2f2bb"/><polygon points="76,38 88,26 88,46 76,58" fill="#40c057"/><rect x="16" y="38" width="60" height="20" fill="#69db7c"/>',
+ "圓形":'<path d="M32,24 v32 a18,6 0 0 0 36,0 v-32" fill="#ffa8a8"/><ellipse cx="50" cy="24" rx="18" ry="6" fill="#ffc9c9"/>',
+ "三角形":'<polygon points="30,26 66,26 52,14" fill="#eebefa"/><rect x="30" y="26" width="36" height="34" fill="#da77f2"/>'};
+const shapeSvg=(n,c)=>'<svg class="shp '+(c||"")+'" viewBox="0 0 100 80"><g fill="#ffe066" stroke="#3a2a14" stroke-width="3" stroke-linejoin="round">'+SHP[n]+"</g></svg>";
+const blockSvg=n=>'<svg class="shp" viewBox="0 0 100 72"><g stroke="#3a2a14" stroke-width="2.5" stroke-linejoin="round">'+BLK[n]+"</g></svg>";
+function qShape(kw,v){const n=pick(SHN);
+  if(kw==="描出"&&v!==1)return{kw,kind:"stamp",chunks:["這個積木","可以","描出","什麼","形狀","？"],done:"描出來的是"+n,say:"這個積木，可以描出什麼形狀？點一下積木，描描看",play:async b=>{
+    const tip=el("div","tip",Z("點一下積木，描描看"));b.appendChild(tip);
+    const w=el("div","stamp"),blk=el("button","blk",blockSvg(n)),paper=el("div","paper",shapeSvg(n,"ghost"));
+    w.appendChild(blk);w.appendChild(el("span","arw","➡"));w.appendChild(paper);b.appendChild(w);
+    await new Promise(res=>{blk.classList.add("nx");blk.onclick=()=>{if(busy())return;blk.classList.remove("nx");blk.onclick=null;res()}});
+    paper.querySelector("svg").classList.remove("ghost");chime();
+    tip.innerHTML=Z("描出來了，是哪一個形狀？");tell("描出來了。是哪一個形狀？"+BR("stamp2","點點看",""));
+    const o=shuf(SHN.filter(x=>x!==n)).slice(0,2).concat([n]),oo=shuf(o);
+    return choices(b,oo.map(x=>shapeSvg(x)),oo.indexOf(n),"shps")}};
+  if(kw==="描出")return{kw,kind:"conn",chunks:["這些積木","可以","描出","什麼","形狀","？"],done:"積木和形狀，都連起來了",say:"這些積木，可以描出什麼形狀？連連看。先點上面，再點下面",play:b=>{
+    b.appendChild(el("div","tip",Z("點上面，再點下面，連起來")));
+    return connect(b,shuf(SHN).map(x=>({key:x,html:blockSvg(x)})),shuf(SHN).map(x=>({key:x,html:shapeSvg(x)})))}};
+  if(v!==1)return{kw,kind:"name",chunks:["這是","什麼","形狀","？"],done:"這是"+n,say:"這是什麼形狀？點點看",play:b=>{
+    b.appendChild(el("div","paper",shapeSvg(n)));
+    const o=shuf(SHN);return choices(b,o.map(x=>Z(x)),o.indexOf(n),"names")}};
+  return{kw,kind:"conn",chunks:["這些是","什麼","形狀","？"],done:"形狀都連起來了",say:"這些是什麼形狀？連連看。先點上面，再點下面",play:b=>{
+    b.appendChild(el("div","tip",Z("點上面，再點下面，連起來")));
+    return connect(b,shuf(SHN).map(x=>({key:x,html:shapeSvg(x)})),shuf(SHN).map(x=>({key:x,html:'<span class="nm">'+Z(x)+"</span>"})))}}}
+
 function qQueue(kw,v){const n=7,st=R(0,ANI.length-n),q=ANI.slice(st,st+n),front=kw==="前面";
   const ord=v===0?true:v===1?false:Math.random()<.5,i=ord?R(1,5):(front?R(2,6):R(0,4)),X=q[i];
   return{kw,done:ord?"從"+kw+"開始數，"+X[1]+"排在第"+(front?i+1:n-i)+"個":"排在"+X[1]+kw+"的，有"+(front?i:n-1-i)+"隻",say:(ord?"從"+kw+"開始數，"+X[1]+"排在第幾個？":"排在"+X[1]+kw+"的，有幾隻？")+"跟著手指，一個一個點",chunks:ord?["從",kw,"開始數","，",X[0]+"排在","第幾個","？"]:["排在"+X[0],kw,"的","有幾隻","？"],play:async b=>{
@@ -513,7 +603,8 @@ const LV=[
  {name:"比長短",ks:[{kw:"比較長",tr:[2]},{kw:"比較短",tr:[2]},{kw:"比較高",tr:[2]},{kw:"比較薄",tr:[2]}],gen:qLen,per:2},
  {name:"彎彎的面、平平的面",ks:[{kw:"彎彎的面",tr:[0,3]},{kw:"平平的面",tr:[0]}],gen:qFace,per:2},
  {name:"合起來、分成",ks:[{kw:"合起來",tr:[0]},{kw:"分成",tr:[0,1]}],gen:qPart,per:2},
- {name:"前面、後面",ks:[{kw:"前面",tr:[0]},{kw:"後面",tr:[0]}],gen:qQueue,per:2}];
+ {name:"前面、後面",ks:[{kw:"前面",tr:[0]},{kw:"後面",tr:[0]}],gen:qQueue,per:2},
+ {name:"積木描形狀",ks:[{kw:"描出",tr:[0,1]},{kw:"形狀",tr:[0,1]}],gen:qShape,per:2}];
 
 /* 每個關鍵字只做一題，不重複 */
 LV.forEach(L=>{L.per=1});
@@ -526,10 +617,10 @@ async function runQ(q,g,intro){
   stage.innerHTML="";
   stage.appendChild(el("div","sent",q.chunks.map(c=>c===q.kw?'<span class="hl">'+Z(c)+"</span>":"<span>"+Z(c)+"</span>").join("")));
   const box=el("div","play");stage.appendChild(box);
-  if(!q.own){tell((intro||"")+q.say);last=q.say}
+  if(!q.own){const k="q|"+q.kw+"|"+(q.kind||q.chunks.length);tell((intro||"")+BR(k,q.say,shortSay(q.say)));if(opt("voice"))last=q.say}
   const first=await q.play(box,intro);chk(g);window.onresize=null;
   if(first){save.stars++;store();showStars()}
-  chime();last="";await say((first?"答對了，得到一顆星星！":"對了！")+(q.done||""),g);await sleep(400,g)}
+  chime();last="";await say((first?BR("star","答對了，得到一顆星星！","答對了！"):"對了！")+(q.done||""),g);await sleep(400,g)}
 
 async function runLevel(i,g){const L=LV[i];let n=0;const tot=L.ks.length*2;
   const ask=async(K,v,intro)=>{n++;$("prog").textContent="第 "+(i+1)+" 關："+L.name+"　第 "+n+" 題／共 "+tot+" 題";await runQ(L.gen(K.kw,v),g,intro)};
@@ -540,10 +631,10 @@ async function runLevel(i,g){const L=LV[i];let n=0;const tot=L.ks.length*2;
     if(opt("claw")){$("prog").textContent="第 "+(i+1)+" 關："+L.name;await clawGame(K,g)}}
   save.lv=Math.max(save.lv,i+1);save.cur=(i+1)%LV.length;store();
   stage.innerHTML="";stage.appendChild(el("div","yay",Z("過關了！")));
-  stage.appendChild(el("div","mean",Z("你有 ")+save.stars+Z(" 顆星星")));chime();await say("過關了，你好棒！你有"+save.stars+"顆星星",g);await sleep(600,g)}
+  stage.appendChild(el("div","mean",Z("你有 ")+save.stars+Z(" 顆星星")));await cheer(1);chk(g);await say("過關了！你有"+save.stars+"顆星星",g);await sleep(600,g)}
 async function playFrom(i,g){for(;i<LV.length;i++){await runLevel(i,g);
     if(opt("one")&&i<LV.length-1){await say("今天玩到這裡。下次再玩下一關",g);home();return}}
-  stage.innerHTML="";stage.appendChild(el("div","yay",Z("全部過關了！")));await say("全部過關了，你好棒！",g);await sleep(1200,g);home()}
+  stage.innerHTML="";stage.appendChild(el("div","yay",Z("全部過關了！")));await cheer(1);chk(g);await say("全部過關了！",g);await sleep(1200,g);home()}
 const inLine=()=>!!window.__line||(/\bLine\//i.test(navigator.userAgent)&&/^https?:$/.test(location.protocol));
 let lineStay=false;
 function lineGate(g){return new Promise(res=>{
@@ -556,27 +647,27 @@ function lineGate(g){return new Promise(res=>{
 async function traceMode(i,g){const L=LV[i];if(inLine()&&!lineStay){$("prog").textContent="描描看";await lineGate(g);chk(g)}$("prog").textContent="描描看　第 "+(i+1)+" 關："+L.name;
   for(const K of L.ks)await trace(K,g);
   save.tcur=(i+1)%LV.length;store();
-  stage.innerHTML="";stage.appendChild(el("div","yay",Z("描好了！")));chime();await say("這一關的字都描好了，你好棒！",g);await sleep(800,g);home()}
+  stage.innerHTML="";stage.appendChild(el("div","yay",Z("描好了！")));await cheer(1);chk(g);await say("這一關的字都描好了！",g);await sleep(800,g);home()}
 async function daily(g){const N=8;let prev=-1;
   for(let n=0;n<N;n++){let i;do{i=R(0,LV.length-1)}while(i===prev);prev=i;
     $("prog").textContent="天天練習　第 "+(n+1)+" 題／共 "+N+" 題";await runQ(LV[i].gen(pick(LV[i].ks).kw),g)}
   stage.innerHTML="";stage.appendChild(el("div","yay",Z("練習好了！")));stage.appendChild(el("div","mean",Z("你有 ")+save.stars+Z(" 顆星星")));
-  await say("練習好了，你好棒！你有"+save.stars+"顆星星",g);await sleep(1000,g);home()}
+  await cheer(1);chk(g);await say("練習好了！你有"+save.stars+"顆星星",g);await sleep(1000,g);home()}
 function start(fn){gen++;const g=gen;window.onresize=null;fn(g).catch(e=>{if(e!=="abort")console.error(e)})}
 
-function home(){gen++;if(SS)SS.cancel();last="";$("prog").textContent="";
+function home(){gen++;if(SS)SS.cancel();last="";pendT="";$("prog").textContent="";
   const cur=(save.cur||0)%LV.length;
   stage.innerHTML="";const h=el("div","home play");
   h.appendChild(el("h1","","數學關鍵字描描看"));
-  h.appendChild(el("div","sub","一年級上學期　期中考A卷（第1～5單元）"));
+  h.appendChild(el("div","sub","一年級上學期　期中考（第1～5單元）"));
   const b1=el("button","bigbtn","開始玩（第 "+(cur+1)+" 關）");b1.id="go";b1.onclick=()=>start(g=>playFrom(cur,g));h.appendChild(b1);
   const tc=(save.tcur||0)%LV.length;
   const b3=el("button","bigbtn b3","描描看（第 "+(tc+1)+" 關的字）");b3.id="trace";b3.onclick=()=>start(g=>traceMode(tc,g));h.appendChild(b3);
   const b2=el("button","bigbtn b2","天天練習（8 題）");b2.id="daily";b2.onclick=()=>start(daily);h.appendChild(b2);
   h.appendChild(el("div","sub","老師設定（點一下切換）"));
-  const sg=el("div","setg");[["wheel","摩天輪拼字","要玩","不玩"],["claw","夾注音","要玩","不玩"],["hint","注音提示","有","沒有"],["one","一次玩","一關","全部"]].forEach(([k,n,a,b])=>{
+  const sg=el("div","setg");[["wheel","摩天輪拼字","要玩","不玩"],["claw","夾注音","要玩","不玩"],["hint","注音提示","有","沒有"],["one","一次玩","一關","全部"],["voice","語音說明","要","不要"]].forEach(([k,n,a,b])=>{
     const x=el("button","");const show=()=>{x.textContent=n+"："+(opt(k)?a:b);x.className=opt(k)?"":"off"};show();x.dataset.k=k;
-    x.onclick=()=>{save.opt=save.opt||{};save.opt[k]=!opt(k);store();show()};sg.appendChild(x)});
+    x.onclick=()=>{save.opt=save.opt||{};save.opt[k]=!opt(k);store();show();if(k==="voice")showVoice()};sg.appendChild(x)});
   h.appendChild(sg);
   h.appendChild(el("div","sub","老師選關"));
   const gr=el("div","lvg");LV.forEach((L,i)=>{const b=el("button",i<save.lv?"ok":"",(i+1)+"　"+L.name);b.onclick=()=>start(g=>playFrom(i,g));gr.appendChild(b)});
@@ -588,7 +679,11 @@ $("bFast").onclick=()=>{if(ri<RATES.length-1)ri++;showSpd()};
 $("bPause").onclick=()=>{paused=true;if(SS)SS.cancel();$("pause").classList.add("on")};
 $("bResume").onclick=()=>{paused=false;$("pause").classList.remove("on");if(last)speak(last)};
 $("bAgain").onclick=()=>{if(paused||!last)return;if(SS&&SS.speaking)return;speak(last)};
-showStars();showSpd();home();
+function showVoice(){const on=opt("voice");$("bVoice").textContent=on?"不要語音說明":"要語音說明";$("bVoice").className=on?"":"off";
+  const h=document.querySelector('.setg button[data-k="voice"]');if(h){h.textContent="語音說明："+(on?"要":"不要");h.className=on?"":"off"}}
+$("bVoice").onclick=()=>{save.opt=save.opt||{};save.opt.voice=!opt("voice");store();showVoice();
+  if(!opt("voice")){pendT=last||pendT;last="";spSeq++;if(SS)SS.cancel()}else if(pendT&&!document.querySelector("#stage .home"))tell(pendT)};
+showStars();showSpd();home();showVoice();
 </script>
 </body>
 </html>
