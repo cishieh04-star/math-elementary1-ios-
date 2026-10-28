@@ -42,33 +42,44 @@
             list-style-type: none; 
             padding: 0; 
             display: grid; 
-            /* 讓網格自動排列，最小寬度縮小以容納三欄 */
-            grid-template-columns: repeat(3, 1fr); 
+            grid-template-columns: repeat(3, 1fr); /* 一行三格 */
             gap: 8px; 
         }
       
         .game-link { 
             background: #f7ed94; color: #000000; 
-            font-size: 0.85em; /* 在手機上一行三格，字體稍微縮小以防擁擠 */
+            font-size: 0.8em; 
             transition: transform 0.2s;
             height: 100%; 
             margin: 0;
             justify-content: flex-start;
             padding-left: 10px;
+            text-align: left;
         }
         .game-link:hover { transform: scale(1.02); }
 
-        a { text-decoration: none; color: inherit; width: 100%; }
+        a { text-decoration: none; color: inherit; width: 100%; display: block; }
 
-        /* 手機螢幕較小時的微調 */
+        /* 讓內部文字分行呈現 */
+        .unit-line {
+            display: block;
+            font-weight: bold;
+            color: #0b0573; /* 單元名稱稍微加深或突顯 */
+            margin-bottom: 2px;
+        }
+        .title-line {
+            display: block;
+        }
+
+        /* 手機螢幕微調 */
         @media (max-width: 768px) {
             ul { 
-                grid-template-columns: repeat(3, 1fr); /* 強制手機上一行三格 */
+                grid-template-columns: repeat(3, 1fr); 
                 gap: 6px; 
             }
             .game-link { 
-                font-size: 0.75em; /* 手機字體微調 */
-                padding: 8px 6px; 
+                font-size: 0.7em; 
+                padding: 6px 4px; 
             }
         }
     </style>
@@ -122,7 +133,17 @@
         games.forEach((game, index) => {
             const li = document.createElement('li');
             const displayNumber = index + 1;
-            li.innerHTML = `<div class="box game-link"><a href="${game.file}?v=${version}">${displayNumber}. ${game.name}</a></div>`;
+            
+            let displayName = game.name;
+            // 如果名稱裡面包含「：」，自動把它拆成兩行（例如：單元一 ＆ 10以內的數）
+            if (displayName.includes('：')) {
+                const parts = displayName.split('：');
+                displayName = `<span class="unit-line">${displayNumber}. ${parts[0]}：</span><span class="title-line">${parts[1]}</span>`;
+            } else {
+                displayName = `<span class="unit-line">${displayNumber}.</span><span class="title-line">${displayName}</span>`;
+            }
+
+            li.innerHTML = `<div class="box game-link"><a href="${game.file}?v=${version}">${displayName}</a></div>`;
             listElement.appendChild(li);
         });
     </script>
