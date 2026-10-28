@@ -7,16 +7,16 @@
     <style>
         body { 
             font-family: "Helvetica Neue", Arial, sans-serif; 
-            padding: 20px; 
+            padding: 10px; 
             max-width: 1200px; 
             margin: auto; 
             background-color: #615e5e; 
         }
 
         .box {
-            padding: 14px 15px;
-            margin: 10px 0;
-            border-radius: 8px;
+            padding: 10px 8px;
+            margin: 5px 0;
+            border-radius: 6px;
             font-weight: normal;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
             display: flex;
@@ -26,14 +26,14 @@
 
         .header-box { 
             background: #0b0573; color: #ffffff; 
-            font-size: 1.5em; margin-bottom: 20px;
+            font-size: 1.3em; margin-bottom: 15px;
             justify-content: center;
             text-align: center;
         }
         
         .category-box { 
             background: #f1c40f; color: #000000; 
-            font-size: 1.1em; width: fit-content; margin: 10px auto; 
+            font-size: 1em; width: fit-content; margin: 10px auto; 
             justify-content: center;
             text-align: center;
         }
@@ -42,26 +42,34 @@
             list-style-type: none; 
             padding: 0; 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
-            gap: 15px; 
+            /* 讓網格自動排列，最小寬度縮小以容納三欄 */
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
         }
       
         .game-link { 
             background: #f7ed94; color: #000000; 
-            font-size: 1.1em; 
+            font-size: 0.85em; /* 在手機上一行三格，字體稍微縮小以防擁擠 */
             transition: transform 0.2s;
             height: 100%; 
             margin: 0;
             justify-content: flex-start;
-            padding-left: 20px;
+            padding-left: 10px;
         }
         .game-link:hover { transform: scale(1.02); }
 
         a { text-decoration: none; color: inherit; width: 100%; }
 
+        /* 手機螢幕較小時的微調 */
         @media (max-width: 768px) {
-            .game-link { font-size: 0.95em; padding: 12px 15px; }
-            ul { gap: 10px; }
+            ul { 
+                grid-template-columns: repeat(3, 1fr); /* 強制手機上一行三格 */
+                gap: 6px; 
+            }
+            .game-link { 
+                font-size: 0.75em; /* 手機字體微調 */
+                padding: 8px 6px; 
+            }
         }
     </style>
 </head>
