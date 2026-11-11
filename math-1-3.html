@@ -325,6 +325,25 @@ button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulat
 .chain.train.big .nd{min-width:calc(var(--u)*2.6);font-size:calc(var(--u)*1.5)}
 .opt .cop{display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*1.35);white-space:nowrap}.opt .cop .sw{width:1em;height:1em}
 .opts.one .opt.pic svg{max-height:calc(var(--u)*7)}
+/* 名師教室：關鍵字 */
+.tkshow{align-items:flex-start;overflow:auto}
+.tkg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:calc(var(--u)*.4);width:100%}
+.tkc{background:#fff;border:.12em solid #0000;border-radius:.6em;padding:.3em .1em;display:flex;flex-direction:column;align-items:center;gap:.1em;box-shadow:0 .15em 0 #c7b99a;color:#222;min-width:0}
+.tkc b{font-size:calc(var(--u)*1.15);line-height:1.2;white-space:nowrap}
+.tkc small{font-size:calc(var(--u)*.72);font-weight:800;border-radius:99px;padding:0 .5em;color:#fff;white-space:nowrap}
+.tk-a small{background:#1864ab}.tk-s small{background:#c92a2a}.tk-t small{background:#2b8a3e}.tk-p small{background:#6741d9}.tk-o small{background:#a8590b}
+.tk-a{border-color:#a5d8ff}.tk-s{border-color:#ffc9c9}.tk-t{border-color:#b2f2bb}.tk-p{border-color:#d0bfff}.tk-o{border-color:#ffd8a8}
+.tkc.sel{background:#fff3b0;box-shadow:0 0 0 .18em #ffb400}
+.tkex{flex:none;display:flex;align-items:center;gap:calc(var(--u)*.6);background:#fff;border-radius:.7em;padding:.35em .7em;box-shadow:0 .12em 0 #c7b99a;min-height:calc(var(--u)*4.2)}
+.tkpic{flex:none;max-width:48%;font-size:calc(var(--u)*1.6);font-weight:900;color:#333;display:flex;flex-wrap:wrap;align-items:center;gap:.15em;line-height:1.2}
+.tkpic span{display:inline-block;animation:pop .45s both}
+.tktx{flex:1;font-weight:800;font-size:calc(var(--u)*1.1);line-height:1.5;color:#222}
+.tktx mark{background:#ffe066;color:#111;border-radius:.2em;padding:0 .1em}
+@media (max-width:430px){.tkg{grid-template-columns:repeat(3,minmax(0,1fr))}.tkex{flex-direction:column;align-items:flex-start}.tkpic{max-width:100%}}
+#clsTabs{display:flex!important;gap:calc(var(--u)*.3)}
+#clsTabs .btn{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip}
+
+
 /* landscape */
 @media (min-aspect-ratio:13/10){
  :root{--u:min(2.3vw,3.5vh,23px)}
@@ -370,7 +389,7 @@ button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulat
 
  <section class="scr" id="class">
   <div class="bar"><button class="btn" id="clsHome">回首頁</button><span class="sp"></span><button class="btn" id="clsPause">暫停</button><button class="btn vbtn"></button></div>
-  <div class="row2"><div class="seg" id="clsTabs" style="flex:1"><button class="btn sel">慢慢教我</button><button class="btn">排排站</button><button class="btn">比多少</button></div></div>
+  <div class="row2"><div class="seg" id="clsTabs" style="flex:1"><button class="btn sel">慢慢教我</button><button class="btn">排排站</button><button class="btn">比多少</button><button class="btn">關鍵字</button></div></div>
   <div class="row2" style="justify-content:flex-end"><div class="spd"><button class="btn spSlow">唸慢一點</button><button class="btn spFast">唸快一點</button></div></div>
   <div class="stage" id="clsStage"></div>
  </section>
@@ -1802,7 +1821,7 @@ function openClass(){go('class');CLS.scene=0;renderClass();}
 function renderClass(){
   $$('#clsTabs .btn').forEach((b,i)=>b.classList.toggle('sel',i===CLS.scene));
   const st=$('#clsStage');lessonStop();stopSeq();clearLater();
-  if(CLS.scene===0){lessonStart(st,{keys:ALLKEYS,cls:true})}
+  if(CLS.scene===3){clsTkw(st)}else if(CLS.scene===0){lessonStart(st,{keys:ALLKEYS,cls:true})}
   else if(CLS.scene===1)clsCount(st);else clsLine(st);
 }
 function clsCount(st){
@@ -1828,6 +1847,27 @@ function clsLine(st){
   $('#cmGo').onclick=()=>{if(!guard(400))return;draw();const e=exPair(pa(),pb(),(big,sm)=>`${big.name}多出來，${big.name}比較多，${sm.name}比較少。`)(st);
     speakSeq(e.items.map(it=>({t:it.t,gap:it.gap,on:()=>{it.on&&it.on();$('#cmSay').innerHTML=it.txt!=null?it.txt:esc(it.t)}})))};
   draw();speakSeq(['比多少。蘋果和香蕉，按多一個或少一個，再按比一比。']);
+}
+
+const TKW=[{"k": "第幾個", "g": "只有一個", "c": "p", "m": "「第幾個」只指一個，例如第3個，只塗第3個。", "e": "從左邊數，第3個塗顏色。", "p": "⚪ ⚪ 🔴 ⚪"}, {"k": "幾個", "g": "全部都算", "c": "o", "m": "「幾個」是很多個一起算，例如3個，要塗3個。", "e": "從左邊數，塗3個。", "p": "🔴 🔴 🔴 ⚪"}, {"k": "第1名", "g": "最先到終點", "c": "p", "m": "離終點最近、最先到的，就是「第1名」。", "e": "誰跑第1名？", "p": "🏁 🐇 🐢"}, {"k": "從左邊數", "g": "從左邊開始", "c": "p", "m": "「從左邊數」，就從最左邊的那一個開始數1。", "e": "從左邊數，小熊是第幾個？", "p": "1️⃣ ➡️ ➡️"}, {"k": "從右邊數", "g": "從右邊開始", "c": "p", "m": "「從右邊數」，就從最右邊的那一個開始數1。", "e": "從右邊數，第2個是誰？", "p": "⬅️ ⬅️ 1️⃣"}, {"k": "從上面數", "g": "從上面開始", "c": "p", "m": "「從上面數」，就從最上面開始數1，像鞋櫃一格一格往下數。", "e": "鞋櫃從上面數，第2格是誰的鞋？", "p": "⬆️ 1 ⬇️ 2"}, {"k": "前面", "g": "排在他之前", "c": "p", "m": "排隊的時候，比他先到的，排在他的「前面」。", "e": "小美的前面有幾個人？", "p": "🧒 🧒 ➡️ 👧"}, {"k": "後面", "g": "排在他之後", "c": "p", "m": "排隊的時候，比他晚到的，排在他的「後面」。", "e": "小明的後面有幾個人？", "p": "👦 ➡️ 🧒 🧒"}, {"k": "夠不夠", "g": "一個配一個", "c": "t", "m": "「夠不夠」就是一個配一個，全部都配到就夠，有人沒配到就不夠。", "e": "5個小朋友，4頂帽子，夠不夠？", "p": "🎩 🎩 🎩 🎩 ❓"}, {"k": "比較多", "g": "多出來的那邊", "c": "t", "m": "一個配一個，有多出來的那一邊「比較多」。", "e": "雞和鴨，哪一種比較多？", "p": "🐔 🐔 🐔 ＞ 🦆 🦆"}, {"k": "多幾個", "g": "多出來的有幾個", "c": "a", "m": "「多幾個」就是一個配一個以後，數一數多出來的有幾個。", "e": "蘋果比橘子多幾個？", "p": "🍎 🍎 🍎 ➖ 🍊 🍊 ➡️ 1"}, {"k": "少幾個", "g": "差幾個", "c": "s", "m": "「少幾個」就是一個配一個以後，少的那一邊還差幾個。", "e": "杯子比盤子少幾個？", "p": "☕ ☕ ❓ ❓"}];
+/* ---------- 名師教室：關鍵字 ---------- */
+// 每一張卡：k 關鍵字、g 小標籤、c 顏色(a加 s減 t比 p位置 o動手)、m 意思、e 例子、p 圖
+function tkHL(text,k){let h=esc(text);k.split('…').filter(Boolean).forEach(w=>{h=h.split(esc(w)).join(`<mark>${esc(w)}</mark>`)});return h}
+const tkSp=t=>t.replace(/＋/g,'加').replace(/－/g,'減').replace(/＝/g,'等於').replace(/……/g,'').replace(/…/g,'');
+const tkChars=k=>Array.from(k).filter(ch=>/[一-鿿]/.test(ch));
+function clsTkw(st){
+  st.innerHTML=`<div class="say" id="tkSay">點一個關鍵字，聽聽它的意思。</div>
+   <div class="cl-show tkshow"><div class="tkg">${TKW.map((x,i)=>`<button class="tkc tk-${x.c}" data-i="${i}"><b>${esc(x.k)}</b><small>${esc(x.g)}</small></button>`).join('')}</div></div>
+   <div class="tkex" id="tkEx"><div class="tkpic" id="tkPic">👆</div><div class="tktx" id="tkTx">題目裡的關鍵字，會告訴我們要怎麼做。</div></div>`;
+  let cur=-1;
+  const show=(i,sp)=>{const x=TKW[i];cur=i;const b=$$('.tkc',st)[i];
+    $$('.tkc',st).forEach(y=>y.classList.toggle('sel',y===b));
+    $('#tkSay').textContent=x.m;
+    $('#tkPic').innerHTML=x.p.split(' ').map((t,j)=>`<span style="animation-delay:${j*.18}s">${t}</span>`).join('');
+    $('#tkTx').innerHTML='例：'+tkHL(x.e,x.k);
+    if(sp)speakSeq([tkSp(x.m),'例如：'+tkSp(x.e)])};
+  $$('.tkc',st).forEach(b=>b.onclick=()=>{if(!guard(300))return;SFX.pop();show(+b.dataset.i,true)});
+  speakSeq(['關鍵字。題目裡的關鍵字，會告訴我們要怎麼做。點一個關鍵字，聽聽看。']);
 }
 
 /* ---------- 設定、暫停 ---------- */
